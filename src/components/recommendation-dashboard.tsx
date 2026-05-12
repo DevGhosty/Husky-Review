@@ -29,7 +29,7 @@ export function RecommendationDashboard({ status, deadline, selectedIds, onToggl
   const isLoading = status === 'loading';
 
   return (
-    <section id="recommendations" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <section id="recommendations" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <div className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <Badge tone={isReady ? 'green' : 'gray'}>{isReady ? 'Ranked recommendations' : 'Sample recommendation area'}</Badge>
@@ -40,8 +40,8 @@ export function RecommendationDashboard({ status, deadline, selectedIds, onToggl
               : 'Run the mocked analysis to unlock ranked UWB recommendations grouped by urgency.'}
           </p>
         </div>
-        <div className="rounded-2xl border border-husky-line bg-white px-4 py-3 text-sm font-semibold text-husky-muted shadow-soft">
-          {selectedIds.length} recommendations added to roadmap
+        <div className="premium-card rounded-2xl px-4 py-3 text-sm font-semibold text-husky-muted">
+          <span className="text-2xl font-black text-husky-purple">{selectedIds.length}</span> recommendations added to roadmap
         </div>
       </div>
 
@@ -49,10 +49,15 @@ export function RecommendationDashboard({ status, deadline, selectedIds, onToggl
         {groups.map((group) => {
           const groupRecommendations = recommendations.filter((recommendation) => recommendation.group === group.id);
           return (
-            <div key={group.id} className="rounded-[1.7rem] border border-white/70 bg-white/[0.45] p-4 shadow-soft backdrop-blur">
-              <div className="mb-4 rounded-2xl bg-white p-5 shadow-soft">
-                <h3 className="text-2xl font-black text-husky-purple-dark">{group.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-husky-muted">{group.summary}</p>
+            <div key={group.id} className="premium-panel rounded-[2rem] p-4">
+              <div className="mb-4 rounded-[1.35rem] bg-husky-purple-dark p-5 text-white shadow-card">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-2xl font-black">{group.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-white/70">{group.summary}</p>
+                  </div>
+                  <Badge tone={group.id === 'in-time' ? 'gold' : 'purple'}>{groupRecommendations.length} matches</Badge>
+                </div>
               </div>
               <div className="grid gap-4">
                 {isReady ? (
@@ -65,8 +70,8 @@ export function RecommendationDashboard({ status, deadline, selectedIds, onToggl
                     />
                   ))
                 ) : (
-                  <div className="rounded-3xl border border-dashed border-husky-purple/20 bg-white/75 p-6 text-center shadow-soft">
-                    <div className="mx-auto h-14 w-14 rounded-2xl bg-husky-purple/10" />
+                  <div className="rounded-[1.6rem] border border-dashed border-husky-purple/20 bg-white/75 p-6 text-center shadow-soft">
+                    <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-husky-purple/10 to-husky-gold/20 shadow-soft" />
                     <h4 className="mt-4 text-lg font-black text-husky-purple-dark">
                       {isLoading ? 'Ranking verified matches' : 'Recommendations unlock after analysis'}
                     </h4>

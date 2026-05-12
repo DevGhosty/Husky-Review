@@ -22,6 +22,8 @@ export default {
         glow: '0 24px 80px rgba(75, 46, 131, 0.22)',
         card: '0 20px 50px rgba(17, 24, 39, 0.10)',
         soft: '0 12px 30px rgba(75, 46, 131, 0.10)',
+        premium: '0 28px 90px rgba(28, 23, 54, 0.16)',
+        inset: 'inset 0 1px 0 rgba(255,255,255,0.72)',
       },
       keyframes: {
         float: {
@@ -48,6 +50,18 @@ export default {
           '0%, 100%': { boxShadow: '0 0 0 0 rgba(183, 165, 122, 0.36)' },
           '50%': { boxShadow: '0 0 0 10px rgba(183, 165, 122, 0)' },
         },
+        sheen: {
+          '0%': { transform: 'translateX(-120%) rotate(12deg)' },
+          '100%': { transform: 'translateX(220%) rotate(12deg)' },
+        },
+        breathe: {
+          '0%, 100%': { opacity: '0.58', transform: 'scale(1)' },
+          '50%': { opacity: '0.9', transform: 'scale(1.04)' },
+        },
+        slideIn: {
+          from: { opacity: '0', transform: 'translateX(-12px)' },
+          to: { opacity: '1', transform: 'translateX(0)' },
+        },
       },
       animation: {
         float: 'float 7s ease-in-out infinite',
@@ -57,6 +71,9 @@ export default {
         progress: 'progress 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards',
         shimmer: 'shimmer 1.5s linear infinite',
         'pulse-ring': 'pulseRing 2.8s ease-in-out infinite',
+        sheen: 'sheen 4.5s ease-in-out infinite',
+        breathe: 'breathe 8s ease-in-out infinite',
+        'slide-in': 'slideIn 520ms ease both',
       },
     },
   },

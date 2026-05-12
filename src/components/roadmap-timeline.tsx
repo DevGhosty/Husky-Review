@@ -15,8 +15,10 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
   const selectedRecommendations = recommendations.filter((recommendation) => selectedIds.includes(recommendation.id));
 
   return (
-    <section id="roadmap" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-      <div className="rounded-[2rem] bg-husky-purple-dark p-5 shadow-glow sm:p-8">
+    <section id="roadmap" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <div className="relative overflow-hidden rounded-[2.2rem] bg-husky-purple-dark p-5 shadow-premium sm:p-8">
+        <div className="absolute -left-20 top-16 h-72 w-72 rounded-full bg-husky-gold/[0.16] blur-3xl motion-safe:animate-breathe" aria-hidden="true" />
+        <div className="absolute -right-24 bottom-8 h-80 w-80 rounded-full bg-husky-purple-soft/[0.24] blur-3xl" aria-hidden="true" />
         <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr]">
           <div className="text-white">
             <Badge tone="gold">Week-by-week roadmap</Badge>
@@ -26,7 +28,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                 ? `The roadmap is organized around the ${formatDeadline(deadline)} deadline and updates as recommendations are added or removed.`
                 : 'Run the mocked review to turn the upload and job posting into a sequenced action plan.'}
             </p>
-            <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.08] p-4">
+            <div className="mt-8 rounded-[1.4rem] border border-white/10 bg-white/[0.08] p-5 shadow-inset">
               <p className="text-sm font-semibold text-white/70">Selected recommendation focus</p>
               <p className="mt-2 text-4xl font-black text-husky-gold-bright">{selectedIds.length}</p>
               <p className="mt-1 text-sm text-white/70">Activity actions currently attached to the roadmap.</p>
@@ -41,11 +43,11 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                 return (
                   <article
                     key={week.week}
-                    className="relative animate-fade-up rounded-3xl border border-white/10 bg-white p-5 shadow-card"
+                    className="relative animate-fade-up rounded-[1.6rem] border border-white/70 bg-white/[0.96] p-5 shadow-premium"
                     style={{ animationDelay: `${index * 120}ms` }}
                   >
                     <div className="flex gap-4">
-                      <span className="relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-husky-gold text-sm font-black text-husky-purple-dark shadow-soft motion-safe:animate-pulse-ring">
+                      <span className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-husky-gold text-sm font-black text-husky-purple-dark shadow-soft motion-safe:animate-pulse-ring">
                         {week.week}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -65,7 +67,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                         <div className="mt-5 grid gap-3">
                           {isReady ? (
                             week.actions.map((action) => (
-                              <div key={action.id} className="rounded-2xl bg-slate-50 p-4">
+                              <div key={action.id} className="rounded-2xl border border-slate-100 bg-slate-50/90 p-4">
                                 <p className="flex items-start gap-2 text-sm font-black text-husky-ink">
                                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-husky-success" aria-hidden="true" />
                                   {action.text}
@@ -86,7 +88,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                             </div>
                           )}
                           {isReady && selectedForWeek.map((recommendation) => (
-                            <div key={recommendation.id} className="rounded-2xl border border-husky-gold/30 bg-husky-gold/10 p-4">
+                            <div key={recommendation.id} className="rounded-2xl border border-husky-gold/30 bg-gradient-to-r from-husky-gold/[0.15] to-white p-4 shadow-soft">
                               <p className="text-xs font-black uppercase tracking-[0.14em] text-husky-purple">Added from recommendations</p>
                               <p className="mt-2 text-sm font-black text-husky-purple-dark">{recommendation.name}</p>
                               <p className="mt-1 text-sm leading-6 text-husky-muted">{recommendation.roadmapAction}</p>
