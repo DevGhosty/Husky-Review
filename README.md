@@ -2,7 +2,7 @@
 
 **Actionable UWB Resume Review** is a web application concept for helping University of Washington Bothell students improve their resumes for specific job postings. Instead of giving generic resume advice, the project is designed to recommend real UWB opportunities that students can act on, including verified clubs, courses, fellowships, events, and research roles.
 
-The repository currently documents the project proposal and intended implementation plan. Application code will be added as the project is built.
+The repository currently contains a mocked React frontend prototype plus the project proposal documentation. Backend analysis, Supabase storage, and AI integration are planned future work.
 
 ## Problem
 
@@ -53,11 +53,17 @@ Husky-Review addresses that gap by grounding recommendations in a curated databa
 
 ## Local Setup
 
-Application code is not present yet. Once the frontend and backend are added, expected setup will look similar to:
+Install dependencies and start the Vite development server:
 
 ```bash
 npm install
 npm run dev
+```
+
+Create a production build:
+
+```bash
+npm run build
 ```
 
 Create a local environment file from the example once one is added:
