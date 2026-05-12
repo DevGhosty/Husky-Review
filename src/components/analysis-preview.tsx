@@ -16,7 +16,7 @@ export function AnalysisPreview({ status, loadingStepIndex }: AnalysisPreviewPro
   const activeStep = loadingSteps[loadingStepIndex] ?? loadingSteps[0];
 
   return (
-    <section id="analysis" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section id="analysis" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <Badge tone={isSuccess ? 'green' : isLoading ? 'gold' : 'gray'}>
@@ -41,17 +41,26 @@ export function AnalysisPreview({ status, loadingStepIndex }: AnalysisPreviewPro
         )}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[0.78fr_repeat(3,1fr)]">
-        <article className="rounded-3xl bg-husky-purple-dark p-6 text-white shadow-glow">
-          <div className="flex items-center justify-between">
+      <div className="grid gap-5 lg:grid-cols-[0.84fr_repeat(3,1fr)]">
+        <article className="relative overflow-hidden rounded-[2rem] bg-husky-purple-dark p-6 text-white shadow-premium">
+          <div className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-husky-gold/20 blur-3xl" aria-hidden="true" />
+          <div className="relative flex items-center justify-between">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/[0.12] text-husky-gold-bright">
               <Gauge className="h-6 w-6" aria-hidden="true" />
             </span>
             <Badge tone="gold">{isSuccess ? matchScore.label : 'Waiting for input'}</Badge>
           </div>
-          <p className="mt-6 text-sm font-semibold text-white/70">Match Score</p>
-          <p className="mt-2 text-6xl font-black">{isSuccess ? formatPercent(matchScore.score) : '--'}</p>
-          <p className="mt-4 text-sm leading-6 text-white/75">
+          <div className="relative mt-7 grid place-items-center">
+            <div className="grid h-44 w-44 place-items-center rounded-full bg-[conic-gradient(#D8C577_0_76%,rgba(255,255,255,0.12)_76%_100%)] p-2">
+              <div className="grid h-full w-full place-items-center rounded-full bg-husky-purple-dark">
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-white/60">Match Score</p>
+                  <p className="mt-1 text-5xl font-black">{isSuccess ? formatPercent(matchScore.score) : '--'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="relative mt-6 text-center text-sm leading-6 text-white/75">
             {isSuccess ? matchScore.summary : 'The score appears after a mocked analysis run.'}
           </p>
         </article>
@@ -59,14 +68,14 @@ export function AnalysisPreview({ status, loadingStepIndex }: AnalysisPreviewPro
         {gapCategories.map((category, index) => (
           <article
             key={category.title}
-            className="glass-card animate-fade-up rounded-3xl p-5 shadow-card"
+            className="premium-card animate-fade-up rounded-[2rem] p-5 transition duration-300 hover:-translate-y-1 hover:shadow-premium"
             style={{ animationDelay: `${index * 90}ms` }}
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-husky-purple/10 text-husky-purple">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-husky-purple/10 to-husky-gold/20 text-husky-purple shadow-soft">
                 {index === 0 ? <SearchCheck className="h-5 w-5" aria-hidden="true" /> : index === 1 ? <SignalHigh className="h-5 w-5" aria-hidden="true" /> : <CheckCircle2 className="h-5 w-5" aria-hidden="true" />}
               </span>
-              <span className="text-sm font-black text-husky-purple">{isSuccess ? formatPercent(category.score) : '--'}</span>
+              <span className="rounded-full bg-husky-purple/[0.08] px-3 py-1 text-sm font-black text-husky-purple">{isSuccess ? formatPercent(category.score) : '--'}</span>
             </div>
             <h3 className="mt-5 text-lg font-black text-husky-ink">{category.title}</h3>
             <p className="mt-2 text-sm leading-6 text-husky-muted">{isSuccess ? category.summary : 'Analysis details will populate here after review.'}</p>
