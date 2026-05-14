@@ -20,9 +20,9 @@ export function Section({ id, className, children, reveal = true }: SectionProps
       ref={ref as Ref<HTMLElement>}
       className={cn(
         reveal &&
-          'motion-safe:translate-y-4 motion-safe:opacity-0 motion-safe:transition-[opacity,transform] motion-safe:duration-700 motion-safe:ease-out',
+          'motion-safe:translate-y-2 motion-safe:opacity-0 motion-safe:transition-[opacity,transform] motion-safe:duration-motion-reveal motion-safe:ease-brand',
         reveal && isRevealed && 'motion-safe:translate-y-0 motion-safe:opacity-100',
-        'motion-reduce:translate-y-0 motion-reduce:opacity-100',
+        'motion-reduce:translate-y-0 motion-reduce:opacity-100 motion-reduce:transition-none',
         className,
       )}
     >

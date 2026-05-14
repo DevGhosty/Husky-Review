@@ -45,7 +45,7 @@ export function LoginPage() {
 
             <button
               type="button"
-              className="mt-7 flex h-14 w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-5 py-4 text-sm font-black text-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="font-ui mt-7 flex h-14 w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-5 py-4 text-sm font-black text-foreground shadow-soft transition hover:-translate-y-0.5 hover:shadow-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-disabled="true"
             >
               <Chrome className="size-5 text-primary" aria-hidden="true" />

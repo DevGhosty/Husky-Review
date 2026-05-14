@@ -29,8 +29,8 @@ interface HeroSectionProps {
 const flowCards = [
   { label: 'Resume', detail: 'Uploaded', icon: FileText, accent: 'purple', start: 0, end: 20 },
   { label: 'Job Posting', detail: 'Captured', icon: BriefcaseBusiness, accent: 'gold', start: 20, end: 42 },
-  { label: 'Gap Analysis', detail: 'Analyzed', icon: Search, accent: 'purple', start: 42, end: 64 },
-  { label: 'UWB Roadmap', detail: 'Personalized', icon: Map, accent: 'gold', start: 64, end: 76 },
+  { label: 'Gap analysis', detail: 'Complete', icon: Search, accent: 'purple', start: 42, end: 64 },
+  { label: 'Action board', detail: 'Synced', icon: Map, accent: 'gold', start: 64, end: 76 },
 ];
 
 const readinessItems = [
@@ -49,10 +49,63 @@ const animationSteps = [
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 const UPLOAD_READINESS_CAP = 18;
+/** Readiness where the upload cloud begins drifting up and fading out */
+const UPLOAD_ICON_EXIT_START = 8;
+/**
+ * Float boundary between exit and enter: cloud finishes below this value;
+ * file begins at/above it — no overlap at any instant.
+ */
+const UPLOAD_ICON_HANDOFF = 13.5;
+/** Pixels the cloud moves up while fading; file starts this far below center */
+const UPLOAD_ICON_TRAVEL_PX = 22;
+/** Check fades in only after the file icon is fully visible */
+const UPLOAD_CHECK_FADE_START = 16;
 
 /** Ease-out with a long, soft deceleration — reads smooth on UI copy */
 const FADE_EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
 const FADE_MS = 520;
+
+function clamp01(x: number) {
+  return Math.min(1, Math.max(0, x));
+}
+
+/** Sequential: cloud exits up + fade, then file rises in + fade — never both visible. Uses float readiness for smooth rAF updates. */
+function uploadZoneSequentialMotion(rawReadiness: number) {
+  if (rawReadiness < UPLOAD_ICON_EXIT_START) {
+    return { uploadY: 0, uploadOp: 1, fileY: UPLOAD_ICON_TRAVEL_PX, fileOp: 0 };
+  }
+  if (rawReadiness < UPLOAD_ICON_HANDOFF) {
+    const span = UPLOAD_ICON_HANDOFF - UPLOAD_ICON_EXIT_START;
+    const t = clamp01(span > 0 ? (rawReadiness - UPLOAD_ICON_EXIT_START) / span : 1);
+    return {
+      uploadY: -UPLOAD_ICON_TRAVEL_PX * t,
+      uploadOp: 1 - t,
+      fileY: UPLOAD_ICON_TRAVEL_PX,
+      fileOp: 0,
+    };
+  }
+  if (rawReadiness < UPLOAD_READINESS_CAP) {
+    const span = UPLOAD_READINESS_CAP - UPLOAD_ICON_HANDOFF;
+    const t = clamp01(span > 0 ? (rawReadiness - UPLOAD_ICON_HANDOFF) / span : 1);
+    return {
+      uploadY: -UPLOAD_ICON_TRAVEL_PX,
+      uploadOp: 0,
+      fileY: UPLOAD_ICON_TRAVEL_PX * (1 - t),
+      fileOp: t,
+    };
+  }
+  return { uploadY: -UPLOAD_ICON_TRAVEL_PX, uploadOp: 0, fileY: 0, fileOp: 1 };
+}
+
+function uploadRowCheckOpacity(rawReadiness: number, cap: number, fadeStart: number) {
+  if (rawReadiness <= fadeStart) {
+    return 0;
+  }
+  if (rawReadiness >= cap) {
+    return 1;
+  }
+  return clamp01((rawReadiness - fadeStart) / (cap - fadeStart));
+}
 
 function FadingText({ text, className }: { text: string; className?: string }) {
   const [display, setDisplay] = useState(text);
@@ -151,12 +204,15 @@ function FadingText({ text, className }: { text: string; className?: string }) {
 
 export function HeroSection({ onStartReview }: HeroSectionProps) {
   const [readiness, setReadiness] = useState(0);
+  /** Same timeline as `readiness` but not rounded — drives smooth subpixel motion every rAF. */
+  const [readinessSmooth, setReadinessSmooth] = useState(0);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
 
     if (reduceMotion) {
       setReadiness(76);
+      setReadinessSmooth(76);
       return;
     }
 
@@ -181,10 +237,13 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
 
       if (!phase) {
         setReadiness(76);
+        setReadinessSmooth(76);
       } else {
         const localProgress = (cycleProgress - phase.start) / (phase.end - phase.start);
         const eased = 1 - Math.pow(1 - localProgress, 2.8);
-        setReadiness(Math.round(phase.from + (phase.to - phase.from) * eased));
+        const raw = phase.from + (phase.to - phase.from) * eased;
+        setReadinessSmooth(raw);
+        setReadiness(Math.round(raw));
       }
 
       animationFrame = window.requestAnimationFrame(tick);
@@ -208,10 +267,10 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
 
   const uploadBarPercent = useMemo(
     () =>
-      readiness < UPLOAD_READINESS_CAP
-        ? Math.min(100, Math.round((readiness / UPLOAD_READINESS_CAP) * 100))
+      readinessSmooth < UPLOAD_READINESS_CAP
+        ? Math.min(100, (readinessSmooth / UPLOAD_READINESS_CAP) * 100)
         : 100,
-    [readiness],
+    [readinessSmooth],
   );
 
   const uploadStatusLabel = useMemo(
@@ -221,27 +280,32 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
 
   const jobCaptureLabel = useMemo(() => (readiness >= 30 ? 'Captured' : 'Waiting'), [readiness]);
 
-  const conicStyle = {
-    background: `conic-gradient(from 220deg, #4B2E83 0%, #6F4BC0 ${Math.max(readiness * 0.42, 0)}%, #A657D8 ${Math.max(readiness * 0.62, 0)}%, #C78308 ${readiness}%, #E8EAF0 ${readiness}% 100%)`,
-  };
+  const uploadIconMotion = useMemo(() => uploadZoneSequentialMotion(readinessSmooth), [readinessSmooth]);
+
+  const resumeRowCheckOpacity = useMemo(
+    () => uploadRowCheckOpacity(readinessSmooth, UPLOAD_READINESS_CAP, UPLOAD_CHECK_FADE_START),
+    [readinessSmooth],
+  );
+
+  const conicStyle = useMemo(
+    () => ({
+      background: `conic-gradient(from 220deg, #4B2E83 0%, #6F4BC0 ${Math.max(readinessSmooth * 0.42, 0)}%, #A657D8 ${Math.max(readinessSmooth * 0.62, 0)}%, #C78308 ${readinessSmooth}%, #E8EAF0 ${readinessSmooth}% 100%)`,
+    }),
+    [readinessSmooth],
+  );
 
   return (
     <Section id="top" className="relative overflow-hidden" reveal={false}>
       <GradientBackground />
       <div className="mx-auto grid max-w-[88rem] items-start gap-8 px-5 py-9 sm:px-8 lg:min-h-[calc(100vh-5.2rem)] lg:grid-cols-[0.86fr_1.14fr] lg:px-12 lg:py-8 xl:grid-cols-[0.82fr_1.18fr]">
         <div className="relative z-10 min-w-0">
-          <Badge tone="purple" className="mb-6 rounded-full bg-husky-purple px-5 py-3 text-sm font-black text-white shadow-glow">
-            <Sparkles className="size-4" aria-hidden="true" />
-            Premium Career Command Center
-          </Badge>
-          <h1 className="max-w-full font-display text-[3rem] font-black leading-[0.94] tracking-normal text-foreground sm:max-w-3xl sm:text-[4.55rem] lg:text-[4.35rem] xl:text-[4.8rem]">
-            <span className="block">Turn your</span>
-            <span className="block text-husky-purple dark:text-amber-200">resume gaps</span>
-            <span className="block">into a UWB</span>
-            <span className="gold-underline block text-[#ba8300] dark:text-amber-300">action plan</span>
+          <h1 className="max-w-full font-sans text-[3rem] font-extrabold leading-[1.08] tracking-[-0.03em] text-foreground sm:max-w-3xl sm:text-[4.55rem] lg:text-[4.35rem] xl:text-[4.8rem]">
+            <span className="block">From resume gaps</span>
+            <span className="block text-muted-foreground">to a working</span>
+            <span className="hero-action-mark mt-1 font-black">action board</span>
           </h1>
           <p className="mt-7 max-w-xl text-lg font-semibold leading-8 text-muted-foreground sm:text-xl">
-            Compare your resume to any job posting and get AI-powered gap insights with verified UWB activities to help you stand out.
+            Upload your resume and a real posting in the app, read AI-assisted gap analysis with UWB-linked recommendations, save reviews, and shape everything into a week-by-week board you can execute—not just read.
           </p>
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -278,8 +342,10 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
           <div className="command-panel rounded-[2rem] p-4 sm:p-5 lg:p-6">
             <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div>
-                <h2 className="text-2xl font-black tracking-normal text-foreground sm:text-3xl">Your Career Command Center</h2>
-                <p className="mt-2 text-sm font-semibold text-muted-foreground">Watch the resume review turn into a roadmap.</p>
+                <h2 className="text-2xl font-black tracking-normal text-foreground sm:text-3xl">Your workspace in the app</h2>
+                <p className="mt-2 text-sm font-semibold text-muted-foreground">
+                  Follow each stage from upload and job capture through gap analysis, saved reviews, and your live action board.
+                </p>
               </div>
               <Badge tone="gray" className="w-fit rounded-xl border-primary/15 bg-primary/8 px-4 py-2 text-primary dark:border-white/15 dark:bg-white/10 dark:text-foreground">
                 <Timer className="size-4" aria-hidden="true" />
@@ -309,7 +375,7 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
                 <div className="mx-auto grid size-28 place-items-center rounded-full p-3 transition-[background] duration-500 xl:size-32" style={conicStyle}>
                   <div className="grid size-full place-items-center rounded-full bg-card">
                     <div className="text-center">
-                      <p className="tabular-nums text-4xl font-black text-primary">{readiness}%</p>
+                      <p className="tabular-nums text-4xl font-black text-primary">{Math.round(readinessSmooth)}%</p>
                     </div>
                   </div>
                 </div>
@@ -317,11 +383,14 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
                   <FadingText text={readinessCaption} className="font-black" />
                 </p>
                 <div className="mx-auto mt-2 h-1 w-36 rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-gradient-to-r from-husky-purple to-[#c78308] transition-all duration-500" style={{ width: `${readiness}%` }} />
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-husky-purple to-[#c78308]"
+                    style={{ width: `${readinessSmooth}%` }}
+                  />
                 </div>
                 <div className="mt-3 flex flex-col gap-2">
                   {readinessItems.map((item) => {
-                    const metricScore = Math.round((item.score / 76) * readiness);
+                    const metricScore = Math.round((item.score / 76) * readinessSmooth);
                     const isMetricReady = metricScore >= item.score - 2;
                     return (
                       <div key={item.label} className="grid grid-cols-[1rem_1fr_auto] items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5">
@@ -339,10 +408,7 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
                   })}
                 </div>
                 <Button variant="secondary" className="mt-3 h-9 w-full cursor-default hover:translate-y-0 hover:shadow-soft" type="button" aria-disabled="true">
-                  Breakdown Preview
-                  <span className="rounded-full border border-husky-purple/25 bg-white/95 px-2 py-0.5 text-[0.68rem] font-black text-husky-purple shadow-sm dark:border-amber-400/45 dark:bg-amber-950/55 dark:text-amber-100 dark:shadow-none">
-                    UI only
-                  </span>
+                  Open full breakdown
                 </Button>
               </article>
 
@@ -352,18 +418,41 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
                   className="upload-dropzone mt-5 rounded-2xl border border-dashed border-primary/30 bg-card/90 px-6 py-7 text-center dark:bg-muted/20"
                   aria-live="polite"
                 >
-                  <span className="mx-auto grid size-14 place-items-center rounded-2xl text-primary">
-                    {readiness < UPLOAD_READINESS_CAP ? <UploadCloud className="size-8" aria-hidden="true" /> : <FileText className="size-8" aria-hidden="true" />}
+                  <span className="relative mx-auto grid size-14 overflow-hidden rounded-2xl text-primary">
+                    <span
+                      className="absolute inset-0 grid place-items-center will-change-transform"
+                      style={{
+                        transform: `translateY(${uploadIconMotion.uploadY}px)`,
+                        opacity: uploadIconMotion.uploadOp,
+                      }}
+                    >
+                      <UploadCloud className="size-8" aria-hidden="true" />
+                    </span>
+                    <span
+                      className="absolute inset-0 grid place-items-center will-change-transform"
+                      style={{
+                        transform: `translateY(${uploadIconMotion.fileY}px)`,
+                        opacity: uploadIconMotion.fileOp,
+                      }}
+                    >
+                      <FileText className="size-8" aria-hidden="true" />
+                    </span>
                   </span>
                   <div className="mx-auto mt-4 max-w-[14rem] rounded-xl border border-border bg-card px-3 py-2 text-left shadow-soft">
                     <div className="flex items-center gap-2">
                       <FileText className="size-4 text-primary" aria-hidden="true" />
                       <span className="truncate text-xs font-black text-foreground">resume.pdf</span>
-                      {readiness >= UPLOAD_READINESS_CAP && <Check className="ml-auto size-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />}
+                      <span className="ml-auto grid size-4 shrink-0 place-items-center">
+                        <Check
+                          className="size-4 text-emerald-600 dark:text-emerald-400"
+                          style={{ opacity: resumeRowCheckOpacity }}
+                          aria-hidden={resumeRowCheckOpacity < 0.08}
+                        />
+                      </span>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-husky-purple to-[#c78308] transition-[width] duration-300 ease-out motion-reduce:transition-none"
+                        className="h-full rounded-full bg-gradient-to-r from-husky-purple to-[#c78308]"
                         style={{ width: `${uploadBarPercent}%` }}
                       />
                     </div>
@@ -391,7 +480,7 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
                 </div>
                 <p className="mt-4 flex items-start gap-2 text-xs font-semibold leading-5 text-muted-foreground">
                   <Shield className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-                  Your files are private and only used for this session.
+                  Uploads stay in your workspace and are handled with student-first privacy controls you manage in the app.
                 </p>
               </article>
             </div>
@@ -399,9 +488,13 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
             <div className="relative mt-5 grid gap-4 rounded-[1.6rem] border border-primary/20 bg-primary/10 p-4 shadow-soft dark:border-white/10 dark:bg-white/5 sm:grid-cols-2 xl:grid-cols-4">
               {flowCards.map((card, index) => {
                 const Icon = card.icon;
-                const isComplete = readiness >= card.end;
-                const isActive = readiness >= card.start && readiness < card.end;
-                const localProgress = isComplete ? 100 : isActive ? Math.max(18, Math.min(92, ((readiness - card.start) / (card.end - card.start)) * 100)) : 10;
+                const isComplete = readinessSmooth >= card.end;
+                const isActive = readinessSmooth >= card.start && readinessSmooth < card.end;
+                const localProgress = isComplete
+                  ? 100
+                  : isActive
+                    ? Math.max(18, Math.min(92, ((readinessSmooth - card.start) / (card.end - card.start)) * 100))
+                    : 10;
                 return (
                   <div key={card.label} className="relative">
                   <article
@@ -433,7 +526,7 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
                     <div className="mx-auto mt-2 h-1.5 w-24 overflow-hidden rounded-full bg-muted">
                       <div
                         className={cn(
-                          'h-full rounded-full bg-gradient-to-r transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+                          'h-full rounded-full bg-gradient-to-r',
                           isComplete
                             ? 'from-emerald-600 via-emerald-500 to-teal-500'
                             : 'from-husky-purple via-[#7a5ab8] to-[#c78308]',
@@ -458,9 +551,9 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
 
             <div className="mt-4 grid gap-4 rounded-2xl border border-border bg-card/70 p-3 shadow-soft dark:bg-card/40 lg:grid-cols-3">
               {[
-                ['Built for UWB Students', 'Activities and resources connected to UWB.'],
-                ['Always Up to Date', 'Fresh opportunities and events from UWB.'],
-                ['Actionable Next Steps', 'Clear recommendations you can take this week.'],
+                ['Built for UWB students', 'Recommendations point to campus sources and programs you can act on.'],
+                ['Stays current', 'Statuses and dates help you spot what is still active.'],
+                ['Actionable next steps', 'Move items from insight to your dated weekly board.'],
               ].map(([title, detail], index) => (
                 <div key={title} className="flex items-center gap-3 border-border/80 lg:border-r lg:last:border-r-0">
                   <span className={[

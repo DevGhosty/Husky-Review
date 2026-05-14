@@ -70,8 +70,8 @@ export function AnalysisPreview({ status, loadingStepIndex }: AnalysisPreviewPro
         {gapCategories.map((category, index) => (
           <Card
             key={category.title}
-            className="dashboard-card motion-safe:animate-slide-in rounded-[2rem] border-border/80 p-0 transition duration-300 hover:-translate-y-1 hover:shadow-premium"
-            style={{ animationDelay: `${index * 90}ms` }}
+            className="dashboard-card motion-safe:animate-slide-in motion-reduce:animate-none rounded-[2rem] border-border/80 p-0 transition-[transform,box-shadow,border-color] duration-motion-normal ease-brand motion-safe:hover:-translate-y-1 hover:shadow-premium active:scale-[0.99] motion-safe:active:scale-[0.99]"
+            style={{ animationDelay: `${Math.min(index * 70, 210)}ms` }}
           >
             <CardContent className="p-5">
               <div className="flex items-center justify-between gap-3">

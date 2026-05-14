@@ -22,7 +22,7 @@ export function RoadmapPage() {
                 <MapPinned className="size-4" aria-hidden="true" />
                 Roadmap
               </Badge>
-              <h1 className="type-page-title type-page-title--brand mt-4 max-w-3xl font-display">
+              <h1 className="type-page-title type-page-title--brand mt-4 max-w-3xl">
                 Plan the next three weeks with verified actions.
               </h1>
               <p className="type-lead mt-5 max-w-2xl">

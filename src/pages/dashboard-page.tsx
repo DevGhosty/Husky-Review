@@ -90,7 +90,7 @@ export function DashboardPage() {
                   return (
                     <article
                       key={item.label}
-                      className="rounded-2xl border border-border bg-card/80 p-4 shadow-soft transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card motion-safe:hover:-translate-y-0.5"
+                      className="rounded-2xl border border-border bg-card/80 p-4 shadow-soft transition-[box-shadow,transform] duration-motion-normal ease-brand hover:-translate-y-0.5 hover:shadow-card active:scale-[0.99] motion-safe:hover:-translate-y-0.5"
                     >
                       <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
                         <Icon className="size-5" aria-hidden="true" />

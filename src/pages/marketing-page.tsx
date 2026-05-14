@@ -7,17 +7,17 @@ import { Surface } from '../components/layout/surface';
 const workflow = [
   {
     title: 'Upload a resume',
-    detail: 'Begin with a student resume and a specific role target.',
+    detail: 'Add your resume and the role you are targeting so every comparison stays tied to that posting.',
     icon: ClipboardCheck,
   },
   {
     title: 'Compare the posting',
-    detail: 'Preview how gaps, strengths, and missing signals could be organized.',
+    detail: 'Get a structured gap review: strengths, gaps, and missing signals mapped directly to the job requirements.',
     icon: FileSearch,
   },
   {
-    title: 'Build a UWB roadmap',
-    detail: 'Turn the review into campus-connected activities and next steps.',
+    title: 'Save and plan',
+    detail: 'Keep reviews in your workspace, promote recommendations into a week-by-week board, and adjust priorities as you go.',
     icon: Map,
   },
 ];
@@ -41,18 +41,20 @@ export function MarketingPage() {
               From resume gaps to a working action board.
             </h2>
             <p className="relative mt-5 text-base font-medium leading-7 text-white/80">
-              The public page explains the product. The app area is where students upload, review, save, and plan. Google sign-in is represented as UI only for now.
+              This page walks through how Husky-Review works. In the app, students upload a resume and job description, run the gap review, save versions, and turn recommendations into a dated action board. Continue with Google on the sign-in screen when you are ready to keep progress in your workspace.
             </p>
           </Surface>
 
           <div className="grid gap-4 md:grid-cols-3">
-            {workflow.map((item) => {
+            {workflow.map((item, index) => {
               const Icon = item.icon;
+              const staggerMs = Math.min(index * 60, 180);
               return (
                 <Surface
                   key={item.title}
                   variant="card"
-                  className="rounded-[1.6rem] border border-border/80 p-5 shadow-soft transition-shadow duration-200 hover:border-primary/25 hover:shadow-md dark:hover:border-primary/35"
+                  className="motion-safe:animate-fade-up motion-reduce:animate-none rounded-[1.6rem] border border-border/80 p-5 shadow-soft transition-[border-color,box-shadow,transform] duration-motion-normal ease-brand hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md active:scale-[0.99] motion-safe:hover:-translate-y-0.5 dark:hover:border-primary/35"
+                  style={{ animationDelay: `${staggerMs}ms` }}
                 >
                   <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-primary/12 to-husky-gold/20 text-primary shadow-soft">
                     <Icon className="size-6" aria-hidden="true" />
