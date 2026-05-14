@@ -1,10 +1,13 @@
 export function GradientBackground() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+      <div className="hero-gradient-field absolute inset-0" />
       <div className="hero-grid absolute inset-0 opacity-[0.42]" />
-      <div className="absolute left-[-8rem] top-[-7rem] h-80 w-80 rounded-full bg-husky-purple/25 blur-3xl animate-glow-shift" />
-      <div className="absolute right-[-8rem] top-24 h-96 w-96 rounded-full bg-husky-gold/30 blur-3xl animate-glow-shift [animation-delay:1.5s]" />
-      <div className="absolute bottom-10 left-[38%] h-72 w-72 rounded-full bg-indigo-200/[0.45] blur-3xl animate-glow-shift [animation-delay:3s]" />
+      <div className="aurora-ribbon absolute left-[20%] top-[12%] h-56 w-[58rem]" />
+      <div className="corner-wash corner-wash-left absolute bottom-[-7rem] left-[-7rem] h-[22rem] w-[30rem]" />
+      <div className="corner-wash corner-wash-right absolute right-[-5rem] top-[-4rem] h-[21rem] w-[28rem]" />
+      <div className="curve-line curve-line-left absolute bottom-12 left-0 h-72 w-[34rem]" />
+      <div className="curve-line curve-line-right absolute right-0 top-0 h-72 w-[28rem]" />
     </div>
   );
 }

@@ -1,5 +1,14 @@
 import type { GapCategory, LoadingStep, Recommendation, RoadmapWeek } from '../types/analysis';
 
+export const defaultDeadline = '2026-05-31';
+
+export const sampleFileName = 'sample-uwb-resume.pdf';
+
+export const sampleJobDescription =
+  'Frontend software engineering internship seeking React, accessibility, API integration, testing, and production deployment experience. Candidates should show collaboration, user-focused product thinking, and measurable project outcomes.';
+
+export const successSelectedIds = ['css-club-review-night', 'career-services-advisor'];
+
 export const loadingSteps: LoadingStep[] = [
   {
     label: 'Reading resume',

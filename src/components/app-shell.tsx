@@ -1,47 +1,127 @@
 import type { ReactNode } from 'react';
-import { ArrowRight, GraduationCap } from 'lucide-react';
-import { Button } from './ui/button';
+import { Bell, ChevronDown } from 'lucide-react';
+import { Link, NavLink } from 'react-router-dom';
+import { BrandLockup } from './brand-lockup';
+import { ThemeToggle } from './theme-toggle';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { cn } from '../lib/utils';
 
 interface AppShellProps {
   children: ReactNode;
-  onStartReview: () => void;
 }
 
-export function AppShell({ children, onStartReview }: AppShellProps) {
+const navItems = [
+  { label: 'Dashboard', to: '/app' },
+  { label: 'Roadmap', to: '/app/roadmap' },
+  { label: 'Resources', to: '/app/resources' },
+  { label: 'Saved Reviews', to: '/app/saved-reviews' },
+  { label: 'Privacy', to: '/app/privacy' },
+  { label: 'Profile', to: '/app/profile' },
+];
+
+const navLinkFocus =
+  'rounded-lg px-2 py-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
+const iconButtonClass =
+  'relative grid size-11 place-items-center rounded-full border border-border bg-card text-primary shadow-soft ring-1 ring-border/50 transition-[color,box-shadow,transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card motion-safe:hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]';
+
+export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-husky-cloud text-husky-ink">
-      <header className="sticky top-0 z-50 border-b border-white/60 bg-white/[0.78] shadow-[0_10px_35px_rgba(28,23,54,0.06)] backdrop-blur-2xl">
-        <nav
-          className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8"
-          aria-label="Main navigation"
-        >
-          <a href="#top" className="flex items-center gap-3 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-husky-gold">
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-husky-purple to-husky-purple-dark text-white shadow-soft ring-1 ring-white/70">
-              <GraduationCap className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <span>
-              <span className="block text-sm font-black tracking-tight text-husky-purple-dark">Husky-Review</span>
-              <span className="block text-xs font-medium text-husky-muted">Actionable UWB Resume Review</span>
-            </span>
-          </a>
-          <div className="hidden items-center gap-1 rounded-full border border-husky-line/80 bg-white/75 p-1 text-sm font-semibold text-slate-600 shadow-soft md:flex">
-            <a href="#workflow" className="rounded-full px-4 py-2 transition hover:bg-husky-purple/[0.08] hover:text-husky-purple">
-              How it works
-            </a>
-            <a href="#recommendations" className="rounded-full px-4 py-2 transition hover:bg-husky-purple/[0.08] hover:text-husky-purple">
-              Recommendations
-            </a>
-            <a href="#privacy" className="rounded-full px-4 py-2 transition hover:bg-husky-purple/[0.08] hover:text-husky-purple">
-              Privacy
-            </a>
+    <div className="min-h-screen overflow-x-hidden px-3 py-3 text-foreground sm:px-5 sm:py-6">
+      <div className="app-frame mx-auto max-w-[92rem] rounded-[var(--radius-shell,1.8rem)]">
+        <header className="border-b border-border bg-card/90 backdrop-blur-xl">
+          <nav className="flex min-h-[4.65rem] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
+            <div className="flex min-w-0 items-center gap-4">
+              <Link
+                to="/app"
+                aria-label="Husky-Review dashboard"
+                className={cn('min-w-0 rounded-xl', navLinkFocus)}
+              >
+                <BrandLockup />
+              </Link>
+              <span className="hidden h-7 w-px bg-border lg:block" aria-hidden="true" />
+              <span className="hidden truncate text-[0.95rem] font-medium text-muted-foreground xl:block">
+                Actionable UWB Resume Review
+              </span>
+            </div>
+
+            <div className="hidden items-center gap-6 text-[0.95rem] font-semibold text-muted-foreground lg:flex">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) =>
+                    cn(
+                      navLinkFocus,
+                      'relative text-muted-foreground hover:text-primary',
+                      isActive && 'font-black text-primary',
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {item.label}
+                      {isActive && (
+                        <span
+                          className="absolute inset-x-1 -bottom-2.5 h-0.5 rounded-full bg-primary shadow-[0_0_16px_rgba(75,46,131,0.28)] dark:bg-primary dark:shadow-[0_0_14px_oklch(0.85_0.05_300_/_0.35)]"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              <ThemeToggle />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" aria-label="Notifications preview" className={iconButtonClass}>
+                    <Bell className="size-5" aria-hidden="true" />
+                    <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-primary" aria-hidden="true" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Preview notifications</TooltipContent>
+              </Tooltip>
+              <Link
+                to="/app/profile"
+                aria-label="Profile preview"
+                className="flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5 shadow-soft ring-1 ring-border/50 transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card motion-safe:hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]"
+              >
+                <Avatar className="size-8">
+                  <AvatarFallback className="bg-primary/10 text-sm font-black text-primary">S</AvatarFallback>
+                </Avatar>
+                <ChevronDown className="hidden size-4 text-primary sm:block" aria-hidden="true" />
+              </Link>
+            </div>
+          </nav>
+          <div className="border-t border-border/80 px-4 py-3 lg:hidden" aria-label="Section navigation">
+            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) =>
+                    cn(
+                      'whitespace-nowrap rounded-full border px-4 py-2 text-sm font-black transition-[color,background-color,border-color,transform] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-safe:active:scale-[0.98]',
+                      isActive
+                        ? 'border-primary bg-primary text-primary-foreground shadow-soft'
+                        : 'border-border bg-card/85 text-muted-foreground hover:border-husky-gold hover:text-primary dark:hover:border-primary/50',
+                    )
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           </div>
-          <Button className="hidden px-4 py-2.5 sm:inline-flex" onClick={onStartReview}>
-            Analyze resume
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </nav>
-      </header>
-      {children}
+        </header>
+        {children}
+      </div>
     </div>
   );
 }

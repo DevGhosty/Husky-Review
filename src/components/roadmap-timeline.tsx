@@ -2,6 +2,7 @@ import { CalendarCheck2, CheckCircle2 } from 'lucide-react';
 import { recommendations, roadmapWeeks } from '../data/mockData';
 import { formatDeadline } from '../lib/utils';
 import type { ReviewStatus } from '../types/analysis';
+import { Section } from './layout/section';
 import { Badge } from './ui/badge';
 
 interface RoadmapTimelineProps {
@@ -15,7 +16,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
   const selectedRecommendations = recommendations.filter((recommendation) => selectedIds.includes(recommendation.id));
 
   return (
-    <section id="roadmap" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+    <Section id="roadmap" className="mx-auto max-w-[86rem] px-5 py-14 sm:px-8 lg:px-12">
       <div className="relative overflow-hidden rounded-[2.2rem] bg-husky-purple-dark p-5 shadow-premium sm:p-8">
         <div className="absolute -left-20 top-16 h-72 w-72 rounded-full bg-husky-gold/[0.16] blur-3xl motion-safe:animate-breathe" aria-hidden="true" />
         <div className="absolute -right-24 bottom-8 h-80 w-80 rounded-full bg-husky-purple-soft/[0.24] blur-3xl" aria-hidden="true" />
@@ -43,44 +44,44 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                 return (
                   <article
                     key={week.week}
-                    className="relative animate-fade-up rounded-[1.6rem] border border-white/70 bg-white/[0.96] p-5 shadow-premium"
+                    className="relative motion-safe:animate-slide-in rounded-[1.6rem] border border-white/70 bg-white/[0.96] p-5 shadow-premium"
                     style={{ animationDelay: `${index * 120}ms` }}
                   >
                     <div className="flex gap-4">
-                      <span className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-husky-gold text-sm font-black text-husky-purple-dark shadow-soft motion-safe:animate-pulse-ring">
+                      <span className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-husky-gold text-sm font-black text-husky-purple shadow-soft motion-safe:animate-pulse-ring">
                         {week.week}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                           <div>
-                            <p className="text-sm font-black uppercase tracking-[0.14em] text-husky-purple">Week {week.week}</p>
-                            <h3 className="mt-1 text-xl font-black text-husky-purple-dark">{week.title}</h3>
+                            <p className="text-sm font-black uppercase tracking-[0.14em] text-primary">Week {week.week}</p>
+                            <h3 className="mt-1 text-xl font-semibold text-foreground">{week.title}</h3>
                           </div>
                           <Badge tone="purple">
                             <CalendarCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
                             Action plan
                           </Badge>
                         </div>
-                        <p className="mt-3 text-sm leading-6 text-husky-muted">
+                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
                           {isReady ? week.summary : 'This week will populate after the analysis connects gaps to verified UWB actions.'}
                         </p>
                         <div className="mt-5 grid gap-3">
                           {isReady ? (
                             week.actions.map((action) => (
-                              <div key={action.id} className="rounded-2xl border border-slate-100 bg-slate-50/90 p-4">
-                                <p className="flex items-start gap-2 text-sm font-black text-husky-ink">
-                                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-husky-success" aria-hidden="true" />
+                              <div key={action.id} className="rounded-2xl border border-border bg-muted/40 p-4 dark:bg-muted/25">
+                                <p className="flex items-start gap-2 text-sm font-semibold text-foreground">
+                                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                                   {action.text}
                                 </p>
-                                <p className="mt-2 pl-6 text-sm leading-6 text-husky-muted">{action.detail}</p>
+                                <p className="mt-2 pl-6 text-sm leading-6 text-muted-foreground">{action.detail}</p>
                               </div>
                             ))
                           ) : (
-                            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
-                              <p className="text-sm font-black text-husky-ink">
+                            <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4 dark:bg-muted/20">
+                              <p className="text-sm font-semibold text-foreground">
                                 {status === 'loading' ? 'Building roadmap steps...' : 'Roadmap empty state'}
                               </p>
-                              <p className="mt-2 text-sm leading-6 text-husky-muted">
+                              <p className="mt-2 text-sm leading-6 text-muted-foreground">
                                 {status === 'loading'
                                   ? 'Recommendations are being placed into the right week.'
                                   : 'Start a review or view the sample roadmap to preview this section.'}
@@ -88,10 +89,10 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                             </div>
                           )}
                           {isReady && selectedForWeek.map((recommendation) => (
-                            <div key={recommendation.id} className="rounded-2xl border border-husky-gold/30 bg-gradient-to-r from-husky-gold/[0.15] to-white p-4 shadow-soft">
-                              <p className="text-xs font-black uppercase tracking-[0.14em] text-husky-purple">Added from recommendations</p>
-                              <p className="mt-2 text-sm font-black text-husky-purple-dark">{recommendation.name}</p>
-                              <p className="mt-1 text-sm leading-6 text-husky-muted">{recommendation.roadmapAction}</p>
+                            <div key={recommendation.id} className="rounded-2xl border border-husky-gold/30 bg-gradient-to-r from-husky-gold/[0.15] to-card p-4 shadow-soft">
+                              <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">Added from recommendations</p>
+                              <p className="mt-2 text-sm font-semibold text-foreground">{recommendation.name}</p>
+                              <p className="mt-1 text-sm leading-6 text-muted-foreground">{recommendation.roadmapAction}</p>
                             </div>
                           ))}
                         </div>
@@ -104,6 +105,6 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
           </div>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }
