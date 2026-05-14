@@ -4,6 +4,39 @@ export default {
   theme: {
     extend: {
       colors: {
+        border: 'var(--border)',
+        input: 'var(--input)',
+        ring: 'var(--ring)',
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
+        },
+        popover: {
+          DEFAULT: 'var(--popover)',
+          foreground: 'var(--popover-foreground)',
+        },
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
+        },
+        secondary: {
+          DEFAULT: 'var(--secondary)',
+          foreground: 'var(--secondary-foreground)',
+        },
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--accent-foreground)',
+        },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: '#ffffff',
+        },
         husky: {
           purple: '#4B2E83',
           'purple-dark': '#2C174F',
@@ -18,12 +51,21 @@ export default {
           warning: '#F59E0B',
         },
       },
+      fontFamily: {
+        sans: ['Geist Variable', 'Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        heading: ['Geist Variable', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Georgia', 'Cambria', 'Times New Roman', 'ui-serif', 'serif'],
+      },
       boxShadow: {
         glow: '0 24px 80px rgba(75, 46, 131, 0.22)',
         card: '0 20px 50px rgba(17, 24, 39, 0.10)',
         soft: '0 12px 30px rgba(75, 46, 131, 0.10)',
         premium: '0 28px 90px rgba(28, 23, 54, 0.16)',
+        frame: '0 30px 120px rgba(35, 19, 72, 0.16)',
         inset: 'inset 0 1px 0 rgba(255,255,255,0.72)',
+        'gold-line': '0 0 20px rgba(216, 197, 119, 0.32)',
+        'gold-line-strong': '0 0 22px rgba(216, 197, 119, 0.35)',
+        'progress-track': '0 20px 50px rgba(0, 0, 0, 0.16)',
       },
       keyframes: {
         float: {

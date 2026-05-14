@@ -1,163 +1,484 @@
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, Clock3, FileText, Layers3, Map, Sparkles } from 'lucide-react';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  CalendarDays,
+  Check,
+  FileText,
+  Link2,
+  LockKeyhole,
+  Map,
+  Search,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Timer,
+  UploadCloud,
+} from 'lucide-react';
 import { GradientBackground } from './gradient-background';
+import { Section } from './layout/section';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 interface HeroSectionProps {
   onStartReview: () => void;
-  onViewRoadmap: () => void;
 }
 
 const flowCards = [
-  { label: 'Resume', detail: 'PDF or DOCX', icon: FileText, delay: '0s' },
-  { label: 'Job Posting', detail: 'Target role', icon: BriefcaseBusiness, delay: '0.6s' },
-  { label: 'Gap Analysis', detail: 'Skills and signals', icon: Sparkles, delay: '1.2s' },
-  { label: 'UWB Roadmap', detail: 'Verified next steps', icon: Map, delay: '1.8s' },
+  { label: 'Resume', detail: 'Uploaded', icon: FileText, accent: 'purple', start: 0, end: 20 },
+  { label: 'Job Posting', detail: 'Captured', icon: BriefcaseBusiness, accent: 'gold', start: 20, end: 42 },
+  { label: 'Gap Analysis', detail: 'Analyzed', icon: Search, accent: 'purple', start: 42, end: 64 },
+  { label: 'UWB Roadmap', detail: 'Personalized', icon: Map, accent: 'gold', start: 64, end: 76 },
 ];
 
-export function HeroSection({ onStartReview, onViewRoadmap }: HeroSectionProps) {
+const readinessItems = [
+  { label: 'Impact', score: 78 },
+  { label: 'Relevance', score: 72 },
+  { label: 'Clarity', score: 77 },
+];
+
+const animationSteps = [
+  { label: 'Uploading resume', detail: 'Resume received' },
+  { label: 'Parsing skills', detail: 'Skills extracted' },
+  { label: 'Comparing role', detail: 'Gaps detected' },
+  { label: 'Building roadmap', detail: 'Next steps ready' },
+];
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+const UPLOAD_READINESS_CAP = 18;
+
+/** Ease-out with a long, soft deceleration — reads smooth on UI copy */
+const FADE_EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
+const FADE_MS = 520;
+
+function FadingText({ text, className }: { text: string; className?: string }) {
+  const [display, setDisplay] = useState(text);
+  const [visible, setVisible] = useState(true);
+  const lastCommittedRef = useRef(text);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const pendingTargetRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
+    if (reduceMotion) {
+      lastCommittedRef.current = text;
+      pendingTargetRef.current = null;
+      setDisplay(text);
+      setVisible(true);
+      return;
+    }
+
+    if (text === lastCommittedRef.current) {
+      return;
+    }
+
+    const targetText = text;
+    pendingTargetRef.current = targetText;
+    setVisible(false);
+
+    const el = spanRef.current;
+    let cleaned = false;
+    let didCommit = false;
+    let fallbackTimer: number | undefined;
+
+    const commitSwapAndEnter = () => {
+      if (cleaned || didCommit || pendingTargetRef.current !== targetText) {
+        return;
+      }
+      didCommit = true;
+      lastCommittedRef.current = targetText;
+      setDisplay(targetText);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (cleaned || pendingTargetRef.current !== targetText || lastCommittedRef.current !== targetText) {
+            return;
+          }
+          setVisible(true);
+        });
+      });
+    };
+
+    const onTransitionEnd = (e: TransitionEvent) => {
+      if (cleaned || pendingTargetRef.current !== targetText) {
+        return;
+      }
+      if (e.target !== el || e.propertyName !== 'opacity') {
+        return;
+      }
+      el?.removeEventListener('transitionend', onTransitionEnd);
+      if (fallbackTimer !== undefined) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = undefined;
+      }
+      commitSwapAndEnter();
+    };
+
+    if (el) {
+      el.addEventListener('transitionend', onTransitionEnd);
+    }
+
+    fallbackTimer = window.setTimeout(() => {
+      el?.removeEventListener('transitionend', onTransitionEnd);
+      commitSwapAndEnter();
+    }, FADE_MS + 200);
+
+    return () => {
+      cleaned = true;
+      if (fallbackTimer !== undefined) {
+        window.clearTimeout(fallbackTimer);
+      }
+      el?.removeEventListener('transitionend', onTransitionEnd);
+    };
+  }, [text]);
+
   return (
-    <section id="top" className="relative overflow-hidden">
+    <span
+      ref={spanRef}
+      style={{ transitionTimingFunction: FADE_EASE, transitionDuration: `${FADE_MS}ms` }}
+      className={cn(
+        'inline-block transition-opacity motion-reduce:transition-none',
+        visible ? 'opacity-100' : 'pointer-events-none opacity-0',
+        className,
+      )}
+    >
+      {display}
+    </span>
+  );
+}
+
+export function HeroSection({ onStartReview }: HeroSectionProps) {
+  const [readiness, setReadiness] = useState(0);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia(REDUCED_MOTION_QUERY).matches;
+
+    if (reduceMotion) {
+      setReadiness(76);
+      return;
+    }
+
+    let frame = 0;
+    let animationFrame = 0;
+    const duration = 15600;
+    const phases = [
+      { from: 0, to: 18, start: 0, end: 0.24 },
+      { from: 18, to: 38, start: 0.24, end: 0.48 },
+      { from: 38, to: 64, start: 0.48, end: 0.74 },
+      { from: 64, to: 76, start: 0.74, end: 0.92 },
+    ];
+
+    function tick(timestamp: number) {
+      if (!frame) {
+        frame = timestamp;
+      }
+
+      const elapsed = (timestamp - frame) % duration;
+      const cycleProgress = elapsed / duration;
+      const phase = phases.find((item) => cycleProgress >= item.start && cycleProgress < item.end);
+
+      if (!phase) {
+        setReadiness(76);
+      } else {
+        const localProgress = (cycleProgress - phase.start) / (phase.end - phase.start);
+        const eased = 1 - Math.pow(1 - localProgress, 2.8);
+        setReadiness(Math.round(phase.from + (phase.to - phase.from) * eased));
+      }
+
+      animationFrame = window.requestAnimationFrame(tick);
+    }
+
+    animationFrame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, []);
+
+  const activeStep = useMemo(() => {
+    if (readiness < 20) return animationSteps[0];
+    if (readiness < 42) return animationSteps[1];
+    if (readiness < 65) return animationSteps[2];
+    return animationSteps[3];
+  }, [readiness]);
+
+  const readinessCaption = useMemo(
+    () => (readiness > 70 ? 'Strong Progress' : activeStep.detail),
+    [readiness, activeStep],
+  );
+
+  const uploadBarPercent = useMemo(
+    () =>
+      readiness < UPLOAD_READINESS_CAP
+        ? Math.min(100, Math.round((readiness / UPLOAD_READINESS_CAP) * 100))
+        : 100,
+    [readiness],
+  );
+
+  const uploadStatusLabel = useMemo(
+    () => (readiness < UPLOAD_READINESS_CAP ? 'Uploading your resume' : 'Resume uploaded'),
+    [readiness],
+  );
+
+  const jobCaptureLabel = useMemo(() => (readiness >= 30 ? 'Captured' : 'Waiting'), [readiness]);
+
+  const conicStyle = {
+    background: `conic-gradient(from 220deg, #4B2E83 0%, #6F4BC0 ${Math.max(readiness * 0.42, 0)}%, #A657D8 ${Math.max(readiness * 0.62, 0)}%, #C78308 ${readiness}%, #E8EAF0 ${readiness}% 100%)`,
+  };
+
+  return (
+    <Section id="top" className="relative overflow-hidden" reveal={false}>
       <GradientBackground />
-      <div className="mx-auto grid min-h-[calc(100vh-76px)] max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:py-16">
-        <div className="max-w-3xl animate-fade-up">
-          <Badge tone="gold" className="mb-5 shadow-soft">
-            Session-only AI preview
+      <div className="mx-auto grid max-w-[88rem] items-start gap-8 px-5 py-9 sm:px-8 lg:min-h-[calc(100vh-5.2rem)] lg:grid-cols-[0.86fr_1.14fr] lg:px-12 lg:py-8 xl:grid-cols-[0.82fr_1.18fr]">
+        <div className="relative z-10 min-w-0">
+          <Badge tone="purple" className="mb-6 rounded-full bg-husky-purple px-5 py-3 text-sm font-black text-white shadow-glow">
+            <Sparkles className="size-4" aria-hidden="true" />
+            Premium Career Command Center
           </Badge>
-          <h1 className="max-w-4xl text-[3.25rem] font-black leading-[0.92] tracking-normal text-husky-purple-dark sm:text-6xl lg:text-[5.35rem]">
-            Turn your resume gaps into a UWB action plan
+          <h1 className="max-w-full font-display text-[3rem] font-black leading-[0.94] tracking-normal text-foreground sm:max-w-3xl sm:text-[4.55rem] lg:text-[4.35rem] xl:text-[4.8rem]">
+            <span className="block">Turn your</span>
+            <span className="block text-husky-purple dark:text-amber-200">resume gaps</span>
+            <span className="block">into a UWB</span>
+            <span className="gold-underline block text-[#ba8300] dark:text-amber-300">action plan</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-husky-muted sm:text-xl">
-            Husky-Review compares your resume to a job posting, finds skill and keyword gaps, and recommends verified UWB activities that can strengthen your next application.
+          <p className="mt-7 max-w-xl text-lg font-semibold leading-8 text-muted-foreground sm:text-xl">
+            Compare your resume to any job posting and get AI-powered gap insights with verified UWB activities to help you stand out.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button className="h-[3.25rem] px-6" onClick={onStartReview}>
+
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+            <Button size="lg" className="w-full sm:w-auto" onClick={onStartReview}>
+              <Sparkles className="size-5" aria-hidden="true" />
               Start Review
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button className="h-[3.25rem] px-6" variant="secondary" onClick={onViewRoadmap}>
-              View Sample Roadmap
             </Button>
           </div>
-          <dl className="mt-9 grid max-w-2xl grid-cols-3 gap-3">
+
+          <div className="mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
             {[
-              ['50+', 'verified UWB activities'],
-              ['1 hr', 'privacy expiry goal'],
-              ['80%', 'roadmap task target'],
-            ].map(([value, label]) => (
-              <div key={label} className="premium-card rounded-2xl p-4">
-                <dt className="text-2xl font-black text-husky-purple">{value}</dt>
-                <dd className="mt-1 text-[0.68rem] font-black uppercase leading-4 tracking-[0.14em] text-slate-500">{label}</dd>
-              </div>
-            ))}
-          </dl>
-          <div className="mt-5 rounded-2xl border border-husky-purple/10 bg-white/70 p-4 shadow-soft backdrop-blur lg:hidden">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-black text-husky-purple-dark">Sample readiness</p>
-                <p className="mt-1 text-xs font-semibold text-husky-muted">Gaps mapped to verified campus actions.</p>
-              </div>
-              <span className="rounded-xl bg-husky-purple px-3 py-2 text-lg font-black text-white">76%</span>
-            </div>
+              { label: 'Verified UWB Opportunities', icon: ShieldCheck, tone: 'green' },
+              { label: 'Privacy by Design', icon: LockKeyhole, tone: 'green' },
+            ].map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="flex items-center gap-3">
+                  <span
+                    className={[
+                      'grid size-11 shrink-0 place-items-center rounded-full',
+                      item.tone === 'gold' ? 'bg-[#f5e6bf] text-[#a07100]' : 'bg-emerald-50 text-emerald-700',
+                    ].join(' ')}
+                  >
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm font-semibold leading-5 text-foreground">{item.label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="relative hidden min-h-[560px] lg:block" aria-label="Husky-Review workflow preview">
-          <div className="absolute -right-4 top-1/2 h-[31rem] w-[31rem] -translate-y-1/2 rounded-full border border-husky-gold/20 bg-husky-gold/[0.08] blur-2xl motion-safe:animate-breathe" />
-          <div className="premium-panel absolute inset-x-0 top-6 rounded-[2rem] p-5">
-            <div className="rounded-[1.45rem] bg-husky-purple-dark p-5 text-white shadow-premium">
-              <div className="grid gap-4 xl:grid-cols-[0.7fr_1fr]">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-5">
-                  <p className="text-sm font-semibold text-husky-gold-bright">Resume readiness</p>
-                  <div className="mt-5 grid h-36 w-36 place-items-center rounded-full bg-[conic-gradient(#D8C577_0_76%,rgba(255,255,255,0.12)_76%_100%)] p-2 shadow-[0_20px_50px_rgba(0,0,0,0.16)]">
-                    <div className="grid h-full w-full place-items-center rounded-full bg-husky-purple-dark">
-                      <div className="text-center">
-                        <p className="text-4xl font-black">76%</p>
-                        <p className="mt-1 text-[0.65rem] font-black uppercase tracking-[0.16em] text-white/50">match</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-5 flex items-center gap-2 text-xs font-bold text-white/[0.68]">
-                    <CheckCircle2 className="h-4 w-4 text-husky-gold-bright" aria-hidden="true" />
-                    6 verified UWB matches
-                  </div>
-                </div>
-                <div className="grid gap-3">
-                  {[
-                    ['REST API evidence', 68],
-                    ['Production keywords', 76],
-                    ['Testing signal', 84],
-                  ].map(([item, score]) => (
-                    <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.08] p-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-semibold text-white/[0.88]">{item}</span>
-                        <span className="font-black text-husky-gold-bright">{score}%</span>
-                      </div>
-                      <div className="mt-3 h-2.5 rounded-full bg-white/10">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-husky-gold via-white to-husky-gold-bright shadow-[0_0_22px_rgba(216,197,119,0.35)]"
-                          style={{ width: `${score}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  <div className="rounded-2xl border border-husky-gold/25 bg-husky-gold/[0.12] p-4">
-                    <div className="flex items-center gap-3">
-                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/[0.12]">
-                        <Layers3 className="h-5 w-5 text-husky-gold-bright" aria-hidden="true" />
-                      </span>
-                      <div>
-                        <p className="text-sm font-black">Week 1 action plan ready</p>
-                        <p className="mt-1 text-xs font-semibold text-white/[0.62]">Advisor review, event, bullet rewrite</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        <div className="relative z-10 min-w-0">
+          <div className="command-panel rounded-[2rem] p-4 sm:p-5 lg:p-6">
+            <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+              <div>
+                <h2 className="text-2xl font-black tracking-normal text-foreground sm:text-3xl">Your Career Command Center</h2>
+                <p className="mt-2 text-sm font-semibold text-muted-foreground">Watch the resume review turn into a roadmap.</p>
               </div>
+              <Badge tone="gray" className="w-fit rounded-xl border-primary/15 bg-primary/8 px-4 py-2 text-primary dark:border-white/15 dark:bg-white/10 dark:text-foreground">
+                <Timer className="size-4" aria-hidden="true" />
+                <FadingText text={activeStep.label} className="font-black" />
+              </Badge>
             </div>
-          </div>
 
-          {flowCards.map((card, index) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.label}
-                className="glass-card absolute w-48 animate-float rounded-2xl p-4 shadow-card"
-                style={{
-                  animationDelay: card.delay,
-                  left: index === 0 || index === 2 ? '-0.25rem' : undefined,
-                  right: index === 1 || index === 3 ? '-0.25rem' : undefined,
-                  top: `${36 + index * 116}px`,
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-lg bg-husky-purple/10 text-husky-purple">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
+            <div className="grid items-start gap-4 lg:grid-cols-[0.78fr_1.42fr]">
+              <article className="dashboard-card rounded-2xl border border-border/60 bg-card p-5 lg:p-4 xl:p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-base font-black text-foreground">Resume Readiness</h3>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="What resume readiness means"
+                        className="grid size-6 place-items-center rounded-full bg-muted text-xs font-black text-muted-foreground transition hover:bg-primary hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      >
+                        i
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent sideOffset={8} className="max-w-[15rem] text-left leading-5">
+                      Resume readiness estimates how well your resume signals impact, relevance, and clarity for the pasted role.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="mx-auto grid size-28 place-items-center rounded-full p-3 transition-[background] duration-500 xl:size-32" style={conicStyle}>
+                  <div className="grid size-full place-items-center rounded-full bg-card">
+                    <div className="text-center">
+                      <p className="tabular-nums text-4xl font-black text-primary">{readiness}%</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-2 text-center text-sm font-black text-primary">
+                  <FadingText text={readinessCaption} className="font-black" />
+                </p>
+                <div className="mx-auto mt-2 h-1 w-36 rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-gradient-to-r from-husky-purple to-[#c78308] transition-all duration-500" style={{ width: `${readiness}%` }} />
+                </div>
+                <div className="mt-3 flex flex-col gap-2">
+                  {readinessItems.map((item) => {
+                    const metricScore = Math.round((item.score / 76) * readiness);
+                    const isMetricReady = metricScore >= item.score - 2;
+                    return (
+                      <div key={item.label} className="grid grid-cols-[1rem_1fr_auto] items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5">
+                        {isMetricReady ? (
+                          <Check className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                        ) : (
+                          <Timer className="size-4 text-amber-700 dark:text-amber-300" aria-hidden="true" />
+                        )}
+                        <span className="text-sm font-semibold text-muted-foreground">{item.label}</span>
+                        <span className={['tabular-nums text-sm font-black', isMetricReady ? 'text-emerald-700 dark:text-emerald-300' : 'text-primary'].join(' ')}>
+                          {metricScore}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <Button variant="secondary" className="mt-3 h-9 w-full cursor-default hover:translate-y-0 hover:shadow-soft" type="button" aria-disabled="true">
+                  Breakdown Preview
+                  <span className="rounded-full border border-husky-purple/25 bg-white/95 px-2 py-0.5 text-[0.68rem] font-black text-husky-purple shadow-sm dark:border-amber-400/45 dark:bg-amber-950/55 dark:text-amber-100 dark:shadow-none">
+                    UI only
+                  </span>
+                </Button>
+              </article>
+
+              <article className="dashboard-card rounded-2xl border border-border/60 bg-card p-5">
+                <h3 className="text-lg font-black text-foreground">Start a New Review</h3>
+                <div
+                  className="upload-dropzone mt-5 rounded-2xl border border-dashed border-primary/30 bg-card/90 px-6 py-7 text-center dark:bg-muted/20"
+                  aria-live="polite"
+                >
+                  <span className="mx-auto grid size-14 place-items-center rounded-2xl text-primary">
+                    {readiness < UPLOAD_READINESS_CAP ? <UploadCloud className="size-8" aria-hidden="true" /> : <FileText className="size-8" aria-hidden="true" />}
+                  </span>
+                  <div className="mx-auto mt-4 max-w-[14rem] rounded-xl border border-border bg-card px-3 py-2 text-left shadow-soft">
+                    <div className="flex items-center gap-2">
+                      <FileText className="size-4 text-primary" aria-hidden="true" />
+                      <span className="truncate text-xs font-black text-foreground">resume.pdf</span>
+                      {readiness >= UPLOAD_READINESS_CAP && <Check className="ml-auto size-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />}
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-husky-purple to-[#c78308] transition-[width] duration-300 ease-out motion-reduce:transition-none"
+                        style={{ width: `${uploadBarPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-4 text-base font-black text-foreground">
+                    <FadingText text={uploadStatusLabel} className="font-black" />
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                    <FadingText text={activeStep.detail} />
+                  </p>
+                </div>
+                <div className="my-4 flex items-center gap-3 text-xs font-semibold text-muted-foreground">
+                  <span className="h-px flex-1 bg-border" />
+                  and
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+                  <div className="flex min-w-0 items-center gap-3 px-4 py-3">
+                    <Link2 className="size-5 shrink-0 text-husky-purple dark:text-amber-200" aria-hidden="true" />
+                    <span className="truncate text-sm font-semibold text-muted-foreground">Paste a job posting URL or description</span>
+                    <span className="ml-auto hidden rounded-full border border-husky-purple/25 bg-white/95 px-2 py-1 text-[0.7rem] font-black text-husky-purple shadow-sm dark:border-amber-400/45 dark:bg-amber-950/55 dark:text-amber-100 dark:shadow-none sm:inline-flex">
+                      <FadingText text={jobCaptureLabel} className="font-black" />
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-4 flex items-start gap-2 text-xs font-semibold leading-5 text-muted-foreground">
+                  <Shield className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                  Your files are private and only used for this session.
+                </p>
+              </article>
+            </div>
+
+            <div className="relative mt-5 grid gap-4 rounded-[1.6rem] border border-primary/20 bg-primary/10 p-4 shadow-soft dark:border-white/10 dark:bg-white/5 sm:grid-cols-2 xl:grid-cols-4">
+              {flowCards.map((card, index) => {
+                const Icon = card.icon;
+                const isComplete = readiness >= card.end;
+                const isActive = readiness >= card.start && readiness < card.end;
+                const localProgress = isComplete ? 100 : isActive ? Math.max(18, Math.min(92, ((readiness - card.start) / (card.end - card.start)) * 100)) : 10;
+                return (
+                  <div key={card.label} className="relative">
+                  <article
+                    className={cn(
+                      'dashboard-card rounded-2xl border border-border/60 bg-card p-3',
+                      'transition-[border-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+                      'hover:shadow-md',
+                      isActive &&
+                        !isComplete &&
+                        'z-10 ring-2 ring-amber-400/40 ring-offset-2 ring-offset-background shadow-md dark:ring-amber-400/30',
+                      isComplete &&
+                        'border-emerald-400/55 shadow-[0_10px_38px_-12px_rgba(5,150,105,0.2)] dark:border-emerald-500/45 dark:shadow-[0_10px_36px_-12px_rgba(52,211,153,0.16)]',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'mx-auto grid size-11 place-items-center rounded-2xl',
+                        'transition-[transform,background-color,color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+                        isComplete
+                          ? 'scale-[1.05] bg-emerald-100 text-emerald-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] motion-reduce:scale-100 dark:bg-emerald-950/75 dark:text-emerald-300 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                          : card.accent === 'gold'
+                            ? 'bg-husky-gold/20 text-amber-800 dark:text-amber-200'
+                            : 'bg-primary/12 text-primary dark:bg-white/10 dark:text-foreground',
+                      )}
+                    >
+                      <Icon className="size-5" aria-hidden="true" />
+                    </span>
+                    <h3 className="mt-2 text-center text-base font-black text-foreground">{card.label}</h3>
+                    <div className="mx-auto mt-2 h-1.5 w-24 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={cn(
+                          'h-full rounded-full bg-gradient-to-r transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
+                          isComplete
+                            ? 'from-emerald-600 via-emerald-500 to-teal-500'
+                            : 'from-husky-purple via-[#7a5ab8] to-[#c78308]',
+                        )}
+                        style={{ width: `${localProgress}%` }}
+                      />
+                    </div>
+                    <Badge tone={isComplete ? 'green' : isActive ? 'gold' : 'gray'} className="mx-auto mt-3 flex w-fit rounded-full">
+                      {isComplete ? <Check className="size-3.5" aria-hidden="true" /> : <Timer className="size-3.5" aria-hidden="true" />}
+                      <FadingText text={isComplete ? card.detail : isActive ? 'Processing' : 'Queued'} className="font-black" />
+                    </Badge>
+                  </article>
+                  {index < flowCards.length - 1 && (
+                    <span className="pointer-events-none absolute -right-5 top-1/2 z-20 hidden -translate-y-1/2 rounded-full bg-card text-primary shadow-soft ring-1 ring-border xl:grid xl:size-8 xl:place-items-center" aria-hidden="true">
+                      <ArrowRight className="size-5" />
+                    </span>
+                  )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 grid gap-4 rounded-2xl border border-border bg-card/70 p-3 shadow-soft dark:bg-card/40 lg:grid-cols-3">
+              {[
+                ['Built for UWB Students', 'Activities and resources connected to UWB.'],
+                ['Always Up to Date', 'Fresh opportunities and events from UWB.'],
+                ['Actionable Next Steps', 'Clear recommendations you can take this week.'],
+              ].map(([title, detail], index) => (
+                <div key={title} className="flex items-center gap-3 border-border/80 lg:border-r lg:last:border-r-0">
+                  <span className={[
+                    'grid size-11 shrink-0 place-items-center rounded-full',
+                    index === 1 ? 'bg-husky-gold/20 text-amber-800 dark:text-amber-200' : 'bg-primary/12 text-primary dark:bg-white/10 dark:text-foreground',
+                  ].join(' ')}>
+                    {index === 1 ? <CalendarDays className="size-5" aria-hidden="true" /> : <Sparkles className="size-5" aria-hidden="true" />}
                   </span>
                   <span>
-                    <span className="block text-sm font-black text-husky-ink">{card.label}</span>
-                    <span className="block text-xs font-semibold text-husky-muted">{card.detail}</span>
+                    <span className="block text-sm font-black text-foreground">{title}</span>
+                    <span className="mt-1 block text-xs font-medium leading-5 text-muted-foreground">{detail}</span>
                   </span>
                 </div>
-              </div>
-            );
-          })}
-          <div className="glass-card absolute bottom-4 left-10 right-10 rounded-2xl p-4 shadow-card">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
-                  <Clock3 className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-sm font-black text-husky-purple-dark">Session expires in 1 hour</p>
-                  <p className="mt-0.5 text-xs font-semibold text-husky-muted">Privacy-first mock session handling</p>
-                </div>
-              </div>
-              <Badge tone="green">Local preview</Badge>
+              ))}
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }
