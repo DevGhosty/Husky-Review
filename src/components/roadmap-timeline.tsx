@@ -1,6 +1,6 @@
 import { CalendarCheck2, CheckCircle2 } from 'lucide-react';
 import { recommendations, roadmapWeeks } from '../data/mockData';
-import { formatDeadline } from '../lib/utils';
+import { cn, formatDeadline } from '../lib/utils';
 import type { ReviewStatus } from '../types/analysis';
 import { Section } from './layout/section';
 import { Badge } from './ui/badge';
@@ -44,11 +44,16 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                 return (
                   <article
                     key={week.week}
-                    className="relative motion-safe:animate-slide-in rounded-[1.6rem] border border-white/70 bg-white/[0.96] p-5 shadow-premium"
-                    style={{ animationDelay: `${index * 120}ms` }}
+                    className="relative motion-safe:animate-slide-in motion-reduce:animate-none rounded-[1.6rem] border border-white/70 bg-white/[0.96] p-5 shadow-premium"
+                    style={{ animationDelay: `${Math.min(index * 90, 270)}ms` }}
                   >
                     <div className="flex gap-4">
-                      <span className="relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-husky-gold text-sm font-black text-husky-purple shadow-soft motion-safe:animate-pulse-ring">
+                      <span
+                        className={cn(
+                          'relative z-10 grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-husky-gold text-sm font-black text-husky-purple shadow-soft',
+                          index === 0 && 'motion-safe:animate-pulse-ring motion-reduce:animate-none',
+                        )}
+                      >
                         {week.week}
                       </span>
                       <div className="min-w-0 flex-1">

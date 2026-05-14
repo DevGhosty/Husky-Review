@@ -25,11 +25,11 @@ export function RecommendationCard({ recommendation, selected, onToggle, stagger
   return (
     <Card
       className={cn(
-        'relative dashboard-card group rounded-[1.6rem] border-border/80 p-0 transition duration-300 hover:-translate-y-1 hover:shadow-premium',
+        'relative dashboard-card group rounded-[1.6rem] border-border/80 p-0 transition-[transform,box-shadow,border-color] duration-motion-normal ease-brand motion-safe:hover:-translate-y-1 hover:shadow-premium active:scale-[0.99] motion-safe:active:scale-[0.99]',
         selected && 'ring-2 ring-husky-gold/60',
-        staggerIndex !== undefined && 'motion-safe:animate-slide-in',
+        staggerIndex !== undefined && 'motion-safe:animate-slide-in motion-reduce:animate-none',
       )}
-      style={staggerIndex !== undefined ? { animationDelay: `${staggerIndex * 72}ms` } : undefined}
+      style={staggerIndex !== undefined ? { animationDelay: `${Math.min(staggerIndex * 72, 216)}ms` } : undefined}
     >
       <CardContent className="p-5">
         <div className="absolute inset-x-5 top-0 h-1 rounded-b-full bg-gradient-to-r from-husky-purple via-husky-gold to-husky-purple opacity-70" />

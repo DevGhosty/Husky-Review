@@ -126,7 +126,7 @@ export function UploadPanel({
                 </Label>
                 <button
                   type="button"
-                  className="rounded-lg px-2 py-1 text-xs font-bold text-primary transition hover:bg-primary/10 dark:hover:bg-primary/20"
+                  className="font-ui rounded-lg px-2 py-1 text-xs font-bold text-primary transition hover:bg-primary/10 dark:hover:bg-primary/20"
                   onClick={() => onJobDescriptionChange(sampleJobDescription)}
                 >
                   Use sample

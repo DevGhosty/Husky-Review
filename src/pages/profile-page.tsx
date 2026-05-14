@@ -38,7 +38,7 @@ export function ProfilePage() {
                 <Badge tone="gold" className="rounded-full px-4 py-2">
                   Student preview
                 </Badge>
-                <h1 className="mt-3 text-3xl font-black tracking-normal text-white sm:text-4xl">UWB career profile</h1>
+                <h1 className="mt-3 font-display text-3xl font-black tracking-normal text-white sm:text-4xl">UWB career profile</h1>
                 <p className="mt-2 text-sm font-medium text-white/65">Mock preferences for roadmap personalization.</p>
               </div>
             </div>
