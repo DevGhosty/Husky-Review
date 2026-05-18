@@ -607,3 +607,20 @@ body {
     animation: none !important;
   }
 }
+
+/* Badge tones: use app .dark class instead of Tailwind dark: text utilities (avoids prefers-color-scheme mismatch). */
+.badge-gold {
+  color: #78350f !important;
+}
+
+.badge-gold svg {
+  color: #78350f !important;
+}
+
+html.dark .badge-gold {
+  color: #fffbeb !important;
+}
+
+html.dark .badge-gold svg {
+  color: #fffbeb !important;
+}

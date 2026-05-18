@@ -11,7 +11,7 @@ const tones: Record<BadgeTone, string> = {
   purple:
     'border-husky-purple/[0.15] bg-husky-purple/[0.08] text-husky-purple dark:border-white/18 dark:bg-white/12 dark:text-white',
   gold:
-    'border-husky-gold/30 bg-husky-gold/[0.15] text-husky-purple-dark dark:border-amber-400/35 dark:bg-amber-400/14 dark:text-amber-50',
+    'badge-gold border-husky-gold/30 bg-husky-gold/[0.15] dark:border-amber-400/35 dark:bg-amber-400/14',
   green:
     'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-950/60 dark:text-emerald-200',
   gray:
