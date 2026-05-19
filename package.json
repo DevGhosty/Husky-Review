@@ -11,10 +11,12 @@
     "deploy:prod": "vercel deploy --prod --yes"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.0.0",
     "@fontsource-variable/fredoka": "^5.2.10",
     "@fontsource-variable/nunito": "^5.2.7",
     "@fontsource-variable/quicksand": "^5.2.10",
     "@fontsource/baloo-2": "^5.2.7",
+    "@supabase/supabase-js": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

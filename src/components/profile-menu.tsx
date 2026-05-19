@@ -11,9 +11,10 @@ import {
   Target,
   UserRound,
 } from 'lucide-react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useProfileSettings } from '../context/profile-settings-context';
 import { profileSectionHref, profileSections } from '../lib/profile-settings';
-import { Avatar, AvatarFallback } from './ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +39,12 @@ const triggerClass =
 
 export function ProfileMenu() {
   const { settings } = useProfileSettings();
-  const initials = settings.displayName
+  const { user, logout } = useAuth0();
+
+  const displayName = user?.name || user?.nickname || settings.displayName;
+  const subtitle = user?.email ? user.email : user ? 'Signed in with Auth0' : 'UWB student preview';
+
+  const initials = displayName
     .split(' ')
     .map((part) => part[0])
     .join('')
@@ -50,6 +56,7 @@ export function ProfileMenu() {
       <DropdownMenuTrigger asChild>
         <button type="button" aria-label="Open profile menu" className={triggerClass}>
           <Avatar className="size-8">
+            {user?.picture ? <AvatarImage src={user.picture} alt={displayName} /> : null}
             <AvatarFallback className="bg-primary/10 text-sm font-black text-primary">{initials}</AvatarFallback>
           </Avatar>
           <ChevronDown className="hidden size-4 text-primary sm:block" aria-hidden="true" />
@@ -57,8 +64,8 @@ export function ProfileMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72 p-2.5">
         <div className="rounded-xl border border-border/70 bg-muted/35 px-3 py-3 shadow-soft">
-          <p className="text-sm font-black text-foreground">{settings.displayName}</p>
-          <p className="mt-0.5 text-xs font-medium text-muted-foreground">UWB student preview</p>
+          <p className="text-sm font-black text-foreground">{displayName}</p>
+          <p className="mt-0.5 text-xs font-medium text-muted-foreground">{subtitle}</p>
         </div>
 
         <DropdownMenuLabel className="mt-3 px-1">Profile</DropdownMenuLabel>
@@ -96,12 +103,18 @@ export function ProfileMenu() {
 
         <DropdownMenuSeparator className="my-2" />
 
-        <DropdownMenuItem disabled className="menu-panel-action h-auto flex-col items-start gap-1 py-3">
+        <DropdownMenuItem
+          className="menu-panel-action h-auto flex-col items-start gap-1 py-3"
+          onSelect={(event) => {
+            event.preventDefault();
+            logout({ logoutParams: { returnTo: window.location.origin } });
+          }}
+        >
           <span className="flex items-center gap-2">
             <LogOut className="size-4" aria-hidden />
             Sign out
           </span>
-          <span className="pl-6 text-xs font-medium text-muted-foreground">Preview only</span>
+          <span className="pl-6 text-xs font-medium text-muted-foreground">Clears your Auth0 session for this browser.</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { ArrowRight } from 'lucide-react';
 import { BrandLockup } from './brand-lockup';
 import { ThemeToggle } from './theme-toggle';
@@ -15,6 +16,7 @@ const hashLinkClass =
 
 export function MarketingShell({ children }: MarketingShellProps) {
   const location = useLocation();
+  const { loginWithRedirect } = useAuth0();
 
   useEffect(() => {
     const id = location.hash.replace(/^#/, '');
@@ -30,6 +32,12 @@ export function MarketingShell({ children }: MarketingShellProps) {
     }, 80);
     return () => window.clearTimeout(timer);
   }, [location.pathname, location.hash]);
+
+  const startAuthLogin = async () => {
+    await loginWithRedirect({
+      appState: { returnTo: '/app' },
+    });
+  };
 
   return (
     <div className="min-h-screen overflow-x-hidden px-3 py-3 text-foreground sm:px-5 sm:py-6">
@@ -53,14 +61,12 @@ export function MarketingShell({ children }: MarketingShellProps) {
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button asChild variant="secondary" className="hidden h-10 sm:inline-flex">
-                <Link to="/login">Sign in</Link>
+              <Button variant="secondary" className="hidden h-10 sm:inline-flex" onClick={startAuthLogin}>
+                Sign in
               </Button>
-              <Button asChild className="h-10">
-                <Link to="/login">
-                  Start Review
-                  <ArrowRight className="size-4" aria-hidden="true" />
-                </Link>
+              <Button className="h-10" onClick={startAuthLogin}>
+                Start Review
+                <ArrowRight className="size-4" aria-hidden="true" />
               </Button>
             </div>
           </nav>
@@ -73,9 +79,13 @@ export function MarketingShell({ children }: MarketingShellProps) {
               this version.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" to="/login">
+              <button
+                type="button"
+                onClick={startAuthLogin}
+                className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
                 Sign in preview
-              </Link>
+              </button>
               <Link className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" to="/app/privacy">
                 Privacy center
               </Link>
