@@ -32,7 +32,7 @@ const privacyList = [
 export function PrivacyPage() {
   return (
     <main>
-      <section className="relative mx-auto max-w-[86rem] px-5 py-10 sm:px-8 lg:px-12">
+      <section className="relative mx-auto max-w-[86rem] px-5 pt-10 pb-16 sm:px-8 lg:px-12">
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
           <Surface variant="dark" className="relative overflow-hidden rounded-[2rem] p-6 sm:p-8">
             <div className="absolute -right-24 -top-20 size-72 rounded-full bg-husky-gold/25 blur-3xl" aria-hidden="true" />
@@ -70,7 +70,7 @@ export function PrivacyPage() {
           </Surface>
 
           <Surface variant="premium" className="rounded-[2rem] p-5 sm:p-6">
-            <div className="flex flex-col justify-between gap-4 border-b border-husky-line pb-5 sm:flex-row sm:items-end">
+            <div className="flex flex-col justify-between gap-4 border-b border-border pb-5 sm:flex-row sm:items-end">
               <div>
                 <h2 className="text-2xl font-black tracking-normal text-foreground sm:text-3xl">Privacy inventory</h2>
                 <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-muted-foreground">
@@ -86,8 +86,8 @@ export function PrivacyPage() {
               {privacyList.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <article key={item.label} className="flex items-center gap-4 rounded-2xl border border-husky-line bg-white/85 p-4 shadow-soft">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-husky-purple/[0.08] text-husky-purple">
+                  <article key={item.label} className="inset-row flex items-center gap-4 rounded-2xl p-4 shadow-soft">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                       <Icon className="size-5" aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">

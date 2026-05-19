@@ -1,5 +1,5 @@
 import type { DragEvent } from 'react';
-import { CalendarDays, CheckCircle2, FileCheck2, FileUp, LockKeyhole, Loader2, WandSparkles } from 'lucide-react';
+import { CalendarDays, CheckCircle2, FileCheck2, FileUp, Link2, LockKeyhole, Loader2, WandSparkles } from 'lucide-react';
 import { Section } from './layout/section';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -7,17 +7,19 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Progress } from './ui/progress';
 import { Textarea } from './ui/textarea';
-import { sampleJobDescription } from '../data/mockData';
+import { sampleJobDescription, sampleJobPostingUrl } from '../data/mockData';
 import type { ReviewStatus } from '../types/analysis';
-import { cn } from '../lib/utils';
+import { cn, hasJobPostingInput, isValidJobPostingUrl, jobPostingInputProgress } from '../lib/utils';
 
 interface UploadPanelProps {
   status: ReviewStatus;
   fileName: string;
   jobDescription: string;
+  jobPostingUrl: string;
   deadline: string;
   onFileNameChange: (fileName: string) => void;
   onJobDescriptionChange: (description: string) => void;
+  onJobPostingUrlChange: (url: string) => void;
   onDeadlineChange: (deadline: string) => void;
   onAnalyze: () => void;
 }
@@ -28,15 +30,22 @@ export function UploadPanel({
   status,
   fileName,
   jobDescription,
+  jobPostingUrl,
   deadline,
   onFileNameChange,
   onJobDescriptionChange,
+  onJobPostingUrlChange,
   onDeadlineChange,
   onAnalyze,
 }: UploadPanelProps) {
   const isLoading = status === 'loading';
-  const canAnalyze = fileName.length > 0 && jobDescription.trim().length >= 80 && !isLoading;
-  const readiness = Math.min(100, Math.round((fileName ? 45 : 0) + Math.min(jobDescription.length / 220, 1) * 45 + (deadline ? 10 : 0)));
+  const hasPosting = hasJobPostingInput(jobDescription, jobPostingUrl);
+  const canAnalyze = fileName.length > 0 && hasPosting && !isLoading;
+  const postingProgress = jobPostingInputProgress(jobDescription, jobPostingUrl);
+  const readiness = Math.min(
+    100,
+    Math.round((fileName ? 45 : 0) + (postingProgress / 100) * 45 + (deadline ? 10 : 0)),
+  );
 
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
@@ -82,7 +91,7 @@ export function UploadPanel({
               <h3 className="mt-1 text-2xl font-black tracking-normal text-foreground">Start a New Review</h3>
             </div>
             <Badge tone={canAnalyze ? 'green' : 'gray'} className="w-fit rounded-full px-4 py-2">
-              {canAnalyze ? 'Ready to analyze' : 'Needs resume and role'}
+              {canAnalyze ? 'Ready to analyze' : 'Needs resume and posting'}
             </Badge>
           </div>
 
@@ -120,28 +129,66 @@ export function UploadPanel({
             </div>
 
             <div>
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <Label htmlFor="job-description" className="text-sm font-black text-foreground">
-                  Job description
-                </Label>
+              <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <Label htmlFor="job-posting-url" className="text-sm font-black text-foreground">
+                    Job posting
+                  </Label>
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                    Paste a posting link or add the full description below—either works.
+                  </p>
+                </div>
                 <button
                   type="button"
-                  className="font-ui rounded-lg px-2 py-1 text-xs font-bold text-primary transition hover:bg-primary/10 dark:hover:bg-primary/20"
-                  onClick={() => onJobDescriptionChange(sampleJobDescription)}
+                  className="font-ui w-fit rounded-lg px-2 py-1 text-xs font-bold text-primary transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:hover:bg-primary/20"
+                  onClick={() => {
+                    onJobPostingUrlChange(sampleJobPostingUrl);
+                    onJobDescriptionChange(sampleJobDescription);
+                  }}
                 >
-                  Use sample
+                  Use sample posting
                 </button>
               </div>
+
+              <div className="relative">
+                <Link2 className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-primary" aria-hidden="true" />
+                <Input
+                  id="job-posting-url"
+                  type="url"
+                  inputMode="url"
+                  value={jobPostingUrl}
+                  onChange={(event) => onJobPostingUrlChange(event.target.value)}
+                  placeholder="https://careers.uw.edu/jobs/your-role"
+                  className="h-12 rounded-xl border-border bg-background pl-11 pr-4 text-sm font-semibold text-foreground focus-visible:border-ring focus-visible:ring-ring/30"
+                />
+              </div>
+              {jobPostingUrl.trim().length > 0 && !isValidJobPostingUrl(jobPostingUrl) ? (
+                <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                  Enter a full link (for example https://linkedin.com/jobs/view/...) or paste the description below instead.
+                </p>
+              ) : null}
+
+              <div className="my-4 flex items-center gap-3">
+                <span className="h-px flex-1 bg-border" aria-hidden="true" />
+                <span className="text-xs font-black uppercase tracking-[0.08em] text-muted-foreground">or paste description</span>
+                <span className="h-px flex-1 bg-border" aria-hidden="true" />
+              </div>
+
+              <Label htmlFor="job-description" className="sr-only">
+                Job description
+              </Label>
               <Textarea
                 id="job-description"
                 value={jobDescription}
                 onChange={(event) => onJobDescriptionChange(event.target.value)}
-                placeholder="Paste the posting requirements, responsibilities, and preferred qualifications..."
-                className="min-h-44 rounded-3xl border-border bg-background px-4 py-3 text-sm leading-6 text-foreground shadow-inner placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/30"
+                placeholder="Paste requirements, responsibilities, and preferred qualifications if you do not have a link..."
+                className="min-h-36 rounded-3xl border-border bg-background px-4 py-3 text-sm leading-6 text-foreground shadow-inner placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/30"
               />
               <div className="mt-2 flex items-center justify-between gap-3">
-                <Progress value={Math.min(100, (jobDescription.length / 220) * 100)} className="h-1.5 flex-1 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold" />
-                <p className="text-right text-xs font-semibold text-muted-foreground">{jobDescription.length} characters</p>
+                <Progress value={postingProgress} className="h-1.5 flex-1 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold" />
+                <p className="text-right text-xs font-semibold text-muted-foreground">
+                  {hasPosting ? 'Posting ready' : `${jobDescription.length} characters`}
+                </p>
               </div>
             </div>
 
@@ -161,7 +208,12 @@ export function UploadPanel({
                   />
                 </div>
               </div>
-              <Button className="h-12 min-w-44 shadow-premium" disabled={!canAnalyze} onClick={onAnalyze} aria-busy={isLoading}>
+              <Button
+                className="h-12 min-w-44 shadow-premium disabled:opacity-100 disabled:border disabled:border-border disabled:bg-muted disabled:text-muted-foreground"
+                disabled={!canAnalyze}
+                onClick={onAnalyze}
+                aria-busy={isLoading}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -176,7 +228,7 @@ export function UploadPanel({
               </Button>
             </div>
 
-            <p className="flex items-start gap-2 rounded-xl bg-primary/8 p-3 text-xs font-semibold leading-5 text-muted-foreground dark:bg-primary/15">
+            <p className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 p-3 text-xs font-semibold leading-5 text-muted-foreground">
               <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
               Resume/session data is designed to be deleted after one hour.
             </p>

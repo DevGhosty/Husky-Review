@@ -6,6 +6,7 @@ import { Section } from './layout/section';
 import { Badge } from './ui/badge';
 import { Card, CardContent } from './ui/card';
 import { Progress } from './ui/progress';
+import { Skeleton } from './ui/skeleton';
 
 interface AnalysisPreviewProps {
   status: ReviewStatus;
@@ -84,13 +85,19 @@ export function AnalysisPreview({ status, loadingStepIndex }: AnalysisPreviewPro
               </div>
               <h3 className="mt-5 text-lg font-semibold text-foreground">{category.title}</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{isSuccess ? category.summary : 'Analysis details will populate here after review.'}</p>
-              <Progress value={isSuccess ? category.score : 18} className="mt-5 h-2 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold" />
+              <Progress value={isSuccess ? category.score : isLoading ? 18 : 0} className="mt-5 h-2 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold" />
               {isSuccess ? (
                 <div className="mt-5 flex flex-wrap gap-2">
                   {category.items.map((item) => (
                     <Badge key={item} tone="purple">
                       {item}
                     </Badge>
+                  ))}
+                </div>
+              ) : isLoading ? (
+                <div className="mt-5 flex flex-col gap-2" role="status" aria-live="polite">
+                  {[0, 1, 2].map((item) => (
+                    <Skeleton key={item} className="h-3 rounded-full" />
                   ))}
                 </div>
               ) : (
