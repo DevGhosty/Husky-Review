@@ -18,6 +18,7 @@ import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Surface } from '../components/layout/surface';
 import { useReview } from '../context/review-context';
+import { hasJobPostingInput, jobPostingInputProgress } from '../lib/utils';
 
 const activityItems = [
   { label: 'Resume workspace', value: 'Ready', detail: 'Sample upload path available', icon: FileText },
@@ -34,16 +35,22 @@ export function DashboardPage() {
     loadingStepIndex,
     fileName,
     jobDescription,
+    jobPostingUrl,
     deadline,
     selectedIds,
     setFileName,
     setJobDescription,
+    setJobPostingUrl,
     setDeadline,
     runMockAnalysis,
     showSampleReview,
   } = useReview();
 
-  const readiness = Math.min(100, (fileName ? 38 : 0) + Math.min(jobDescription.length / 220, 1) * 42 + (status === 'success' ? 20 : 0));
+  const postingProgress = jobPostingInputProgress(jobDescription, jobPostingUrl);
+  const readiness = Math.min(
+    100,
+    (fileName ? 38 : 0) + (postingProgress / 100) * 42 + (status === 'success' ? 20 : 0),
+  );
 
   useEffect(() => {
     if (location.hash === '#workflow') {
@@ -62,7 +69,7 @@ export function DashboardPage() {
 
   return (
     <main>
-      <section className="section-enter mx-auto max-w-[86rem] px-5 py-7 sm:px-8 lg:px-12">
+      <section className="section-enter mx-auto max-w-[86rem] px-5 py-10 sm:px-8 lg:px-12">
         <div className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
           <Surface variant="premium" className="relative overflow-hidden rounded-[2rem] p-6 sm:p-8">
             <div className="absolute -right-20 -top-20 size-60 rounded-full bg-husky-gold/20 blur-3xl" aria-hidden="true" />
@@ -90,7 +97,7 @@ export function DashboardPage() {
                   return (
                     <article
                       key={item.label}
-                      className="rounded-2xl border border-border bg-card/80 p-4 shadow-soft transition-[box-shadow,transform] duration-motion-normal ease-brand hover:-translate-y-0.5 hover:shadow-card active:scale-[0.99] motion-safe:hover:-translate-y-0.5"
+                      className="rounded-2xl border border-border bg-card/80 p-4 shadow-soft transition-[box-shadow,transform] duration-motion-normal ease-brand active:scale-[0.99] motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-card dark:bg-card/90"
                     >
                       <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
                         <Icon className="size-5" aria-hidden="true" />
@@ -116,7 +123,7 @@ export function DashboardPage() {
             </div>
           </Surface>
 
-          <div className="section-enter grid gap-5 lg:grid-cols-[0.8fr_1.2fr] xl:grid-cols-1" style={{ animationDelay: '90ms' }}>
+          <div className="section-enter grid gap-5 lg:grid-cols-[0.8fr_1.2fr]" style={{ animationDelay: '90ms' }}>
             <Surface variant="dark" className="rounded-[2rem] p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -133,18 +140,22 @@ export function DashboardPage() {
               </p>
             </Surface>
 
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2">
               <Surface variant="card" className="rounded-[1.6rem] p-5">
                 <ClipboardCheck className="size-7 text-primary" aria-hidden="true" />
                 <h2 className="mt-4 text-lg font-semibold text-foreground">Input console</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Resume and posting controls sit below as the primary work area.</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {hasJobPostingInput(jobDescription, jobPostingUrl)
+                    ? 'Resume and posting are in place. Scroll down to run or update your review.'
+                    : 'Add your resume plus a posting link or pasted job description in the workflow panel below.'}
+                </p>
               </Surface>
               <Surface variant="card" className="rounded-[1.6rem] p-5">
                 <Map className="size-7 text-amber-700 dark:text-amber-300" aria-hidden="true" />
                 <h2 className="mt-4 text-lg font-semibold text-foreground">{selectedIds.length || 4} roadmap items</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Selected recommendations feed into the planning timeline.</p>
               </Surface>
-              <Surface variant="card" className="rounded-[1.6rem] p-5 md:col-span-2 xl:col-span-1">
+              <Surface variant="card" className="rounded-[1.6rem] p-5 md:col-span-2">
                 <BellRing className="size-7 text-primary" aria-hidden="true" />
                 <h2 className="mt-4 text-lg font-semibold text-foreground">Google sign-in pending</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Auth is represented in the UI only; no provider is configured.</p>
@@ -159,9 +170,11 @@ export function DashboardPage() {
           status={status}
           fileName={fileName}
           jobDescription={jobDescription}
+          jobPostingUrl={jobPostingUrl}
           deadline={deadline}
           onFileNameChange={setFileName}
           onJobDescriptionChange={setJobDescription}
+          onJobPostingUrlChange={setJobPostingUrl}
           onDeadlineChange={setDeadline}
           onAnalyze={runMockAnalysis}
         />
@@ -169,7 +182,7 @@ export function DashboardPage() {
 
       <AnalysisPreview status={status} loadingStepIndex={loadingStepIndex} />
 
-      <section className="section-enter mx-auto max-w-[86rem] px-5 pb-14 sm:px-8 lg:px-12">
+      <section className="section-enter mx-auto max-w-[86rem] px-5 pb-16 sm:px-8 lg:px-12">
         <Surface variant="premium" className="grid gap-5 rounded-[2rem] p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <p className="type-eyebrow">Workspace pages</p>
@@ -178,7 +191,7 @@ export function DashboardPage() {
               The app shell separates roadmap planning, resources, saved reviews, privacy, and profile settings while keeping the same mocked review state.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[34rem]">
+          <div className="grid min-w-0 w-full gap-3 sm:grid-cols-3">
             <Button asChild variant="secondary" className="h-12">
               <Link to="/app/resources">
                 <ClipboardCheck className="size-4" aria-hidden="true" />

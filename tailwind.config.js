@@ -132,6 +132,14 @@ export default {
           from: { opacity: '0', transform: 'translateX(-8px)' },
           to: { opacity: '1', transform: 'translateX(0)' },
         },
+        panelIn: {
+          from: { opacity: '0', transform: 'translate3d(0, -8px, 0) scale(0.96)' },
+          to: { opacity: '1', transform: 'translate3d(0, 0, 0) scale(1)' },
+        },
+        panelOut: {
+          from: { opacity: '1', transform: 'translate3d(0, 0, 0) scale(1)' },
+          to: { opacity: '0', transform: 'translate3d(0, -4px, 0) scale(0.98)' },
+        },
       },
       animation: {
         float: 'float 7s ease-in-out infinite',
@@ -144,6 +152,8 @@ export default {
         sheen: 'sheen 4.5s ease-in-out infinite',
         breathe: 'breathe 10s ease-in-out infinite',
         'slide-in': 'slideIn 480ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        'panel-in': 'panelIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both',
+        'panel-out': 'panelOut 180ms cubic-bezier(0.4, 0, 0.72, 0.2) both',
       },
     },
   },

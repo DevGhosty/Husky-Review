@@ -25,18 +25,18 @@ export function ResourcesPage() {
             <Badge tone="green" className="relative rounded-full px-4 py-2">
               Verified resource workspace
             </Badge>
-            <h1 className="relative mt-4 max-w-3xl font-display text-4xl font-black leading-[0.98] tracking-normal text-foreground sm:text-6xl">
+            <h1 className="relative mt-4 max-w-3xl type-page-title type-page-title--brand">
               Campus-connected activities without filler recommendations.
             </h1>
-            <p className="relative mt-5 max-w-2xl text-base font-medium leading-7 text-muted-foreground">
+            <p className="relative mt-5 max-w-2xl type-lead">
               Browse the mocked UWB activity recommendations with active status, last-verified dates, source labels, and roadmap selection controls.
             </p>
             <div className="relative mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button onClick={showSampleReview}>
+              <Button className="h-12" onClick={showSampleReview}>
                 <Sparkles className="size-4" aria-hidden="true" />
                 Load sample recommendations
               </Button>
-              <Button asChild variant="secondary">
+              <Button asChild variant="secondary" className="h-12">
                 <Link to="/app/roadmap">Open roadmap</Link>
               </Button>
             </div>
@@ -50,7 +50,7 @@ export function ResourcesPage() {
                     <p className="text-sm font-bold text-muted-foreground">{stat.label}</p>
                     <p className="mt-1 text-3xl font-black text-foreground">{stat.value}</p>
                   </div>
-                  <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-husky-purple/10 to-husky-gold/20 text-husky-purple">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-husky-purple/10 to-husky-gold/20 text-primary dark:text-husky-gold-bright">
                     <Icon className="size-6" aria-hidden="true" />
                   </span>
                 </Surface>

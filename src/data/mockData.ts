@@ -4,8 +4,10 @@ export const defaultDeadline = '2026-05-31';
 
 export const sampleFileName = 'sample-uwb-resume.pdf';
 
+export const sampleJobPostingUrl = 'https://careers.uw.edu/jobs/healthcare-program-coordinator-intern';
+
 export const sampleJobDescription =
-  'Frontend software engineering internship seeking React, accessibility, API integration, testing, and production deployment experience. Candidates should show collaboration, user-focused product thinking, and measurable project outcomes.';
+  'Healthcare program coordinator intern supporting patient outreach, appointment scheduling, and community wellness events. Seeking candidates with strong communication, organization, teamwork, and experience coordinating programs or volunteer activities. Comfort with spreadsheets and documenting outcomes is a plus.';
 
 export const successSelectedIds = ['css-club-review-night', 'career-services-advisor'];
 
@@ -31,20 +33,20 @@ export const loadingSteps: LoadingStep[] = [
 export const gapCategories: GapCategory[] = [
   {
     title: 'Missing Skills',
-    summary: 'Backend API, data modeling, and deployment evidence are light for this posting.',
-    items: ['REST API design', 'PostgreSQL schema design', 'Cloud deployment'],
+    summary: 'Program coordination, stakeholder communication, and documentation evidence could be stronger for this posting.',
+    items: ['Program coordination', 'Stakeholder communication', 'Outcome documentation'],
     score: 68,
   },
   {
     title: 'Keyword Gaps',
-    summary: 'The job posting repeats production, accessibility, and test coverage language.',
-    items: ['Production readiness', 'Accessibility', 'Integration testing'],
+    summary: 'The job posting emphasizes organization, teamwork, and community engagement language.',
+    items: ['Community engagement', 'Scheduling workflows', 'Cross-team collaboration'],
     score: 74,
   },
   {
     title: 'Experience Signals',
-    summary: 'Project ownership is visible, but collaboration and verification evidence can be stronger.',
-    items: ['Cross-functional review', 'User validation', 'Documented source checks'],
+    summary: 'Volunteer and campus involvement is visible, but leadership and verification evidence can be stronger.',
+    items: ['Leadership examples', 'Measurable outcomes', 'Advisor or supervisor references'],
     score: 81,
   },
 ];
@@ -52,14 +54,14 @@ export const gapCategories: GapCategory[] = [
 export const matchScore = {
   score: 76,
   label: 'Strong foundation',
-  summary: 'Your resume matches core frontend expectations, with clear opportunities to add verified UWB experience before applying.',
+  summary: 'Solid foundation with room to strengthen verified campus experience before applying.',
 };
 
 export const recommendations: Recommendation[] = [
   {
     id: 'css-club-review-night',
     group: 'in-time',
-    name: 'CSS Club Resume Review Night',
+    name: 'UWB Career Prep Resume Night',
     type: 'event',
     whyItHelps:
       'Gives you fast feedback on bullets, project framing, and missing keywords before the application deadline.',
@@ -67,7 +69,7 @@ export const recommendations: Recommendation[] = [
     active: true,
     lastVerified: 'May 8, 2026',
     confidence: 94,
-    sourceLabel: 'UWB CSS Club calendar',
+    sourceLabel: 'UWB Career Services events',
     roadmapWeek: 1,
     roadmapAction: 'Bring the target posting and revise three bullets after peer feedback.',
   },
@@ -84,22 +86,22 @@ export const recommendations: Recommendation[] = [
     confidence: 91,
     sourceLabel: 'UWB Career Services',
     roadmapWeek: 1,
-    roadmapAction: 'Book a 30-minute review and ask for feedback on backend and testing language.',
+    roadmapAction: 'Book a 30-minute review and ask for feedback on coordination and communication language.',
   },
   {
-    id: 'hackathon-project-sprint',
+    id: 'business-leadership-workshop',
     group: 'in-time',
-    name: 'UWB Hackathon Project Sprint',
-    type: 'project',
+    name: 'School of Business Leadership Workshop',
+    type: 'event',
     whyItHelps:
-      'Creates a short, recent project artifact that can show API design, teamwork, and deployment scope.',
-    tags: ['Project proof', 'Teamwork', 'Deployment'],
+      'Builds communication, teamwork, and professional presence evidence that transfers across majors and roles.',
+    tags: ['Leadership', 'Communication', 'Professional skills'],
     active: true,
     lastVerified: 'May 6, 2026',
     confidence: 88,
-    sourceLabel: 'UWB events listing',
+    sourceLabel: 'UWB School of Business events',
     roadmapWeek: 2,
-    roadmapAction: 'Ship one small feature and add a measurable project bullet to the resume.',
+    roadmapAction: 'Attend the workshop and add one teamwork or facilitation bullet to your resume.',
   },
   {
     id: 'bcss-research-assistant',
@@ -117,19 +119,19 @@ export const recommendations: Recommendation[] = [
     roadmapAction: 'Email two faculty labs with a concise interest note and project portfolio link.',
   },
   {
-    id: 'css-475-database-systems',
+    id: 'bhlth-320-community-health',
     group: 'next-time',
-    name: 'CSS 475: Database Systems',
+    name: 'BHLTH 320: Community Health Practice',
     type: 'course',
     whyItHelps:
-      'Strengthens the PostgreSQL and schema-design experience requested by many software roles.',
-    tags: ['PostgreSQL', 'Schema design', 'Query optimization'],
+      'Adds structured field experience and program coordination language useful for service, health, and operations roles.',
+    tags: ['Field experience', 'Program coordination', 'Community engagement'],
     active: true,
     lastVerified: 'May 1, 2026',
     confidence: 84,
     sourceLabel: 'UWB course catalog',
     roadmapWeek: 3,
-    roadmapAction: 'Add the course to next-quarter planning and note database goals for advising.',
+    roadmapAction: 'Discuss enrollment with your advisor and note learning goals tied to the posting.',
   },
   {
     id: 'women-in-stem-fellowship',
@@ -157,12 +159,12 @@ export const roadmapWeeks: RoadmapWeek[] = [
       {
         id: 'week-1-bullets',
         text: 'Rewrite three resume bullets around measurable impact.',
-        detail: 'Use the job posting language for accessibility, deployment, and testing.',
+        detail: 'Use the job posting language for organization, communication, and community impact.',
       },
       {
         id: 'week-1-advisor',
         text: 'Contact an advisor or peer reviewer.',
-        detail: 'Ask whether the revised bullets clearly show project ownership.',
+        detail: 'Ask whether the revised bullets clearly show leadership and measurable outcomes.',
       },
     ],
   },
@@ -174,7 +176,7 @@ export const roadmapWeeks: RoadmapWeek[] = [
       {
         id: 'week-2-project',
         text: 'Complete one scoped project task.',
-        detail: 'Prioritize a visible README, deployed demo, or test coverage note.',
+        detail: 'Prioritize a presentation, portfolio sample, certification, or documented volunteer hours.',
       },
       {
         id: 'week-2-keywords',
