@@ -30,13 +30,13 @@ export function RoadmapPage() {
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:w-[24rem]">
-              <Button asChild variant="secondary" className="h-12">
+              <Button asChild variant="secondary" className="h-12" disabled={status === 'loading'}>
                 <Link to="/app#workflow">
                   <ArrowLeft className="size-4" aria-hidden="true" />
                   Start review
                 </Link>
               </Button>
-              <Button className="h-12" onClick={showSampleReview}>
+              <Button className="h-12" onClick={showSampleReview} disabled={status === 'loading'}>
                 <Sparkles className="size-4" aria-hidden="true" />
                 Load sample
               </Button>
@@ -48,9 +48,20 @@ export function RoadmapPage() {
       <RoadmapTimeline status={status} deadline={deadline} selectedIds={selectedIds} />
 
       <section className="mx-auto max-w-[86rem] px-5 pb-16 sm:px-8 lg:px-12">
-        <div className="grid gap-4 lg:grid-cols-3">
-          {selectedRecommendations.length > 0 ? (
-            selectedRecommendations.slice(0, 3).map((recommendation) => (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {status === 'loading' ? (
+            <Surface variant="stroke" className="flex flex-col items-center rounded-[1.6rem] p-8 text-center lg:col-span-3">
+              <span className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/12 to-husky-gold/20 text-primary shadow-soft ring-1 ring-border/50">
+                <MapPinned className="size-7 motion-safe:animate-pulse" aria-hidden />
+              </span>
+              <h2 className="mt-5 text-xl font-semibold text-foreground">Building your roadmap</h2>
+              <p className="type-body mx-auto mt-2 max-w-lg">
+                Recommendations are being placed into the right week. Check back in a moment.
+              </p>
+            </Surface>
+          ) : selectedRecommendations.length > 0 ? (
+            <>
+            {selectedRecommendations.slice(0, 3).map((recommendation) => (
               <Surface key={recommendation.id} variant="card" className="rounded-[1.6rem] p-5">
                 <div className="flex items-start justify-between gap-3">
                   <Badge tone={recommendation.group === 'in-time' ? 'gold' : 'purple'}>{recommendation.group === 'in-time' ? 'In-Time' : 'Next-Time'}</Badge>
@@ -63,7 +74,18 @@ export function RoadmapPage() {
                   Last verified {recommendation.lastVerified}
                 </p>
               </Surface>
-            ))
+            ))}
+            {selectedIds.length > 3 && (
+              <Surface variant="stroke" className="flex items-center justify-center rounded-[1.6rem] p-5 text-center md:col-span-2 lg:col-span-3">
+                <p className="text-sm font-semibold text-muted-foreground">
+                  +{selectedIds.length - 3} more on{' '}
+                  <Link to="/app/resources" className="font-black text-primary underline-offset-2 hover:underline">
+                    Resources
+                  </Link>
+                </p>
+              </Surface>
+            )}
+            </>
           ) : (
             <Surface variant="stroke" className="flex flex-col items-center rounded-[1.6rem] p-8 text-center lg:col-span-3">
               <span className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/12 to-husky-gold/20 text-primary shadow-soft ring-1 ring-border/50">
@@ -74,10 +96,10 @@ export function RoadmapPage() {
                 Load the sample review or run the mock analysis from the dashboard to attach activities to this roadmap.
               </p>
               <div className="mt-6 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-                <Button asChild className="h-11 sm:min-w-[11rem]">
+                <Button asChild className="h-12 sm:min-w-[11rem]">
                   <Link to="/app#workflow">Open workflow</Link>
                 </Button>
-                <Button variant="secondary" className="h-11 sm:min-w-[11rem]" onClick={showSampleReview}>
+                <Button variant="secondary" className="h-12 sm:min-w-[11rem]" onClick={showSampleReview}>
                   <Sparkles className="size-4" aria-hidden />
                   Load sample
                 </Button>

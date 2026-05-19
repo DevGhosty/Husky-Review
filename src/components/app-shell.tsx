@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
-import { Bell, ChevronDown } from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import { BrandLockup } from './brand-lockup';
+import { NotificationsPanel } from './notifications-panel';
+import { ProfileMenu } from './profile-menu';
 import { ThemeToggle } from './theme-toggle';
-import { Avatar, AvatarFallback } from './ui/avatar';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { cn } from '../lib/utils';
 
 interface AppShellProps {
@@ -22,9 +21,6 @@ const navItems = [
 
 const navLinkFocus =
   'rounded-lg px-2 py-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
-
-const iconButtonClass =
-  'relative grid size-11 place-items-center rounded-full border border-border bg-card text-primary shadow-soft ring-1 ring-border/50 transition-[color,box-shadow,transform,border-color] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card motion-safe:hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]';
 
 export function AppShell({ children }: AppShellProps) {
   return (
@@ -51,7 +47,7 @@ export function AppShell({ children }: AppShellProps) {
                 <NavLink
                   key={item.label}
                   to={item.to}
-                  end={item.to === '/'}
+                  end={item.to === '/app'}
                   className={({ isActive }) =>
                     cn(
                       navLinkFocus,
@@ -77,25 +73,8 @@ export function AppShell({ children }: AppShellProps) {
 
             <div className="flex items-center gap-2 sm:gap-3">
               <ThemeToggle />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" aria-label="Notifications preview" className={iconButtonClass}>
-                    <Bell className="size-5" aria-hidden="true" />
-                    <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-primary" aria-hidden="true" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Preview notifications</TooltipContent>
-              </Tooltip>
-              <Link
-                to="/app/profile"
-                aria-label="Profile preview"
-                className="flex items-center gap-2 rounded-full border border-border bg-card px-2 py-1.5 shadow-soft ring-1 ring-border/50 transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card motion-safe:hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]"
-              >
-                <Avatar className="size-8">
-                  <AvatarFallback className="bg-primary/10 text-sm font-black text-primary">S</AvatarFallback>
-                </Avatar>
-                <ChevronDown className="hidden size-4 text-primary sm:block" aria-hidden="true" />
-              </Link>
+              <NotificationsPanel />
+              <ProfileMenu />
             </div>
           </nav>
           <div className="border-t border-border/80 px-4 py-3 lg:hidden" aria-label="Section navigation">
@@ -104,7 +83,7 @@ export function AppShell({ children }: AppShellProps) {
                 <NavLink
                   key={item.label}
                   to={item.to}
-                  end={item.to === '/'}
+                  end={item.to === '/app'}
                   className={({ isActive }) =>
                     cn(
                       'whitespace-nowrap rounded-full border px-4 py-2 text-sm font-black transition-[color,background-color,border-color,transform] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-safe:active:scale-[0.98]',

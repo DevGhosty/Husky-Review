@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/app-shell';
 import { MarketingShell } from './components/marketing-shell';
 import { ReviewProvider } from './context/review-context';
+import { ProfileSettingsProvider } from './context/profile-settings-context';
 import { DashboardPage } from './pages/dashboard-page';
 import { LoginPage } from './pages/login-page';
 import { MarketingPage } from './pages/marketing-page';
@@ -14,6 +15,7 @@ import { SavedReviewsPage } from './pages/saved-reviews-page';
 function App() {
   return (
     <ReviewProvider>
+      <ProfileSettingsProvider>
       <Routes>
         <Route
           path="/"
@@ -81,6 +83,7 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </ProfileSettingsProvider>
     </ReviewProvider>
   );
 }

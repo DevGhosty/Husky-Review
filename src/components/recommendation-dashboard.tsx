@@ -62,7 +62,7 @@ export function RecommendationDashboard({ status, deadline, selectedIds, onToggl
                     <h3 className="text-2xl font-black">{group.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-white/70">{group.summary}</p>
                   </div>
-                  <Badge tone={group.id === 'in-time' ? 'gold' : 'purple'}>{groupRecommendations.length} matches</Badge>
+                  <Badge tone="onDark">{groupRecommendations.length} matches</Badge>
                 </div>
               </div>
               <div className="grid gap-4">
@@ -77,7 +77,13 @@ export function RecommendationDashboard({ status, deadline, selectedIds, onToggl
                     />
                   ))
                 ) : (
-                  <Surface variant="stroke" className="rounded-[1.6rem] p-6 text-center">
+                  <Surface
+                    variant="stroke"
+                    className="rounded-[1.6rem] p-6 text-center"
+                    role={isLoading ? 'status' : undefined}
+                    aria-busy={isLoading || undefined}
+                    aria-live={isLoading ? 'polite' : undefined}
+                  >
                     <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/12 to-husky-gold/20 text-primary shadow-soft ring-1 ring-border/60 dark:from-primary/20 dark:to-amber-400/15">
                       {isLoading ? (
                         <Loader2 className="size-7 animate-spin" aria-hidden />
@@ -101,11 +107,13 @@ export function RecommendationDashboard({ status, deadline, selectedIds, onToggl
                         </Link>
                       </Button>
                     )}
-                    <div className="mt-5 flex flex-col gap-2">
-                      {[0, 1, 2].map((item) => (
-                        <Skeleton key={item} className="h-3 rounded-full" />
-                      ))}
-                    </div>
+                    {isLoading && (
+                      <div className="mt-5 flex flex-col gap-2">
+                        {[0, 1, 2].map((item) => (
+                          <Skeleton key={item} className="h-3 rounded-full" />
+                        ))}
+                      </div>
+                    )}
                   </Surface>
                 )}
               </div>

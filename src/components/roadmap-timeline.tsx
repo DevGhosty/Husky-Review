@@ -22,7 +22,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
         <div className="absolute -right-24 bottom-8 h-80 w-80 rounded-full bg-husky-purple-soft/[0.24] blur-3xl" aria-hidden="true" />
         <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr]">
           <div className="text-white">
-            <Badge tone="gold">Week-by-week roadmap</Badge>
+            <Badge tone="onDark">Week-by-week roadmap</Badge>
             <h2 className="mt-5 text-3xl font-black tracking-normal sm:text-4xl">Move from gaps to next actions.</h2>
             <p className="mt-4 text-base leading-7 text-white/75">
               {isReady
@@ -44,7 +44,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                 return (
                   <article
                     key={week.week}
-                    className="relative motion-safe:animate-slide-in motion-reduce:animate-none rounded-[1.6rem] border border-white/70 bg-white/[0.96] p-5 shadow-premium"
+                    className="relative motion-safe:animate-slide-in motion-reduce:animate-none rounded-[1.6rem] border border-border/80 bg-card p-5 text-card-foreground shadow-soft"
                     style={{ animationDelay: `${Math.min(index * 90, 270)}ms` }}
                   >
                     <div className="flex gap-4">
@@ -57,12 +57,12 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                         {week.week}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex flex-wrap flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                           <div>
                             <p className="text-sm font-black uppercase tracking-[0.14em] text-primary">Week {week.week}</p>
                             <h3 className="mt-1 text-xl font-semibold text-foreground">{week.title}</h3>
                           </div>
-                          <Badge tone="purple">
+                          <Badge tone="gold" className="shrink-0">
                             <CalendarCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
                             Action plan
                           </Badge>
@@ -84,7 +84,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                           ) : (
                             <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4 dark:bg-muted/20">
                               <p className="text-sm font-semibold text-foreground">
-                                {status === 'loading' ? 'Building roadmap steps...' : 'Roadmap empty state'}
+                                {status === 'loading' ? 'Building roadmap steps...' : 'Roadmap not built yet'}
                               </p>
                               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                                 {status === 'loading'

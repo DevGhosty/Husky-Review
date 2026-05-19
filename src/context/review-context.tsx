@@ -5,6 +5,7 @@ import {
   recommendations,
   sampleFileName,
   sampleJobDescription,
+  sampleJobPostingUrl,
   successSelectedIds,
 } from '../data/mockData';
 import type { ReviewStatus } from '../types/analysis';
@@ -14,10 +15,12 @@ interface ReviewContextValue {
   loadingStepIndex: number;
   fileName: string;
   jobDescription: string;
+  jobPostingUrl: string;
   deadline: string;
   selectedIds: string[];
   setFileName: (fileName: string) => void;
   setJobDescription: (description: string) => void;
+  setJobPostingUrl: (url: string) => void;
   setDeadline: (deadline: string) => void;
   runMockAnalysis: () => void;
   showSampleReview: () => void;
@@ -35,6 +38,7 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [fileName, setFileNameValue] = useState('');
   const [jobDescription, setJobDescriptionValue] = useState('');
+  const [jobPostingUrl, setJobPostingUrlValue] = useState('');
   const [deadline, setDeadlineValue] = useState(defaultDeadline);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -78,6 +82,11 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
     clearResultState();
   }
 
+  function setJobPostingUrl(url: string) {
+    setJobPostingUrlValue(url);
+    clearResultState();
+  }
+
   function setDeadline(deadlineValue: string) {
     setDeadlineValue(deadlineValue);
     clearResultState();
@@ -92,6 +101,7 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
     setLoadingStepIndex(loadingSteps.length - 1);
     setFileNameValue((current) => current || sampleFileName);
     setJobDescriptionValue((current) => current || sampleJobDescription);
+    setJobPostingUrlValue((current) => current || sampleJobPostingUrl);
     setDeadlineValue((current) => current || defaultDeadline);
     setSelectedIds(allRecommendationIds.slice(0, 4));
   }
@@ -108,16 +118,18 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
       loadingStepIndex,
       fileName,
       jobDescription,
+      jobPostingUrl,
       deadline,
       selectedIds,
       setFileName,
       setJobDescription,
+      setJobPostingUrl,
       setDeadline,
       runMockAnalysis,
       showSampleReview,
       toggleRecommendation,
     }),
-    [deadline, fileName, jobDescription, loadingStepIndex, selectedIds, status],
+    [deadline, fileName, jobDescription, jobPostingUrl, loadingStepIndex, selectedIds, status],
   );
 
   return <ReviewContext.Provider value={value}>{children}</ReviewContext.Provider>;
