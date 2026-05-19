@@ -1,3 +1,4 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardCheck, FileSearch, Map } from 'lucide-react';
 import { HeroSection } from '../components/hero-section';
@@ -24,9 +25,10 @@ const workflow = [
 
 export function MarketingPage() {
   const navigate = useNavigate();
+  const { loginWithRedirect } = useAuth0();
 
   function startPreview() {
-    navigate('/login');
+    void loginWithRedirect();
   }
 
   return (
