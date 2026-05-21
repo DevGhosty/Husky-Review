@@ -33,7 +33,7 @@ exports.onExecutePostLogin = async (event, api) => {
 
 Supabase requires the literal `role` claim on the ID token. Auth0 strips non-namespaced custom claims from access tokens, so do not rely on adding this claim to the Auth0 access token.
 
-Disable all application connections except Google OAuth for the Husky-Review Auth0 application. The app also sends `connection=google-oauth2` on every login request, but the Action is the server-side enforcement point.
+Disable all application connections except Google OAuth for the Husky-Review Auth0 application. The app redirects users to Auth0 Universal Login, so the enabled Auth0 connections control which sign-in buttons appear. The Action is the server-side enforcement point for Google-only and `@uw.edu` access.
 
 ## 2. Supabase Setup
 
@@ -72,7 +72,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` in browser code.
 
 ## 4. App Flow
 
-1. Auth0 protects `/app/*` routes.
+1. `/app/*` routes show the Husky-Review app shell first, then redirect to Auth0 Universal Login only after the user clicks Continue with Google.
 2. The browser uses Auth0 ID tokens for Supabase profile reads/writes through Supabase Third-Party Auth and RLS.
 3. Resume uploads go through Vercel API routes with Auth0 access tokens.
 4. API routes verify Auth0 tokens with `jose` and Auth0 JWKS.
@@ -96,7 +96,8 @@ npm run test:auth
 
 Manual checks:
 
-- Unauthenticated `/app/*` redirects to Auth0.
+- Unauthenticated `/app/*` shows the in-app sign-in gate.
+- Clicking Continue with Google redirects to Auth0 Universal Login with only the Google connection available.
 - A signed-in user reaches `/app`.
 - Uploading a resume and clicking Analyze creates a resume record and storage object.
 - `/app/saved-reviews` lists uploaded resumes with signed Open links.

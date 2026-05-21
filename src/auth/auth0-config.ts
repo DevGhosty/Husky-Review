@@ -17,16 +17,6 @@ export function getAuth0LoginOptions(returnTo = '/app') {
   return {
     appState: { returnTo },
     authorizationParams: {
-      connection: AUTH0_CONFIG.connection,
-      prompt: 'select_account' as const,
-    },
-  };
-}
-
-export function getAuth0PopupOptions() {
-  return {
-    authorizationParams: {
-      connection: AUTH0_CONFIG.connection,
       prompt: 'select_account' as const,
     },
   };
@@ -34,28 +24,6 @@ export function getAuth0PopupOptions() {
 
 export function isAllowedEmail(email?: string | null) {
   return Boolean(email?.toLowerCase().endsWith(`@${AUTH0_CONFIG.allowedEmailDomain}`));
-}
-
-export function shouldFallbackToRedirect(error: unknown) {
-  const authError = error as { error?: string; message?: string };
-  const code = authError.error?.toLowerCase() || '';
-  const message = authError.message?.toLowerCase() || '';
-
-  return code.includes('popup') || message.includes('popup');
-}
-
-export function getAuthErrorMessage(error: unknown) {
-  const authError = error as { error?: string; error_description?: string; message?: string };
-
-  if (authError.error === 'popup_closed_by_user') {
-    return 'Sign-in was closed before it finished.';
-  }
-
-  if (authError.error === 'access_denied') {
-    return authError.error_description || authError.message || `Use a @${AUTH0_CONFIG.allowedEmailDomain} Google account to access Husky-Review.`;
-  }
-
-  return authError.message || 'Sign-in could not be completed.';
 }
 
 /**

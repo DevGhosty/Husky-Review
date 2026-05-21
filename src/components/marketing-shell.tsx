@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { ArrowRight } from 'lucide-react';
-import { getAuth0LoginOptions, getAuth0PopupOptions, shouldFallbackToRedirect } from '../auth/auth0-config';
+import { getAuth0LoginOptions } from '../auth/auth0-config';
 import { BrandLockup } from './brand-lockup';
 import { ThemeToggle } from './theme-toggle';
 import { Button } from './ui/button';
@@ -17,7 +17,7 @@ const hashLinkClass =
 
 export function MarketingShell({ children }: MarketingShellProps) {
   const location = useLocation();
-  const { loginWithPopup, loginWithRedirect } = useAuth0();
+  const { loginWithRedirect } = useAuth0();
 
   useEffect(() => {
     const id = location.hash.replace(/^#/, '');
@@ -35,13 +35,7 @@ export function MarketingShell({ children }: MarketingShellProps) {
   }, [location.pathname, location.hash]);
 
   const startAuthLogin = async () => {
-    try {
-      await loginWithPopup(getAuth0PopupOptions());
-    } catch (error) {
-      if (shouldFallbackToRedirect(error)) {
-        await loginWithRedirect(getAuth0LoginOptions('/app'));
-      }
-    }
+    await loginWithRedirect(getAuth0LoginOptions('/app'));
   };
 
   return (

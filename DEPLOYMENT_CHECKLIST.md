@@ -7,7 +7,8 @@
 - [ ] Auth0 callback/logout/web-origin URLs include local and production origins.
 - [ ] Auth0 post-login Action adds `role: "authenticated"` to ID tokens.
 - [ ] Auth0 post-login Action denies non-Google connections and non-`@uw.edu` email addresses.
-- [ ] Auth0 application has Google OAuth enabled and other login connections disabled.
+- [ ] Auth0 application has Google OAuth enabled and every other login connection disabled.
+- [ ] Auth0 Universal Login displays only the Google sign-in option for the Husky-Review app.
 - [ ] Supabase project created.
 - [ ] Supabase Third-Party Auth integration for Auth0 enabled.
 - [ ] [`supabase/schema.sql`](./supabase/schema.sql) has been run.
@@ -37,7 +38,8 @@
 - [ ] Run `npm run dev:vercel` when testing API routes locally.
 - [ ] Run `npm run test:auth` against `vercel dev` or a deployed URL with `API_BASE_URL`.
 - [ ] Visit `http://localhost:5173`.
-- [ ] Sign in through Auth0.
+- [ ] Click Continue with Google from the app and confirm it redirects to Auth0 Universal Login.
+- [ ] Sign in with a valid `@uw.edu` Google account.
 - [ ] Verify `/app` loads after redirect.
 - [ ] Change profile settings, refresh, and confirm they persist.
 - [ ] Upload a resume from the dashboard and click Analyze.
@@ -49,7 +51,8 @@
 
 - [ ] Deploy to Vercel from `development`.
 - [ ] Add production URL to Auth0 callback/logout/web-origin settings.
-- [ ] Confirm unauthenticated `/app/*` redirects to Auth0.
+- [ ] Confirm unauthenticated `/app/*` shows the in-app sign-in gate.
+- [ ] Confirm Continue with Google redirects to Auth0 Universal Login.
 - [ ] Confirm API calls include `Authorization: Bearer ...`.
 - [ ] Confirm API calls without tokens return `401`.
 - [ ] Confirm invalid tokens return `401`.

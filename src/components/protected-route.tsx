@@ -2,14 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { AlertCircle, Chrome, Loader2, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import {
-  AUTH0_CONFIG,
-  getAuth0LoginOptions,
-  getAuth0PopupOptions,
-  getAuthErrorMessage,
-  isAllowedEmail,
-  shouldFallbackToRedirect,
-} from '../auth/auth0-config';
+import { AUTH0_CONFIG, getAuth0LoginOptions, isAllowedEmail } from '../auth/auth0-config';
 import { Button } from './ui/button';
 
 interface ProtectedRouteProps {
@@ -18,7 +11,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
-  const { isAuthenticated, isLoading, loginWithPopup, loginWithRedirect, logout, user } = useAuth0();
+  const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -29,14 +22,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     setAuthError(null);
 
     try {
-      await loginWithPopup(getAuth0PopupOptions());
+      await loginWithRedirect(getAuth0LoginOptions(returnTo));
     } catch (error) {
-      if (shouldFallbackToRedirect(error)) {
-        await loginWithRedirect(getAuth0LoginOptions(returnTo));
-        return;
-      }
-
-      setAuthError(getAuthErrorMessage(error));
+      const authError = error as { error_description?: string; message?: string };
+      setAuthError(authError.error_description || authError.message || 'Sign-in could not be started.');
     } finally {
       setIsSigningIn(false);
     }

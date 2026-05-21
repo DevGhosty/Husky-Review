@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { ClipboardCheck, FileSearch, Map } from 'lucide-react';
-import { getAuth0LoginOptions, getAuth0PopupOptions, shouldFallbackToRedirect } from '../auth/auth0-config';
+import { getAuth0LoginOptions } from '../auth/auth0-config';
 import { HeroSection } from '../components/hero-section';
 import { TrustSection } from '../components/trust-section';
 import { Surface } from '../components/layout/surface';
@@ -24,16 +24,10 @@ const workflow = [
 ];
 
 export function MarketingPage() {
-  const { loginWithPopup, loginWithRedirect } = useAuth0();
+  const { loginWithRedirect } = useAuth0();
 
   async function startPreview() {
-    try {
-      await loginWithPopup(getAuth0PopupOptions());
-    } catch (error) {
-      if (shouldFallbackToRedirect(error)) {
-        await loginWithRedirect(getAuth0LoginOptions('/app'));
-      }
-    }
+    await loginWithRedirect(getAuth0LoginOptions('/app'));
   }
 
   return (

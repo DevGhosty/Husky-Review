@@ -5,7 +5,6 @@ import {
   ChevronDown,
   Chrome,
   LayoutDashboard,
-  Loader2,
   LogOut,
   Palette,
   ShieldCheck,
@@ -14,8 +13,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useState } from 'react';
-import { getAuth0LoginOptions, getAuth0PopupOptions, shouldFallbackToRedirect } from '../auth/auth0-config';
+import { getAuth0LoginOptions } from '../auth/auth0-config';
 import { useReview } from '../context/review-context';
 import { useProfileSettings } from '../context/profile-settings-context';
 import { profileSectionHref, profileSections } from '../lib/profile-settings';
@@ -46,8 +44,7 @@ export function ProfileMenu() {
   const location = useLocation();
   const { settings } = useProfileSettings();
   const { resetReview } = useReview();
-  const { isAuthenticated, isLoading, loginWithPopup, loginWithRedirect, user, logout } = useAuth0();
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const { isAuthenticated, isLoading, loginWithRedirect, user, logout } = useAuth0();
 
   const displayName = user?.name || user?.nickname || settings.displayName;
   const subtitle = user?.email ? user.email : user ? 'Signed in with Google' : 'Sign in with your @uw.edu Google account';
@@ -62,17 +59,7 @@ export function ProfileMenu() {
   const returnTo = location.pathname + location.search + location.hash;
 
   async function startGoogleSignIn() {
-    setIsSigningIn(true);
-
-    try {
-      await loginWithPopup(getAuth0PopupOptions());
-    } catch (error) {
-      if (shouldFallbackToRedirect(error)) {
-        await loginWithRedirect(getAuth0LoginOptions(returnTo));
-      }
-    } finally {
-      setIsSigningIn(false);
-    }
+    await loginWithRedirect(getAuth0LoginOptions(returnTo));
   }
 
   function signOut() {
@@ -153,14 +140,14 @@ export function ProfileMenu() {
         ) : (
           <DropdownMenuItem
             className="menu-panel-action h-auto flex-col items-start gap-1 py-3"
-            disabled={isLoading || isSigningIn}
+            disabled={isLoading}
             onSelect={(event) => {
               event.preventDefault();
               void startGoogleSignIn();
             }}
           >
             <span className="flex items-center gap-2">
-              {isSigningIn ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Chrome className="size-4" aria-hidden />}
+              <Chrome className="size-4" aria-hidden />
               Continue with Google
             </span>
             <span className="pl-6 text-xs font-medium text-muted-foreground">Use your @uw.edu account.</span>
