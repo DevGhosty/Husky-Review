@@ -16,11 +16,24 @@ This app keeps Auth0 as the identity provider and uses Supabase for account-scop
 
 ```js
 exports.onExecutePostLogin = async (event, api) => {
+  if (event.connection.strategy !== 'google-oauth2') {
+    api.access.deny('google_required', 'Use Google sign-in to access Husky-Review.')
+    return
+  }
+
+  const email = (event.user.email || '').toLowerCase()
+  if (!email.endsWith('@uw.edu')) {
+    api.access.deny('uw_email_required', 'Use a @uw.edu Google account to access Husky-Review.')
+    return
+  }
+
   api.idToken.setCustomClaim('role', 'authenticated')
 }
 ```
 
 Supabase requires the literal `role` claim on the ID token. Auth0 strips non-namespaced custom claims from access tokens, so do not rely on adding this claim to the Auth0 access token.
+
+Disable all application connections except Google OAuth for the Husky-Review Auth0 application. The app also sends `connection=google-oauth2` on every login request, but the Action is the server-side enforcement point.
 
 ## 2. Supabase Setup
 

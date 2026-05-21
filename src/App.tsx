@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { AppShell } from './components/app-shell';
 import { MarketingShell } from './components/marketing-shell';
 import { ProtectedRoute } from './components/protected-route';
@@ -13,6 +14,12 @@ import { RoadmapPage } from './pages/roadmap-page';
 import { SavedReviewsPage } from './pages/saved-reviews-page';
 
 function App() {
+  const appRoute = (page: ReactNode) => (
+    <AppShell>
+      <ProtectedRoute>{page}</ProtectedRoute>
+    </AppShell>
+  );
+
   return (
     <ReviewProvider>
       <ProfileSettingsProvider>
@@ -46,63 +53,27 @@ function App() {
           {/* Protected app routes */}
           <Route
             path="/app"
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <DashboardPage />
-                </AppShell>
-              </ProtectedRoute>
-            }
+            element={appRoute(<DashboardPage />)}
           />
           <Route
             path="/app/roadmap"
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <RoadmapPage />
-                </AppShell>
-              </ProtectedRoute>
-            }
+            element={appRoute(<RoadmapPage />)}
           />
           <Route
             path="/app/resources"
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <ResourcesPage />
-                </AppShell>
-              </ProtectedRoute>
-            }
+            element={appRoute(<ResourcesPage />)}
           />
           <Route
             path="/app/saved-reviews"
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <SavedReviewsPage />
-                </AppShell>
-              </ProtectedRoute>
-            }
+            element={appRoute(<SavedReviewsPage />)}
           />
           <Route
             path="/app/profile"
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <ProfilePage />
-                </AppShell>
-              </ProtectedRoute>
-            }
+            element={appRoute(<ProfilePage />)}
           />
           <Route
             path="/app/privacy"
-            element={
-              <ProtectedRoute>
-                <AppShell>
-                  <PrivacyPage />
-                </AppShell>
-              </ProtectedRoute>
-            }
+            element={appRoute(<PrivacyPage />)}
           />
 
           {/* Catch-all redirect */}

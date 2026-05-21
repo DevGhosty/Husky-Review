@@ -27,6 +27,7 @@ interface ReviewContextValue {
   runMockAnalysis: () => void;
   showSampleReview: () => void;
   toggleRecommendation: (id: string) => void;
+  resetReview: () => void;
 }
 
 const ReviewContext = createContext<ReviewContextValue | null>(null);
@@ -122,6 +123,17 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
     );
   }
 
+  function resetReview() {
+    setStatus('idle');
+    setLoadingStepIndex(0);
+    setResumeFileValue(null);
+    setFileNameValue('');
+    setJobDescriptionValue('');
+    setJobPostingUrlValue('');
+    setDeadlineValue(defaultDeadline);
+    setSelectedIds([]);
+  }
+
   const value = useMemo(
     () => ({
       status,
@@ -140,6 +152,7 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
       runMockAnalysis,
       showSampleReview,
       toggleRecommendation,
+      resetReview,
     }),
     [deadline, fileName, jobDescription, jobPostingUrl, loadingStepIndex, resumeFile, selectedIds, status],
   );
