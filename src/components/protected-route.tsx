@@ -1,54 +1,106 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { AlertCircle, Chrome, Loader2, ShieldCheck } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
+import {
+  AUTH0_CONFIG,
+  getAuth0LoginOptions,
+  getAuth0PopupOptions,
+  getAuthErrorMessage,
+  isAllowedEmail,
+  shouldFallbackToRedirect,
+} from '../auth/auth0-config';
+import { Button } from './ui/button';
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
-/**
- * ProtectedRoute component gates access to authenticated app routes
- * Redirects unauthenticated users directly to Auth0 Universal Login
- * Shows loading state while Auth0 session is being verified
- */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
-  const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
-  const redirectStartedRef = useRef(false);
+  const { isAuthenticated, isLoading, loginWithPopup, loginWithRedirect, logout, user } = useAuth0();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      redirectStartedRef.current = false;
-      return;
-    }
+  const returnTo = location.pathname + location.search + location.hash;
 
-    if (!isLoading && !redirectStartedRef.current) {
-      redirectStartedRef.current = true;
-      void loginWithRedirect({
-        appState: { returnTo: location.pathname + location.search + location.hash },
-      });
+  async function startGoogleSignIn() {
+    setIsSigningIn(true);
+    setAuthError(null);
+
+    try {
+      await loginWithPopup(getAuth0PopupOptions());
+    } catch (error) {
+      if (shouldFallbackToRedirect(error)) {
+        await loginWithRedirect(getAuth0LoginOptions(returnTo));
+        return;
+      }
+
+      setAuthError(getAuthErrorMessage(error));
+    } finally {
+      setIsSigningIn(false);
     }
-  }, [isAuthenticated, isLoading, loginWithRedirect, location.hash, location.pathname, location.search]);
+  }
+
+  async function signOut() {
+    logout({ logoutParams: { returnTo: window.location.origin } });
+  }
 
   if (isLoading) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background">
+      <main className="grid min-h-[calc(100vh-8rem)] place-items-center px-5 py-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <Loader2 className="mx-auto size-10 animate-spin text-primary" aria-hidden="true" />
+          <p className="mt-4 text-sm font-semibold text-muted-foreground">Checking your session...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-          <p className="mt-4 text-muted-foreground">Redirecting to Auth0...</p>
-        </div>
-      </div>
+      <main className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-[86rem] place-items-center px-5 py-16 sm:px-8 lg:px-12">
+        <section className="w-full max-w-xl rounded-[2rem] border border-border bg-card/95 p-6 text-center shadow-premium sm:p-8">
+          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <ShieldCheck className="size-7" aria-hidden="true" />
+          </span>
+          <h1 className="mt-5 text-3xl font-black tracking-normal text-foreground">Sign in to your workspace</h1>
+          <p className="mt-3 text-sm font-semibold leading-6 text-muted-foreground">
+            Continue with Google using your @{AUTH0_CONFIG.allowedEmailDomain} account to access saved resumes, profile settings, and the review dashboard.
+          </p>
+
+          {authError ? (
+            <p className="mt-5 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-xs font-semibold leading-5 text-amber-800 dark:border-amber-400/40 dark:bg-amber-950/50 dark:text-amber-100">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              {authError}
+            </p>
+          ) : null}
+
+          <Button className="mt-6 h-12 w-full sm:w-auto sm:min-w-64" onClick={startGoogleSignIn} disabled={isSigningIn}>
+            {isSigningIn ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Chrome className="size-4" aria-hidden="true" />}
+            Continue with Google
+          </Button>
+        </section>
+      </main>
+    );
+  }
+
+  if (!isAllowedEmail(user?.email)) {
+    return (
+      <main className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-[86rem] place-items-center px-5 py-16 sm:px-8 lg:px-12">
+        <section className="w-full max-w-xl rounded-[2rem] border border-border bg-card/95 p-6 text-center shadow-premium sm:p-8">
+          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-200">
+            <AlertCircle className="size-7" aria-hidden="true" />
+          </span>
+          <h1 className="mt-5 text-3xl font-black tracking-normal text-foreground">UW email required</h1>
+          <p className="mt-3 text-sm font-semibold leading-6 text-muted-foreground">
+            Husky-Review is limited to Google accounts using an @{AUTH0_CONFIG.allowedEmailDomain} email address.
+          </p>
+          <Button className="mt-6 h-12" onClick={signOut}>
+            Sign out
+          </Button>
+        </section>
+      </main>
     );
   }
 

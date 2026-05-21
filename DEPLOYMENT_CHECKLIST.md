@@ -6,6 +6,8 @@
 - [ ] Auth0 API created with RS256 signing.
 - [ ] Auth0 callback/logout/web-origin URLs include local and production origins.
 - [ ] Auth0 post-login Action adds `role: "authenticated"` to ID tokens.
+- [ ] Auth0 post-login Action denies non-Google connections and non-`@uw.edu` email addresses.
+- [ ] Auth0 application has Google OAuth enabled and other login connections disabled.
 - [ ] Supabase project created.
 - [ ] Supabase Third-Party Auth integration for Auth0 enabled.
 - [ ] [`supabase/schema.sql`](./supabase/schema.sql) has been run.

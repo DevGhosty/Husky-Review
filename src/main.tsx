@@ -18,6 +18,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       authorizationParams={{
         redirect_uri: AUTH0_CONFIG.redirectUri,
         audience: AUTH0_CONFIG.audience,
+        scope: 'openid profile email',
       }}
       onRedirectCallback={(appState) => {
         const targetPath = appState?.returnTo || '/app';
