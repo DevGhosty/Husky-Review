@@ -75,8 +75,8 @@ export function MarketingShell({ children }: MarketingShellProps) {
         <footer className="border-t border-border bg-card/85 px-5 py-10 backdrop-blur-sm sm:px-8 lg:px-12">
           <div className="mx-auto grid max-w-[86rem] gap-4 text-sm font-semibold leading-6 text-muted-foreground md:grid-cols-[1fr_auto] md:items-center">
             <p>
-              Husky-Review is a mocked career readiness frontend for UW Bothell students. No real resume data is stored or analyzed in
-              this version.
+              Husky-Review stores account profile settings and uploaded resumes after sign-in. Analysis results remain mocked until the
+              review pipeline is connected.
             </p>
             <div className="flex flex-wrap gap-4">
               <button

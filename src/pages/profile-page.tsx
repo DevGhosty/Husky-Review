@@ -53,9 +53,9 @@ const selectClassName =
   'h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30';
 
 const privacySummaryItems = [
-  'Resume and job posting inputs stay in session state for this frontend prototype.',
-  'Profile preferences save locally in your browser only.',
-  'No authenticated student records or backend APIs are connected yet.',
+  'Uploaded resume files are stored in private Supabase storage paths scoped to your Auth0 account.',
+  'Profile preferences sync to Supabase when the project and Auth0 third-party auth are configured.',
+  'Generated analysis and roadmap selections remain mocked until the review pipeline is connected.',
 ];
 
 function getActiveSection(hash: string): ProfileSectionId {
@@ -147,6 +147,8 @@ export function ProfilePage() {
     toggleActivityInterest,
     setGraduationYear,
     resetSettings,
+    syncStatus,
+    syncError,
   } = useProfileSettings();
   const [dark, setDark] = useState(() => isDarkMode());
 
@@ -302,10 +304,14 @@ export function ProfilePage() {
             <div className="mt-5 flex flex-wrap gap-2">
               <Badge tone="purple">{settings.major}</Badge>
               <Badge tone="gray">UWB student preview</Badge>
+              <Badge tone={syncStatus === 'synced' ? 'green' : syncStatus === 'error' ? 'gold' : 'gray'}>
+                {syncStatus === 'synced' ? 'Profile synced' : syncStatus === 'loading' ? 'Syncing profile' : 'Local fallback'}
+              </Badge>
               <Badge tone={status === 'success' ? 'green' : 'gray'}>
                 {status === 'success' ? 'Sample review loaded' : 'No active review'}
               </Badge>
             </div>
+            {syncError ? <p className="mt-3 text-sm font-semibold text-amber-700 dark:text-amber-300">{syncError}</p> : null}
 
             <div className="mt-6 rounded-[1.4rem] border border-border bg-muted/30 p-5 dark:bg-muted/20">
               <div className="flex items-center justify-between gap-4">

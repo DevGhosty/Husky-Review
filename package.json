@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "dev:vercel": "vercel dev",
     "build": "tsc --noEmit && vite build",
+    "test:auth": "node scripts/verify-auth-boundary.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "deploy": "vercel deploy --yes",
     "deploy:prod": "vercel deploy --prod --yes"
@@ -19,6 +21,7 @@
     "@supabase/supabase-js": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jose": "^5.9.6",
     "lucide-react": "^0.468.0",
     "radix-ui": "^1.4.3",
     "react": "^18.3.1",
@@ -27,6 +30,7 @@
     "tailwind-merge": "^2.6.1"
   },
   "devDependencies": {
+    "@types/node": "^20.19.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^6.0.1",

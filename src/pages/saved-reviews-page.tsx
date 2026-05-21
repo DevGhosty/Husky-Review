@@ -64,10 +64,10 @@ export function SavedReviewsPage() {
                 Saved Reviews
               </Badge>
               <h1 className="mt-4 max-w-3xl type-page-title type-page-title--brand">
-                Review history and saved resumes.
+                Mock review history and saved resumes.
               </h1>
               <p className="mt-5 max-w-2xl type-lead">
-                Access your saved reviews and uploaded resumes. Your data is securely stored and scoped to your account.
+                Uploaded resumes are stored in your account-backed Supabase path. Review cards remain mocked until the analysis pipeline is connected.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:w-[25rem]">
@@ -147,7 +147,7 @@ export function SavedReviewsPage() {
 
         <Surface variant="stroke" className="mt-6 rounded-[1.6rem] p-5 text-center">
           <p className="text-sm font-semibold leading-6 text-muted-foreground">
-            {recommendations.length} mocked recommendation records available for preview.
+            {recommendations.length} mocked recommendation records remain available for preview.
           </p>
         </Surface>
       </section>
@@ -186,7 +186,7 @@ export function SavedReviewsPage() {
                   <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
                     <FileText className="size-6" aria-hidden="true" />
                   </span>
-                  <Badge tone="green">Saved</Badge>
+                  <Badge tone="green">Account file</Badge>
                 </div>
                 <h3 className="relative mt-5 text-xl font-black text-foreground truncate">{resume.filename}</h3>
                 <p className="relative mt-2 text-sm leading-6 text-muted-foreground">
@@ -195,7 +195,7 @@ export function SavedReviewsPage() {
 
                 <div className="relative mt-5 flex gap-2">
                   <Button asChild variant="secondary" className="flex-1">
-                    <a href={resume.file_url} target="_blank" rel="noopener noreferrer">
+                    <a href={resume.download_url || resume.file_url} target="_blank" rel="noopener noreferrer">
                       Open
                       <ArrowRight className="size-4" aria-hidden="true" />
                     </a>

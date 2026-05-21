@@ -94,6 +94,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/app/privacy"
+            element={
+              <ProtectedRoute>
+                <AppShell>
+                  <PrivacyPage />
+                </AppShell>
+              </ProtectedRoute>
+            }
+          />
 
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />

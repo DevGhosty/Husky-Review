@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { ResumeRecord } from '../auth/supabase-client';
+import { deleteResume as deleteResumeRequest, fetchUserResumes, type ResumeRecord } from '../auth/supabase-client';
 
 export function useResumes() {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
@@ -26,20 +26,7 @@ export function useResumes() {
 
         const token = await getAccessTokenSilently();
 
-        const response = await fetch('/api/resumes', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.message || 'Failed to fetch resumes');
-        }
-
-        const data = await response.json();
+        const data = await fetchUserResumes(token);
         setResumes(data);
       } catch (err) {
         setError((err as Error).message);
@@ -55,19 +42,8 @@ export function useResumes() {
     try {
       const token = await getAccessTokenSilently();
 
-      const response = await fetch(`/api/resumes/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to delete resume');
-      }
-
-      setResumes(resumes.filter((r) => r.id !== id));
+      await deleteResumeRequest(token, id);
+      setResumes((current) => current.filter((r) => r.id !== id));
     } catch (err) {
       setError((err as Error).message);
       throw err;
