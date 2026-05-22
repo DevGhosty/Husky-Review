@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { AlertCircle, Chrome, Loader2, ShieldCheck } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AUTH0_CONFIG, getAuth0LoginOptions, isAllowedEmail } from '../auth/auth0-config';
+import { AUTH0_CONFIG, getAuth0LoginOptions, isAllowedEmail, isAuth0Configured } from '../auth/auth0-config';
 import { Button } from './ui/button';
 
 interface ProtectedRouteProps {
@@ -22,6 +22,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     setAuthError(null);
 
     try {
+      if (!isAuth0Configured()) {
+        setAuthError('Auth0 is missing its browser configuration. Check the Vercel Preview VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID variables, then redeploy.');
+        return;
+      }
+
       await loginWithRedirect(getAuth0LoginOptions(returnTo));
     } catch (error) {
       const authError = error as { error_description?: string; message?: string };
@@ -65,7 +70,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
             </p>
           ) : null}
 
-          <Button className="mt-6 h-12 w-full sm:w-auto sm:min-w-64" onClick={startGoogleSignIn} disabled={isSigningIn}>
+          <Button type="button" className="mt-6 h-12 w-full sm:w-auto sm:min-w-64" onClick={startGoogleSignIn} disabled={isSigningIn}>
             {isSigningIn ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Chrome className="size-4" aria-hidden="true" />}
             Continue with Google
           </Button>
@@ -85,7 +90,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
           <p className="mt-3 text-sm font-semibold leading-6 text-muted-foreground">
             Husky-Review is limited to Google accounts using an @{AUTH0_CONFIG.allowedEmailDomain} email address.
           </p>
-          <Button className="mt-6 h-12" onClick={signOut}>
+          <Button type="button" className="mt-6 h-12" onClick={signOut}>
             Sign out
           </Button>
         </section>

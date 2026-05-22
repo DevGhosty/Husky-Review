@@ -17,9 +17,19 @@ export function getAuth0LoginOptions(returnTo = '/app') {
   return {
     appState: { returnTo },
     authorizationParams: {
+      redirect_uri: AUTH0_CONFIG.redirectUri,
+      audience: AUTH0_CONFIG.audience || undefined,
+      scope: 'openid profile email',
       prompt: 'select_account' as const,
     },
+    openUrl: (url: string) => {
+      window.location.assign(url);
+    },
   };
+}
+
+export function isAuth0Configured() {
+  return Boolean(AUTH0_CONFIG.domain && AUTH0_CONFIG.clientId);
 }
 
 export function isAllowedEmail(email?: string | null) {
