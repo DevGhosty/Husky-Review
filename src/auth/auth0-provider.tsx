@@ -19,7 +19,10 @@ export function Auth0ProviderWithNavigate({ children }: Auth0ProviderWithNavigat
       useRefreshTokens
       onRedirectCallback={(appState?: AppState) => {
         const targetPath = appState?.returnTo || '/app';
-        navigate(targetPath, { replace: true });
+        const hashIndex = targetPath.indexOf('#');
+        const pathname = hashIndex >= 0 ? targetPath.slice(0, hashIndex) : targetPath;
+        const hash = hashIndex >= 0 ? targetPath.slice(hashIndex) : '';
+        navigate({ pathname: pathname || '/app', hash, search: '' }, { replace: true });
       }}
     >
       {children}

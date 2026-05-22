@@ -23,7 +23,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading, loginWithRedirect, logout, user } = useAuth0();
+  const { isAuthenticated, isLoading, error: auth0Error, loginWithRedirect, logout, user } = useAuth0();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -31,7 +31,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const callbackParams = getAuth0CallbackSearchParams(location.search);
   const callbackError = formatAuth0CallbackError(callbackParams.error, callbackParams.errorDescription);
   const isCompletingCallback =
-    callbackParams.hasAuthCallback && !callbackParams.hasAuthError && (isLoading || !isAuthenticated);
+    callbackParams.hasAuthCallback && !callbackParams.hasAuthError && isLoading;
 
   useEffect(() => {
     if (!callbackParams.hasAuthError || !callbackError) {
@@ -41,6 +41,33 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     stashAuthNotice(callbackError);
     navigate('/', { replace: true });
   }, [callbackParams.hasAuthError, callbackError, navigate]);
+
+  useEffect(() => {
+    if (!callbackParams.hasAuthCallback || callbackParams.hasAuthError || isLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      const message = 'Sign-in could not be completed. Please try again.';
+      setAuthError(message);
+      navigate(location.pathname, { replace: true });
+    }
+  }, [
+    callbackParams.hasAuthCallback,
+    callbackParams.hasAuthError,
+    isAuthenticated,
+    isLoading,
+    location.pathname,
+    navigate,
+  ]);
+
+  useEffect(() => {
+    if (!auth0Error) {
+      return;
+    }
+
+    setAuthError(formatAuth0Error(auth0Error, 'Sign-in could not be completed.'));
+  }, [auth0Error]);
 
   async function startGoogleSignIn() {
     setIsSigningIn(true);
