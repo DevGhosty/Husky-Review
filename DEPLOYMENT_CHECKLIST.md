@@ -4,7 +4,9 @@
 
 - [ ] Auth0 SPA application created.
 - [ ] Auth0 API created with RS256 signing.
-- [ ] Auth0 callback/logout/web-origin URLs include local and production origins.
+- [ ] Auth0 callback URLs include `http://localhost:5173/app`, production `/app`, and Vercel preview pattern (e.g. `https://*.vercel.app/app`).
+- [ ] Auth0 logout URLs include `http://localhost:5173`, production origin, and `https://*.vercel.app` (exact match for `returnTo`; fixes “sign out does nothing”).
+- [ ] Auth0 web origins match logout origins (no path suffix).
 - [ ] Auth0 post-login Action adds `role: "authenticated"` to ID tokens.
 - [ ] Auth0 post-login Action denies non-Google connections and non-`@uw.edu` email addresses.
 - [ ] Auth0 application has Google OAuth enabled and every other login connection disabled.
@@ -50,7 +52,8 @@
 ## Production Verification
 
 - [ ] Deploy to Vercel from `development`.
-- [ ] Add production URL to Auth0 callback/logout/web-origin settings.
+- [ ] Add production and Vercel preview URLs to Auth0 callback/logout/web-origin settings.
+- [ ] Sign out from profile menu returns to site origin and `/app` shows sign-in gate.
 - [ ] Confirm unauthenticated `/app/*` shows the in-app sign-in gate.
 - [ ] Confirm Continue with Google redirects to Auth0 Universal Login.
 - [ ] Confirm API calls include `Authorization: Bearer ...`.

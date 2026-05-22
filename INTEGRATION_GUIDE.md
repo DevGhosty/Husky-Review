@@ -5,14 +5,16 @@ This app keeps Auth0 as the identity provider and uses Supabase for account-scop
 ## 1. Auth0 Setup
 
 1. Create an Auth0 Single Page Application.
-2. Configure the app URLs:
-   - Callback URLs: `http://localhost:5173/app`, plus your production `/app` URL.
-   - Logout URLs: `http://localhost:5173`, plus your production origin.
-   - Web Origins: `http://localhost:5173`, plus your production origin.
-3. Create an Auth0 API for the Vercel functions.
+2. Configure the app URLs (each value must match exactly what the browser uses):
+   - **Allowed Callback URLs**: `http://localhost:5173/app`, your production `https://<domain>/app`, and Vercel previews such as `https://*.vercel.app/app` when your Auth0 plan supports wildcards.
+   - **Allowed Logout URLs**: `http://localhost:5173`, your production origin `https://<domain>`, and `https://*.vercel.app`. The app signs out with `returnTo` set to `window.location.origin` (no path). If logout appears to do nothing, this origin is usually missing from Allowed Logout URLs.
+   - **Allowed Web Origins**: same origins as logout (scheme + host + port, no trailing path).
+3. Enable **only** the Google (`google-oauth2`) connection for this application; disable database and other social connections.
+4. The SPA passes `connection: 'google-oauth2'` in `authorizationParams` on login so Universal Login goes straight to Google.
+5. Create an Auth0 API for the Vercel functions.
    - Identifier becomes `VITE_AUTH0_AUDIENCE` and `AUTH0_AUDIENCE`.
    - Signing algorithm must be RS256.
-4. Add an Auth0 Action for Supabase Third-Party Auth:
+6. Add an Auth0 Action for Supabase Third-Party Auth:
 
 ```js
 exports.onExecutePostLogin = async (event, api) => {
@@ -33,7 +35,7 @@ exports.onExecutePostLogin = async (event, api) => {
 
 Supabase requires the literal `role` claim on the ID token. Auth0 strips non-namespaced custom claims from access tokens, so do not rely on adding this claim to the Auth0 access token.
 
-Disable all application connections except Google OAuth for the Husky-Review Auth0 application. The app redirects users to Auth0 Universal Login, so the enabled Auth0 connections control which sign-in buttons appear. The Action is the server-side enforcement point for Google-only and `@uw.edu` access.
+Attach the Action to the **Login** flow. The Action is the server-side enforcement point for Google-only and `@uw.edu` access; the client also blocks non-`@uw.edu` emails in [`protected-route.tsx`](./src/components/protected-route.tsx).
 
 ## 2. Supabase Setup
 
@@ -57,6 +59,10 @@ VITE_AUTH0_DOMAIN=your-tenant.auth0.com
 VITE_AUTH0_CLIENT_ID=your_client_id
 VITE_AUTH0_AUDIENCE=https://your-api-identifier
 VITE_AUTH0_CALLBACK_URL=http://localhost:5173/app
+# Optional: override sign-out return URL (must match Auth0 Allowed Logout URLs exactly)
+# VITE_AUTH0_LOGOUT_URL=http://localhost:5173
+# Optional: extra origins for logout validation messages (comma-separated)
+# VITE_AUTH0_ALLOWED_ORIGINS=https://your-production-domain.vercel.app
 
 AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_AUDIENCE=https://your-api-identifier
@@ -103,3 +109,15 @@ Manual checks:
 - `/app/saved-reviews` lists uploaded resumes with signed Open links.
 - Deleting a resume removes the database row and storage object.
 - Profile settings survive refresh after Supabase Third-Party Auth is configured.
+- Sign out from the profile menu clears the session and returns to the site origin; visiting `/app` shows the sign-in gate again.
+
+## 6. Vercel environment sync
+
+From the `Husky-Review` directory:
+
+```bash
+vercel link
+vercel env pull .env.local
+```
+
+Set the same Auth0 and Supabase variables for **Preview** and **Production**, then redeploy. Preview deployments need the preview origin in Auth0 logout/callback/web-origin settings.

@@ -22,10 +22,6 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
-interface HeroSectionProps {
-  onStartReview: () => void;
-}
-
 const flowCards = [
   { label: 'Resume', detail: 'Uploaded', icon: FileText, accent: 'purple', start: 0, end: 20 },
   { label: 'Job Posting', detail: 'Captured', icon: BriefcaseBusiness, accent: 'gold', start: 20, end: 42 },
@@ -202,7 +198,7 @@ function FadingText({ text, className }: { text: string; className?: string }) {
   );
 }
 
-export function HeroSection({ onStartReview }: HeroSectionProps) {
+export function HeroSection() {
   const [readiness, setReadiness] = useState(0);
   /** Same timeline as `readiness` but not rounded — drives smooth subpixel motion every rAF. */
   const [readinessSmooth, setReadinessSmooth] = useState(0);
@@ -307,13 +303,6 @@ export function HeroSection({ onStartReview }: HeroSectionProps) {
           <p className="mt-7 max-w-xl text-lg font-semibold leading-8 text-muted-foreground sm:text-xl">
             Upload your resume and a real posting in the app, read AI-assisted gap analysis with UWB-linked recommendations, save reviews, and shape everything into a week-by-week board you can execute—not just read.
           </p>
-
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-            <Button size="lg" className="w-full sm:w-auto" onClick={onStartReview}>
-              <Sparkles className="size-5" aria-hidden="true" />
-              Start Review
-            </Button>
-          </div>
 
           <div className="mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
             {[

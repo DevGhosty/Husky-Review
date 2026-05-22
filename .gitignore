@@ -13,6 +13,9 @@ build/
 .env.*
 !.env.example
 
+# Local tooling
+.tools/
+
 # Logs
 logs/
 *.log

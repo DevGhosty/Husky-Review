@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { ArrowRight } from 'lucide-react';
 import { getAuth0LoginOptions } from '../auth/auth0-config';
 import { BrandLockup } from './brand-lockup';
 import { ThemeToggle } from './theme-toggle';
@@ -60,12 +59,8 @@ export function MarketingShell({ children }: MarketingShellProps) {
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <Button variant="secondary" className="hidden h-10 sm:inline-flex" onClick={startAuthLogin}>
-                Sign in
-              </Button>
               <Button className="h-10" onClick={startAuthLogin}>
-                Start Review
-                <ArrowRight className="size-4" aria-hidden="true" />
+                Sign in
               </Button>
             </div>
           </nav>
@@ -83,7 +78,7 @@ export function MarketingShell({ children }: MarketingShellProps) {
                 onClick={startAuthLogin}
                 className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                Sign in preview
+                Sign in
               </button>
               <Link className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" to="/app/privacy">
                 Privacy center

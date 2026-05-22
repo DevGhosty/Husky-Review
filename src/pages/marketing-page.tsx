@@ -1,6 +1,4 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { ClipboardCheck, FileSearch, Map } from 'lucide-react';
-import { getAuth0LoginOptions } from '../auth/auth0-config';
 import { HeroSection } from '../components/hero-section';
 import { TrustSection } from '../components/trust-section';
 import { Surface } from '../components/layout/surface';
@@ -24,15 +22,9 @@ const workflow = [
 ];
 
 export function MarketingPage() {
-  const { loginWithRedirect } = useAuth0();
-
-  async function startPreview() {
-    await loginWithRedirect(getAuth0LoginOptions('/app'));
-  }
-
   return (
     <main>
-      <HeroSection onStartReview={startPreview} />
+      <HeroSection />
 
       <section id="how-it-works" className="mx-auto max-w-[86rem] px-5 py-12 sm:px-8 lg:px-12">
         <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr] lg:items-stretch">

@@ -1,8 +1,18 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { AlertCircle, Chrome, Loader2, ShieldCheck } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AUTH0_CONFIG, getAuth0LoginOptions, isAllowedEmail, isAuth0Configured } from '../auth/auth0-config';
+import {
+  AUTH0_CONFIG,
+  formatAuth0CallbackError,
+  formatAuth0Error,
+  getAuth0CallbackSearchParams,
+  getAuth0LoginOptions,
+  getAuth0LogoutOptions,
+  isAllowedEmail,
+  isAuth0Configured,
+  validateLogoutReturnTo,
+} from '../auth/auth0-config';
 import { Button } from './ui/button';
 
 interface ProtectedRouteProps {
@@ -15,7 +25,16 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const returnTo = location.pathname + location.search + location.hash;
+  const returnTo = location.pathname + location.hash;
+  const callbackParams = getAuth0CallbackSearchParams(location.search);
+  const callbackError = formatAuth0CallbackError(callbackParams.error, callbackParams.errorDescription);
+  const isCompletingCallback = callbackParams.hasAuthCallback && (isLoading || !isAuthenticated);
+
+  useEffect(() => {
+    if (callbackError) {
+      setAuthError(callbackError);
+    }
+  }, [callbackError]);
 
   async function startGoogleSignIn() {
     setIsSigningIn(true);
@@ -27,25 +46,42 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         return;
       }
 
+      if (isCompletingCallback) {
+        return;
+      }
+
       await loginWithRedirect(getAuth0LoginOptions(returnTo));
     } catch (error) {
-      const authError = error as { error_description?: string; message?: string };
-      setAuthError(authError.error_description || authError.message || 'Sign-in could not be started.');
+      setAuthError(formatAuth0Error(error, 'Sign-in could not be started.'));
     } finally {
       setIsSigningIn(false);
     }
   }
 
   async function signOut() {
-    logout({ logoutParams: { returnTo: window.location.origin } });
+    setAuthError(null);
+
+    const logoutValidation = validateLogoutReturnTo();
+    if (logoutValidation) {
+      setAuthError(logoutValidation);
+      return;
+    }
+
+    try {
+      await logout(getAuth0LogoutOptions());
+    } catch (error) {
+      setAuthError(formatAuth0Error(error, 'Sign-out could not be completed. Confirm this site origin is in Auth0 Allowed Logout URLs.'));
+    }
   }
 
-  if (isLoading) {
+  if (isLoading || isCompletingCallback) {
     return (
       <main className="grid min-h-[calc(100vh-8rem)] place-items-center px-5 py-16">
         <div className="text-center">
           <Loader2 className="mx-auto size-10 animate-spin text-primary" aria-hidden="true" />
-          <p className="mt-4 text-sm font-semibold text-muted-foreground">Checking your session...</p>
+          <p className="mt-4 text-sm font-semibold text-muted-foreground">
+            {isCompletingCallback ? 'Completing Google sign-in...' : 'Checking your session...'}
+          </p>
         </div>
       </main>
     );
@@ -70,7 +106,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
             </p>
           ) : null}
 
-          <Button type="button" className="mt-6 h-12 w-full sm:w-auto sm:min-w-64" onClick={startGoogleSignIn} disabled={isSigningIn}>
+          <Button
+            type="button"
+            className="mt-6 h-12 w-full sm:w-auto sm:min-w-64"
+            onClick={startGoogleSignIn}
+            disabled={isSigningIn || isCompletingCallback}
+          >
             {isSigningIn ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Chrome className="size-4" aria-hidden="true" />}
             Continue with Google
           </Button>

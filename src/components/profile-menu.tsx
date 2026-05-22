@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bell,
@@ -13,7 +14,12 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { getAuth0LoginOptions } from '../auth/auth0-config';
+import {
+  formatAuth0Error,
+  getAuth0LoginOptions,
+  getAuth0LogoutOptions,
+  validateLogoutReturnTo,
+} from '../auth/auth0-config';
 import { useReview } from '../context/review-context';
 import { useProfileSettings } from '../context/profile-settings-context';
 import { profileSectionHref, profileSections } from '../lib/profile-settings';
@@ -45,6 +51,7 @@ export function ProfileMenu() {
   const { settings } = useProfileSettings();
   const { resetReview } = useReview();
   const { isAuthenticated, isLoading, loginWithRedirect, user, logout } = useAuth0();
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const displayName = user?.name || user?.nickname || settings.displayName;
   const subtitle = user?.email ? user.email : user ? 'Signed in with Google' : 'Sign in with your @uw.edu Google account';
@@ -59,12 +66,33 @@ export function ProfileMenu() {
   const returnTo = location.pathname + location.search + location.hash;
 
   async function startGoogleSignIn() {
-    await loginWithRedirect(getAuth0LoginOptions(returnTo));
+    setAuthError(null);
+
+    try {
+      await loginWithRedirect(getAuth0LoginOptions(returnTo));
+    } catch (error) {
+      setAuthError(formatAuth0Error(error, 'Sign-in could not be started.'));
+    }
   }
 
-  function signOut() {
+  async function signOut() {
+    setAuthError(null);
+
+    const logoutValidation = validateLogoutReturnTo();
+    if (logoutValidation) {
+      setAuthError(logoutValidation);
+      return;
+    }
+
     resetReview();
-    logout({ logoutParams: { returnTo: window.location.origin } });
+
+    try {
+      await logout(getAuth0LogoutOptions());
+    } catch (error) {
+      setAuthError(
+        formatAuth0Error(error, 'Sign-out could not be completed. Confirm this site origin is in Auth0 Allowed Logout URLs.'),
+      );
+    }
   }
 
   return (
@@ -82,6 +110,9 @@ export function ProfileMenu() {
         <div className="rounded-xl border border-border/70 bg-muted/35 px-3 py-3 shadow-soft">
           <p className="text-sm font-black text-foreground">{displayName}</p>
           <p className="mt-0.5 text-xs font-medium text-muted-foreground">{subtitle}</p>
+          {authError ? (
+            <p className="mt-2 text-xs font-semibold leading-5 text-amber-800 dark:text-amber-100">{authError}</p>
+          ) : null}
         </div>
 
         {isAuthenticated ? (
@@ -126,9 +157,8 @@ export function ProfileMenu() {
         {isAuthenticated ? (
           <DropdownMenuItem
             className="menu-panel-action h-auto flex-col items-start gap-1 py-3"
-            onSelect={(event) => {
-              event.preventDefault();
-              signOut();
+            onSelect={() => {
+              void signOut();
             }}
           >
             <span className="flex items-center gap-2">
