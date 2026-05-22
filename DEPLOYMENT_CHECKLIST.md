@@ -7,7 +7,7 @@
 - [ ] Auth0 callback URLs include `http://localhost:5173/app`, production `/app`, and Vercel preview pattern (e.g. `https://*.vercel.app/app`).
 - [ ] Auth0 logout URLs include `http://localhost:5173`, production origin, and `https://*.vercel.app` (exact match for `returnTo`; fixes “sign out does nothing”).
 - [ ] Auth0 web origins match logout origins (no path suffix).
-- [ ] Auth0 post-login Action adds `role: "authenticated"` to ID tokens.
+- [ ] Auth0 post-login Action adds `role: "authenticated"` and `email` to access tokens (and ID tokens).
 - [ ] Auth0 post-login Action denies non-Google connections and non-`@uw.edu` email addresses.
 - [ ] Auth0 application has Google OAuth enabled and every other login connection disabled.
 - [ ] Auth0 Universal Login displays only the Google sign-in option for the Husky-Review app.
@@ -25,6 +25,8 @@
 - [ ] `VITE_AUTH0_CALLBACK_URL`
 - [ ] `AUTH0_DOMAIN`
 - [ ] `AUTH0_AUDIENCE`
+- [ ] `AUTH0_ALLOWED_ORIGINS` (comma-separated; API CORS allowlist)
+- [ ] `CRON_SECRET` (server-only; protects resume purge cron)
 - [ ] `VITE_SUPABASE_URL`
 - [ ] `VITE_SUPABASE_ANON_KEY`
 - [ ] `SUPABASE_URL`

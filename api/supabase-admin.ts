@@ -14,9 +14,26 @@ export interface ResumeRow {
   updated_at: string;
 }
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://husky-review.vercel.app',
+];
+
+function getAllowedOrigins(): string[] {
+  const raw = process.env.AUTH0_ALLOWED_ORIGINS || process.env.VITE_AUTH0_ALLOWED_ORIGINS || '';
+  const configured = raw
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set([...DEFAULT_ALLOWED_ORIGINS, ...configured]));
+}
+
 export function getSupabaseAdmin() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
   if (!supabaseUrl || !serviceRoleKey) {
     const error = new Error('Supabase server configuration is missing');
@@ -29,18 +46,33 @@ export function getSupabaseAdmin() {
   });
 }
 
-export function setApiHeaders(res: any, methods: string) {
+export function setApiHeaders(res: any, methods: string, requestOrigin?: string) {
   res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', `${methods},OPTIONS`);
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  const origin = typeof requestOrigin === 'string' ? requestOrigin : undefined;
+  if (origin && getAllowedOrigins().includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
 }
 
 export function sendError(res: any, error: unknown) {
   const statusCode = (error as any).statusCode || 500;
-  const message = (error as Error).message || 'Internal server error';
+
+  if (statusCode >= 500) {
+    console.error('API error:', error);
+    return res.status(statusCode).json({ message: 'Internal server error' });
+  }
+
+  const message = (error as Error).message || 'Request failed';
   return res.status(statusCode).json({ message });
+}
+
+export function sendInternalError(res: any, context: string, cause: unknown) {
+  console.error(context, cause);
+  return res.status(500).json({ message: 'Internal server error' });
 }
 
 export async function withSignedUrl(supabase: ReturnType<typeof getSupabaseAdmin>, row: ResumeRow) {

@@ -1,8 +1,8 @@
 import { requireAuth } from '../auth0-verify';
-import { getSupabaseAdmin, RESUME_BUCKET, sendError, setApiHeaders, withSignedUrl, type ResumeRow } from '../supabase-admin';
+import { getSupabaseAdmin, RESUME_BUCKET, sendError, sendInternalError, setApiHeaders, withSignedUrl, type ResumeRow } from '../supabase-admin';
 
 export default async function handler(req: any, res: any) {
-  setApiHeaders(res, 'GET,DELETE');
+  setApiHeaders(res, 'GET,DELETE', req.headers?.origin);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -29,7 +29,7 @@ export default async function handler(req: any, res: any) {
       .maybeSingle();
 
     if (findError) {
-      return res.status(500).json({ message: 'Failed to fetch resume', error: findError.message });
+      return sendInternalError(res, 'Failed to fetch resume', findError);
     }
 
     if (!resume) {
@@ -43,7 +43,7 @@ export default async function handler(req: any, res: any) {
     const { error: dbError } = await supabase.from('resumes').delete().eq('id', id).eq('auth0_user_id', auth.userId);
 
     if (dbError) {
-      return res.status(500).json({ message: 'Failed to delete resume', error: dbError.message });
+      return sendInternalError(res, 'Failed to delete resume', dbError);
     }
 
     await supabase.storage.from(RESUME_BUCKET).remove([(resume as ResumeRow).storage_path]);

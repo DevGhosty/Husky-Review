@@ -1,8 +1,8 @@
 import { requireAuth } from './auth0-verify';
-import { getSupabaseAdmin, sendError, setApiHeaders, withSignedUrl, type ResumeRow } from './supabase-admin';
+import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders, withSignedUrl, type ResumeRow } from './supabase-admin';
 
 export default async function handler(req: any, res: any) {
-  setApiHeaders(res, 'GET');
+  setApiHeaders(res, 'GET', req.headers?.origin);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -23,7 +23,7 @@ export default async function handler(req: any, res: any) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return res.status(500).json({ message: 'Failed to fetch resumes', error: error.message });
+      return sendInternalError(res, 'Failed to fetch resumes', error);
     }
 
     const resumes = await Promise.all(((data || []) as ResumeRow[]).map((row) => withSignedUrl(supabase, row)));
