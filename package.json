@@ -14,6 +14,7 @@
     "auth0:login": "powershell -NoProfile -Command \"& .tools/auth0-cli/auth0.exe login\"",
     "env:pull": "vercel env pull .env.local --environment=preview --yes",
     "env:sync-auth0": "node scripts/sync-vercel-auth0-env.mjs",
+    "env:sync-server": "node scripts/sync-vercel-server-env.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "deploy": "vercel deploy --yes",
     "deploy:prod": "vercel deploy --prod --yes"

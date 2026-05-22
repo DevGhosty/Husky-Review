@@ -64,6 +64,12 @@ Set in Vercel (Preview + Production):
 
 **Note:** `vercel env pull` may write empty strings for encrypted variables. Keep secrets in the Vercel dashboard and maintain a local `.env.local` manually.
 
+Sync server-only variables to Vercel (from `.env.local`):
+
+```bash
+npm run env:sync-server
+```
+
 Redeploy after changes:
 
 ```bash
