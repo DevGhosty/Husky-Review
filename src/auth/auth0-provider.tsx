@@ -15,7 +15,7 @@ export function Auth0ProviderWithNavigate({ children }: Auth0ProviderWithNavigat
       domain={AUTH0_CONFIG.domain}
       clientId={AUTH0_CONFIG.clientId}
       authorizationParams={getAuth0ProviderAuthorizationParams()}
-      cacheLocation="localstorage"
+      cacheLocation="memory"
       useRefreshTokens
       onRedirectCallback={(appState?: AppState) => {
         const targetPath = appState?.returnTo || '/app';

@@ -102,3 +102,7 @@ Optional API boundary checks (paste a real access token from the browser):
 Server routes require **`AUTH0_DOMAIN`** and **`AUTH0_AUDIENCE`** (not `VITE_*` fallbacks).
 
 Manual: sign in with `@uw.edu` Google → `/app` loads → profile menu **Sign out** returns home and `/app` shows the sign-in gate.
+
+## Token storage
+
+The SPA uses `cacheLocation="memory"` (see [`src/auth/auth0-provider.tsx`](src/auth/auth0-provider.tsx)) so access and refresh tokens are not persisted in `localStorage`. Users sign in again after closing the browser tab; this reduces token theft from XSS.
