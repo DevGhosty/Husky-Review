@@ -13,12 +13,24 @@ export const AUTH0_CONFIG = {
     typeof window !== 'undefined' ? `${window.location.origin}/app` : import.meta.env.VITE_AUTH0_CALLBACK_URL || '',
 };
 
-/** Shared authorization params for Auth0Provider and login redirects */
+/** Base params for Auth0Provider (no audience — avoids hanging session checks on /app) */
 export function getAuth0ProviderAuthorizationParams() {
   return {
     redirect_uri: AUTH0_CONFIG.redirectUri,
-    audience: AUTH0_CONFIG.audience || undefined,
     scope: 'openid profile email',
+  };
+}
+
+/** Params when requesting an API access token (resume routes require audience + email claims) */
+export function getAccessTokenRequestOptions() {
+  if (!AUTH0_CONFIG.audience) {
+    return {};
+  }
+
+  return {
+    authorizationParams: {
+      audience: AUTH0_CONFIG.audience,
+    },
   };
 }
 
@@ -27,6 +39,7 @@ export function getAuth0LoginOptions(returnTo = '/app') {
     appState: { returnTo },
     authorizationParams: {
       ...getAuth0ProviderAuthorizationParams(),
+      audience: AUTH0_CONFIG.audience || undefined,
       connection: AUTH0_CONFIG.connection,
       prompt: 'select_account' as const,
     },

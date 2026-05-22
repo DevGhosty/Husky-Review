@@ -26,6 +26,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, error: auth0Error, loginWithRedirect, logout, user } = useAuth0();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [sessionCheckTimedOut, setSessionCheckTimedOut] = useState(false);
+
+  const SESSION_CHECK_TIMEOUT_MS = 12_000;
 
   const returnTo = location.pathname + location.hash;
   const callbackParams = getAuth0CallbackSearchParams(location.search);
@@ -68,6 +71,22 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     setAuthError(formatAuth0Error(auth0Error, 'Sign-in could not be completed.'));
   }, [auth0Error]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setSessionCheckTimedOut(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSessionCheckTimedOut(true);
+      setAuthError('Session check timed out. Try signing in again.');
+    }, SESSION_CHECK_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [isLoading]);
+
+  const isCheckingSession = isLoading && !sessionCheckTimedOut;
 
   async function startGoogleSignIn() {
     setIsSigningIn(true);
@@ -118,7 +137,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (isLoading || isCompletingCallback) {
+  if (isCheckingSession || isCompletingCallback) {
     return (
       <main className="grid min-h-[calc(100vh-8rem)] place-items-center px-5 py-16">
         <div className="text-center">

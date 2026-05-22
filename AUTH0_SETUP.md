@@ -111,4 +111,4 @@ Manual: sign in with `@uw.edu` Google → `/app` loads → profile menu **Sign o
 
 ## Token storage
 
-The SPA uses `cacheLocation="memory"` (see [`src/auth/auth0-provider.tsx`](src/auth/auth0-provider.tsx)) so access and refresh tokens are not persisted in `localStorage`. Users sign in again after closing the browser tab; this reduces token theft from XSS.
+The SPA uses `cacheLocation="localstorage"` with `useRefreshTokens={false}` (see [`src/auth/auth0-provider.tsx`](src/auth/auth0-provider.tsx)) so session restore stays reliable without silent refresh iframes that can hang behind CSP.

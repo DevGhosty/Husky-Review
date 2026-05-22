@@ -7,6 +7,15 @@ interface Auth0ProviderWithNavigateProps {
   children: ReactNode;
 }
 
+function shouldHandleRedirectCallback() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return params.has('code') && params.has('state');
+}
+
 export function Auth0ProviderWithNavigate({ children }: Auth0ProviderWithNavigateProps) {
   const navigate = useNavigate();
 
@@ -15,8 +24,9 @@ export function Auth0ProviderWithNavigate({ children }: Auth0ProviderWithNavigat
       domain={AUTH0_CONFIG.domain}
       clientId={AUTH0_CONFIG.clientId}
       authorizationParams={getAuth0ProviderAuthorizationParams()}
-      cacheLocation="memory"
-      useRefreshTokens
+      cacheLocation="localstorage"
+      useRefreshTokens={false}
+      skipRedirectCallback={!shouldHandleRedirectCallback()}
       onRedirectCallback={(appState?: AppState) => {
         const targetPath = appState?.returnTo || '/app';
         const hashIndex = targetPath.indexOf('#');

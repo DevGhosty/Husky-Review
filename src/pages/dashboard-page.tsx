@@ -1,4 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import { getAccessTokenRequestOptions } from '../auth/auth0-config';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -80,7 +81,7 @@ export function DashboardPage() {
     try {
       if (resumeFile) {
         setIsSubmitting(true);
-        const token = await getAccessTokenSilently();
+        const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
         await uploadResume(token, resumeFile, {
           jobPostingUrl,
           deadline,

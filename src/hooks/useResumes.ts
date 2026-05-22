@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { getAccessTokenRequestOptions } from '../auth/auth0-config';
 import { deleteResume as deleteResumeRequest, fetchUserResumes, type ResumeRecord } from '../auth/supabase-client';
 
 export function useResumes() {
@@ -24,7 +25,7 @@ export function useResumes() {
         setLoading(true);
         setError(null);
 
-        const token = await getAccessTokenSilently();
+        const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
 
         const data = await fetchUserResumes(token);
         setResumes(data);
@@ -40,7 +41,7 @@ export function useResumes() {
 
   const deleteResume = async (id: string) => {
     try {
-      const token = await getAccessTokenSilently();
+      const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
 
       await deleteResumeRequest(token, id);
       setResumes((current) => current.filter((r) => r.id !== id));
