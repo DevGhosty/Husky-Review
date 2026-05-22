@@ -54,19 +54,9 @@ export const UWB_MAJORS = [
   'Other',
 ] as const;
 
-export type UwbMajor = (typeof UWB_MAJORS)[number];
-
 const activityInterestLabels = Object.fromEntries(
   ACTIVITY_INTEREST_OPTIONS.map((option) => [option.id, option.label]),
 ) as Record<ActivityType, string>;
-
-export function getActivityInterestLabel(id: ActivityType): string {
-  return activityInterestLabels[id];
-}
-
-export function getMajorLabel(major: string): string {
-  return major.trim() || 'Undeclared';
-}
 
 export function isActivityType(value: unknown): value is ActivityType {
   return typeof value === 'string' && value in activityInterestLabels;

@@ -21,14 +21,6 @@ export function initTheme(): void {
   }
 }
 
-export function getStoredTheme(): 'light' | 'dark' | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  const v = localStorage.getItem(STORAGE_KEY);
-  return v === 'dark' || v === 'light' ? v : null;
-}
-
 export function setTheme(mode: 'light' | 'dark'): void {
   const root = document.documentElement;
   root.classList.toggle('dark', mode === 'dark');

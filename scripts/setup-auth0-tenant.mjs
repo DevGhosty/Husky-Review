@@ -130,7 +130,7 @@ async function updateSpaClient(token) {
       web_origins: webOrigins,
       allowed_origins: webOrigins,
       oidc_conformant: true,
-      grant_types: ['authorization_code', 'refresh_token', 'implicit'],
+      grant_types: ['authorization_code', 'refresh_token'],
     }),
   });
 

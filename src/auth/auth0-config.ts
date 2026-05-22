@@ -171,12 +171,3 @@ export const SUPABASE_CONFIG = {
   anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
 };
 
-/**
- * API routes (same-origin proxy)
- */
-export const API_ROUTES = {
-  token: '/api/auth/token',
-  resumeList: '/api/resumes',
-  resumeDetail: (id: string) => `/api/resumes/${id}`,
-  resumeUpload: '/api/resumes/upload',
-};

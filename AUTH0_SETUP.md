@@ -2,15 +2,15 @@
 
 Code changes for Google-only `@uw.edu` login and logout are in the app. Finish tenant + Vercel configuration with the steps below.
 
-## Quick setup (Auth0 CLI — already logged in on this machine)
+## Quick setup (Auth0 CLI — day to day)
 
 ```bash
 npm run auth0:setup:cli
 ```
 
-This updates callback/logout URLs, ensures the app is a **SPA** (not Regular Web Application), and verifies the post-login Action.
+This updates callback/logout URLs, ensures the app is a **SPA** (not Regular Web Application), deploys the post-login Action, and patches public-client token settings.
 
-## Option A — Management API (CI / non-interactive)
+## Option A — Management API (CI / initial tenant bind)
 
 1. In [Auth0 Dashboard](https://manage.auth0.com/) → **Applications** → **Create Application** → **Machine to Machine**.
 2. Authorize it for the **Auth0 Management API** with scopes:

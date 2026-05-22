@@ -15,6 +15,7 @@ build/
 
 # Local tooling
 .tools/
+.config/
 
 # Logs
 logs/

@@ -14,16 +14,6 @@ function requireSupabaseConfig() {
   return SUPABASE_CONFIG;
 }
 
-export const supabase = hasSupabaseConfig()
-  ? createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    })
-  : null;
-
 export function createAuth0SupabaseClient(getAuth0IdToken: () => Promise<string | null>): SupabaseClient {
   const config = requireSupabaseConfig();
   return createClient(config.url, config.anonKey, {
@@ -130,23 +120,6 @@ export async function uploadResume(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || 'Failed to upload resume');
-  }
-
-  return response.json();
-}
-
-export async function fetchResumeById(accessToken: string, resumeId: string): Promise<ResumeRecord> {
-  const response = await fetch(`/api/resumes/${resumeId}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch resume');
   }
 
   return response.json();
