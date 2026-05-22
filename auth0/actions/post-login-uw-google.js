@@ -15,4 +15,6 @@ exports.onExecutePostLogin = async (event, api) => {
   }
 
   api.idToken.setCustomClaim('role', 'authenticated');
+  api.accessToken.setCustomClaim('role', 'authenticated');
+  api.accessToken.setCustomClaim('email', email);
 };

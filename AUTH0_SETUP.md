@@ -70,6 +70,19 @@ Redeploy after changes:
 npm run deploy:prod
 ```
 
+## Access token claims (API enforcement)
+
+The post-login Action sets on the **access token**:
+
+- `email` — used by [`api/auth0-verify.ts`](api/auth0-verify.ts) to require `@uw.edu` on every API call
+- `role` — `authenticated` for Supabase third-party auth
+
+Redeploy the Action after changing `auth0/actions/post-login-uw-google.js`:
+
+```bash
+npm run auth0:setup:cli
+```
+
 ## Verify
 
 ```bash
@@ -78,5 +91,14 @@ npm run dev:vercel
 # second terminal:
 $env:API_BASE_URL='http://localhost:3000'; npm run test:auth
 ```
+
+Optional API boundary checks (paste a real access token from the browser):
+
+| Env var | Expect |
+|---------|--------|
+| `AUTH_TEST_TOKEN` | `GET /api/resumes` → 200 |
+| `AUTH_TEST_TOKEN_NON_UW` | `GET /api/resumes` → 403 |
+
+Server routes require **`AUTH0_DOMAIN`** and **`AUTH0_AUDIENCE`** (not `VITE_*` fallbacks).
 
 Manual: sign in with `@uw.edu` Google → `/app` loads → profile menu **Sign out** returns home and `/app` shows the sign-in gate.
