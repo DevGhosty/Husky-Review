@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookmarkCheck, CalendarDays, FileText, Sparkles } from 'lucide-react';
+import { ArrowRight, BookmarkCheck, CalendarDays, FileText, Sparkles, Trash2 } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Surface } from '../components/layout/surface';
 import { formatDeadline } from '../lib/utils';
 import { defaultDeadline, matchScore, recommendations } from '../data/mockData';
 import { useReview } from '../context/review-context';
+import { useResumes } from '../hooks/useResumes';
+import { useState } from 'react';
 
-const savedReviews = [
+
+const mockSavedReviews = [
   {
     id: 'healthcare-admin-internship',
     title: 'Healthcare Admin Internship Review',
@@ -36,6 +39,19 @@ const savedReviews = [
 
 export function SavedReviewsPage() {
   const { status, selectedIds, showSampleReview } = useReview();
+  const { resumes, loading: resumesLoading, error: resumesError, deleteResume } = useResumes();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteResume = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await deleteResume(id);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const savedReviews = mockSavedReviews;
 
   return (
     <main>
@@ -48,10 +64,10 @@ export function SavedReviewsPage() {
                 Saved Reviews
               </Badge>
               <h1 className="mt-4 max-w-3xl type-page-title type-page-title--brand">
-                Review history for planning the next application.
+                Mock review history and saved resumes.
               </h1>
               <p className="mt-5 max-w-2xl type-lead">
-                These saved reviews are mocked navigation examples. No browser storage, backend persistence, or real resume analysis is implemented in this frontend version.
+                Uploaded resumes are stored in your account-backed Supabase path. Review cards remain mocked until the analysis pipeline is connected.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:w-[25rem]">
@@ -131,10 +147,73 @@ export function SavedReviewsPage() {
 
         <Surface variant="stroke" className="mt-6 rounded-[1.6rem] p-5 text-center">
           <p className="text-sm font-semibold leading-6 text-muted-foreground">
-            Saved review data is illustrative. A future backend can replace these cards with authenticated review history.
+            {recommendations.length} mocked recommendation records remain available for preview.
           </p>
-          <p className="mt-2 text-sm font-black text-primary">{recommendations.length} mocked recommendation records available for preview.</p>
         </Surface>
+      </section>
+
+      {/* Saved Resumes Section */}
+      <section className="mx-auto max-w-[86rem] px-5 pb-16 sm:px-8 lg:px-12">
+        <h2 className="text-2xl font-bold text-foreground mb-4">Your Saved Resumes</h2>
+
+        {resumesLoading && (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <p className="mt-2 text-muted-foreground">Loading resumes...</p>
+          </div>
+        )}
+
+        {resumesError && (
+          <Surface variant="stroke" className="rounded-[1.6rem] p-5 text-center border border-red-200 bg-red-50">
+            <p className="text-sm font-semibold text-red-600">{resumesError}</p>
+          </Surface>
+        )}
+
+        {!resumesLoading && resumes.length === 0 && !resumesError && (
+          <Surface variant="stroke" className="rounded-[1.6rem] p-8 text-center">
+            <p className="text-sm font-semibold leading-6 text-muted-foreground">
+              No saved resumes yet. Upload your first resume to get started.
+            </p>
+          </Surface>
+        )}
+
+        {!resumesLoading && resumes.length > 0 && (
+          <div className="grid gap-5 lg:grid-cols-3">
+            {resumes.map((resume) => (
+              <Surface key={resume.id} variant="card" className="relative overflow-hidden rounded-[1.8rem] p-5 transition motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-premium">
+                <div className="absolute -right-14 -top-14 size-32 rounded-full bg-husky-gold/20 blur-2xl" aria-hidden="true" />
+                <div className="relative flex items-start justify-between gap-4">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                    <FileText className="size-6" aria-hidden="true" />
+                  </span>
+                  <Badge tone="green">Account file</Badge>
+                </div>
+                <h3 className="relative mt-5 text-xl font-black text-foreground truncate">{resume.filename}</h3>
+                <p className="relative mt-2 text-sm leading-6 text-muted-foreground">
+                  {new Date(resume.uploaded_at).toLocaleDateString()}
+                </p>
+
+                <div className="relative mt-5 flex gap-2">
+                  <Button asChild variant="secondary" className="flex-1">
+                    <a href={resume.download_url || resume.file_url} target="_blank" rel="noopener noreferrer">
+                      Open
+                      <ArrowRight className="size-4" aria-hidden="true" />
+                    </a>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleDeleteResume(resume.id)}
+                    disabled={deletingId === resume.id}
+                    className="px-3"
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </Button>
+                </div>
+              </Surface>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );

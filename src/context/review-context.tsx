@@ -13,11 +13,13 @@ import type { ReviewStatus } from '../types/analysis';
 interface ReviewContextValue {
   status: ReviewStatus;
   loadingStepIndex: number;
+  resumeFile: File | null;
   fileName: string;
   jobDescription: string;
   jobPostingUrl: string;
   deadline: string;
   selectedIds: string[];
+  setResumeFile: (file: File | null) => void;
   setFileName: (fileName: string) => void;
   setJobDescription: (description: string) => void;
   setJobPostingUrl: (url: string) => void;
@@ -25,6 +27,7 @@ interface ReviewContextValue {
   runMockAnalysis: () => void;
   showSampleReview: () => void;
   toggleRecommendation: (id: string) => void;
+  resetReview: () => void;
 }
 
 const ReviewContext = createContext<ReviewContextValue | null>(null);
@@ -36,6 +39,7 @@ interface ReviewProviderProps {
 export function ReviewProvider({ children }: ReviewProviderProps) {
   const [status, setStatus] = useState<ReviewStatus>('idle');
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [resumeFile, setResumeFileValue] = useState<File | null>(null);
   const [fileName, setFileNameValue] = useState('');
   const [jobDescription, setJobDescriptionValue] = useState('');
   const [jobPostingUrl, setJobPostingUrlValue] = useState('');
@@ -73,7 +77,14 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
   }
 
   function setFileName(fileNameValue: string) {
+    setResumeFileValue(null);
     setFileNameValue(fileNameValue);
+    clearResultState();
+  }
+
+  function setResumeFile(file: File | null) {
+    setResumeFileValue(file);
+    setFileNameValue(file?.name || '');
     clearResultState();
   }
 
@@ -112,15 +123,28 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
     );
   }
 
+  function resetReview() {
+    setStatus('idle');
+    setLoadingStepIndex(0);
+    setResumeFileValue(null);
+    setFileNameValue('');
+    setJobDescriptionValue('');
+    setJobPostingUrlValue('');
+    setDeadlineValue(defaultDeadline);
+    setSelectedIds([]);
+  }
+
   const value = useMemo(
     () => ({
       status,
       loadingStepIndex,
+      resumeFile,
       fileName,
       jobDescription,
       jobPostingUrl,
       deadline,
       selectedIds,
+      setResumeFile,
       setFileName,
       setJobDescription,
       setJobPostingUrl,
@@ -128,8 +152,9 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
       runMockAnalysis,
       showSampleReview,
       toggleRecommendation,
+      resetReview,
     }),
-    [deadline, fileName, jobDescription, jobPostingUrl, loadingStepIndex, selectedIds, status],
+    [deadline, fileName, jobDescription, jobPostingUrl, loadingStepIndex, resumeFile, selectedIds, status],
   );
 
   return <ReviewContext.Provider value={value}>{children}</ReviewContext.Provider>;

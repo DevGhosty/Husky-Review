@@ -1,4 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { getAccessTokenRequestOptions } from '../auth/auth0-config';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
@@ -17,12 +19,13 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Surface } from '../components/layout/surface';
+import { uploadResume } from '../auth/supabase-client';
 import { useReview } from '../context/review-context';
 import { hasJobPostingInput, jobPostingInputProgress } from '../lib/utils';
 
 const activityItems = [
   { label: 'Resume workspace', value: 'Ready', detail: 'Sample upload path available', icon: FileText },
-  { label: 'Privacy status', value: 'Session', detail: 'One-hour expiry language visible', icon: LockKeyhole },
+  { label: 'Privacy status', value: 'Session', detail: 'Resumes auto-delete within one hour', icon: LockKeyhole },
   { label: 'Next deadline', value: 'May 31', detail: 'Mock application planning date', icon: CalendarDays },
 ];
 
@@ -30,14 +33,19 @@ export function DashboardPage() {
   const workflowRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { getAccessTokenSilently } = useAuth0();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     status,
     loadingStepIndex,
+    resumeFile,
     fileName,
     jobDescription,
     jobPostingUrl,
     deadline,
     selectedIds,
+    setResumeFile,
     setFileName,
     setJobDescription,
     setJobPostingUrl,
@@ -65,6 +73,28 @@ export function DashboardPage() {
   function viewSampleRoadmap() {
     showSampleReview();
     navigate('/app/roadmap');
+  }
+
+  async function analyzeReview() {
+    setSubmitError(null);
+
+    try {
+      if (resumeFile) {
+        setIsSubmitting(true);
+        const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+        await uploadResume(token, resumeFile, {
+          jobPostingUrl,
+          deadline,
+          last_updated: new Date().toISOString(),
+        });
+      }
+
+      runMockAnalysis();
+    } catch (error) {
+      setSubmitError((error as Error).message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -157,8 +187,8 @@ export function DashboardPage() {
               </Surface>
               <Surface variant="card" className="rounded-[1.6rem] p-5 md:col-span-2">
                 <BellRing className="size-7 text-primary" aria-hidden="true" />
-                <h2 className="mt-4 text-lg font-semibold text-foreground">Google sign-in pending</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">Auth is represented in the UI only; no provider is configured.</p>
+                <h2 className="mt-4 text-lg font-semibold text-foreground">Authenticated workspace</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">Resume uploads are saved to the account-backed storage path when you run an analysis.</p>
               </Surface>
             </div>
           </div>
@@ -172,11 +202,14 @@ export function DashboardPage() {
           jobDescription={jobDescription}
           jobPostingUrl={jobPostingUrl}
           deadline={deadline}
+          isSubmitting={isSubmitting}
+          submitError={submitError}
+          onResumeFileChange={setResumeFile}
           onFileNameChange={setFileName}
           onJobDescriptionChange={setJobDescription}
           onJobPostingUrlChange={setJobPostingUrl}
           onDeadlineChange={setDeadline}
-          onAnalyze={runMockAnalysis}
+          onAnalyze={analyzeReview}
         />
       </div>
 

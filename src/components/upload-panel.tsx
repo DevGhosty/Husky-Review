@@ -17,6 +17,9 @@ interface UploadPanelProps {
   jobDescription: string;
   jobPostingUrl: string;
   deadline: string;
+  isSubmitting?: boolean;
+  submitError?: string | null;
+  onResumeFileChange: (file: File | null) => void;
   onFileNameChange: (fileName: string) => void;
   onJobDescriptionChange: (description: string) => void;
   onJobPostingUrlChange: (url: string) => void;
@@ -32,13 +35,16 @@ export function UploadPanel({
   jobDescription,
   jobPostingUrl,
   deadline,
+  isSubmitting = false,
+  submitError,
+  onResumeFileChange,
   onFileNameChange,
   onJobDescriptionChange,
   onJobPostingUrlChange,
   onDeadlineChange,
   onAnalyze,
 }: UploadPanelProps) {
-  const isLoading = status === 'loading';
+  const isLoading = status === 'loading' || isSubmitting;
   const hasPosting = hasJobPostingInput(jobDescription, jobPostingUrl);
   const canAnalyze = fileName.length > 0 && hasPosting && !isLoading;
   const postingProgress = jobPostingInputProgress(jobDescription, jobPostingUrl);
@@ -51,7 +57,7 @@ export function UploadPanel({
     event.preventDefault();
     const droppedFile = event.dataTransfer.files.item(0);
     if (droppedFile) {
-      onFileNameChange(droppedFile.name);
+      onResumeFileChange(droppedFile);
     }
   }
 
@@ -113,7 +119,7 @@ export function UploadPanel({
                   onChange={(event) => {
                     const selectedFile = event.target.files?.item(0);
                     if (selectedFile) {
-                      onFileNameChange(selectedFile.name);
+                      onResumeFileChange(selectedFile);
                     }
                   }}
                 />
@@ -121,7 +127,7 @@ export function UploadPanel({
                   {fileName ? <FileCheck2 className="size-7" aria-hidden="true" /> : <FileUp className="size-7" aria-hidden="true" />}
                 </span>
                 <span className="mt-4 text-base font-black text-foreground">{fileName || 'Drop your resume here'}</span>
-                <span className="mt-1 text-sm font-medium text-muted-foreground">PDF, DOC, or DOCX. Mock upload only.</span>
+                <span className="mt-1 text-sm font-medium text-muted-foreground">PDF, DOC, or DOCX. Stored when you analyze.</span>
               </Label>
               <Button variant="secondary" className="mt-3 h-11 w-full" onClick={() => onFileNameChange('sample-uwb-resume.pdf')}>
                 Use sample resume
@@ -217,7 +223,7 @@ export function UploadPanel({
                 {isLoading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                    Analyzing
+                    {isSubmitting ? 'Saving' : 'Analyzing'}
                   </>
                 ) : (
                   <>
@@ -228,9 +234,15 @@ export function UploadPanel({
               </Button>
             </div>
 
+            {submitError ? (
+              <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold leading-5 text-red-700 dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200">
+                {submitError}
+              </p>
+            ) : null}
+
             <p className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 p-3 text-xs font-semibold leading-5 text-muted-foreground">
               <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-              Resume/session data is designed to be deleted after one hour.
+              Uploaded resumes are automatically deleted within one hour.
             </p>
           </div>
         </div>

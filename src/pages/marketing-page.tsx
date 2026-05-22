@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { ClipboardCheck, FileSearch, Map } from 'lucide-react';
 import { HeroSection } from '../components/hero-section';
 import { TrustSection } from '../components/trust-section';
@@ -23,15 +22,9 @@ const workflow = [
 ];
 
 export function MarketingPage() {
-  const navigate = useNavigate();
-
-  function startPreview() {
-    navigate('/login');
-  }
-
   return (
     <main>
-      <HeroSection onStartReview={startPreview} />
+      <HeroSection />
 
       <section id="how-it-works" className="mx-auto max-w-[86rem] px-5 py-12 sm:px-8 lg:px-12">
         <div className="grid gap-5 lg:grid-cols-[0.72fr_1.28fr] lg:items-stretch">

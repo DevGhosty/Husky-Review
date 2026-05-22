@@ -92,7 +92,7 @@ export function clearProfileSettings(): ProfileSettings {
   return defaultProfileSettings;
 }
 
-export const profileSectionIds = {
+const profileSectionIds = {
   overview: 'overview',
   preferences: 'preferences',
   notifications: 'notifications',

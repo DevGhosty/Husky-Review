@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  createAuth0SupabaseClient,
+  hasSupabaseConfig,
+  profileRecordToSettings,
+  settingsToProfileRecord,
+  type ProfileRecord,
+} from '../auth/supabase-client';
 import {
   clearProfileSettings,
   defaultProfileSettings,
@@ -18,6 +26,8 @@ interface ProfileSettingsContextValue {
   toggleActivityInterest: (interest: ActivityType) => void;
   setGraduationYear: (graduationYear: string) => void;
   resetSettings: () => void;
+  syncStatus: 'local' | 'loading' | 'synced' | 'error';
+  syncError: string | null;
 }
 
 type BooleanPrefKey =
@@ -36,11 +46,121 @@ interface ProfileSettingsProviderProps {
 }
 
 export function ProfileSettingsProvider({ children }: ProfileSettingsProviderProps) {
+  const { getIdTokenClaims, isAuthenticated, isLoading, user } = useAuth0();
   const [settings, setSettings] = useState<ProfileSettings>(() => loadProfileSettings());
+  const [remoteReady, setRemoteReady] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<ProfileSettingsContextValue['syncStatus']>('local');
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const lastRemoteSettingsRef = useRef('');
+
+  const supabase = useMemo(() => {
+    if (!hasSupabaseConfig()) {
+      return null;
+    }
+
+    return createAuth0SupabaseClient(async () => {
+      const claims = await getIdTokenClaims();
+      return claims?.__raw ?? null;
+    });
+  }, [getIdTokenClaims]);
 
   useEffect(() => {
     saveProfileSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    const userId = user?.sub;
+    const client = supabase;
+
+    if (!isAuthenticated || !userId || !client) {
+      setRemoteReady(false);
+      setSyncStatus('local');
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadRemoteProfile(activeClient: NonNullable<typeof client>, activeUserId: string) {
+      setSyncStatus('loading');
+      setSyncError(null);
+
+      const { data, error } = await activeClient
+        .from('profiles')
+        .select('*')
+        .eq('auth0_user_id', activeUserId)
+        .maybeSingle<ProfileRecord>();
+
+      if (cancelled) {
+        return;
+      }
+
+      if (error) {
+        setSyncStatus('error');
+        setSyncError(error.message);
+        setRemoteReady(false);
+        return;
+      }
+
+      if (data) {
+        const remoteSettings = profileRecordToSettings(data);
+        lastRemoteSettingsRef.current = JSON.stringify(remoteSettings);
+        setSettings(remoteSettings);
+      } else {
+        lastRemoteSettingsRef.current = '';
+      }
+
+      setRemoteReady(true);
+      setSyncStatus('synced');
+    }
+
+    void loadRemoteProfile(client, userId);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, isLoading, supabase, user?.sub]);
+
+  useEffect(() => {
+    const userId = user?.sub;
+    const client = supabase;
+
+    if (!isAuthenticated || !userId || !client || !remoteReady) {
+      return;
+    }
+
+    const serialized = JSON.stringify(settings);
+    if (serialized === lastRemoteSettingsRef.current) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      async function saveRemoteProfile(activeClient: NonNullable<typeof client>, activeUserId: string) {
+        setSyncStatus('loading');
+        setSyncError(null);
+
+        const { error } = await activeClient
+          .from('profiles')
+          .upsert(settingsToProfileRecord(activeUserId, settings), { onConflict: 'auth0_user_id' });
+
+        if (error) {
+          setSyncStatus('error');
+          setSyncError(error.message);
+          return;
+        }
+
+        lastRemoteSettingsRef.current = serialized;
+        setSyncStatus('synced');
+      }
+
+      void saveRemoteProfile(client, userId);
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [isAuthenticated, remoteReady, settings, supabase, user?.sub]);
 
   const value = useMemo<ProfileSettingsContextValue>(
     () => ({
@@ -72,8 +192,10 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       resetSettings: () => {
         setSettings(clearProfileSettings());
       },
+      syncStatus,
+      syncError,
     }),
-    [settings],
+    [settings, syncError, syncStatus],
   );
 
   return <ProfileSettingsContext.Provider value={value}>{children}</ProfileSettingsContext.Provider>;

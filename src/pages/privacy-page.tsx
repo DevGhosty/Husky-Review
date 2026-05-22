@@ -4,8 +4,8 @@ import { Surface } from '../components/layout/surface';
 
 const privacyPrinciples = [
   {
-    title: 'Session-only resume review',
-    detail: 'Resume and job posting inputs are represented as session data in this frontend prototype.',
+    title: 'Private resume storage',
+    detail: 'Uploaded resumes are stored in a private Supabase bucket and scoped to the signed-in Auth0 user.',
     icon: Clock3,
   },
   {
@@ -14,19 +14,19 @@ const privacyPrinciples = [
     icon: LockKeyhole,
   },
   {
-    title: 'No hidden profile storage',
-    detail: 'Saved preferences in this mock UI are local product state, not authenticated student records.',
+    title: 'Account-scoped profile settings',
+    detail: 'Profile preferences sync to Supabase after sign-in, with local browser settings used only as a fallback.',
     icon: EyeOff,
   },
 ];
 
 const privacyList = [
-  { label: 'Resume files', value: 'Mock upload only', icon: FileWarning },
+  { label: 'Resume files', value: 'Private Supabase object paths with short-lived signed links', icon: FileWarning },
   { label: 'Job posting URL', value: 'Used to demonstrate matching workflow', icon: ShieldCheck },
-  { label: 'Generated analysis', value: 'Stored only in shared frontend state', icon: Database },
-  { label: 'Deletion policy', value: 'Designed around one-hour session expiry language', icon: Trash2 },
-  { label: 'External services', value: 'No live AI, storage, or backend APIs are called here', icon: ServerOff },
-  { label: 'Future account data', value: 'Should use server-side access controls before launch', icon: CheckCircle2 },
+  { label: 'Generated analysis', value: 'Still stored only in shared frontend state', icon: Database },
+  { label: 'Deletion policy', value: 'Resumes purged automatically within one hour (scheduled cleanup)', icon: Trash2 },
+  { label: 'External services', value: 'Auth0 and Supabase are used for account access and persistence', icon: ServerOff },
+  { label: 'Account data', value: 'Server APIs verify Auth0 tokens before touching Supabase service-role operations', icon: CheckCircle2 },
 ];
 
 export function PrivacyPage() {
@@ -45,7 +45,7 @@ export function PrivacyPage() {
                 Clear handling for every resume signal.
               </h1>
               <p className="mt-5 max-w-xl text-base font-medium leading-7 text-white/70">
-                This tab gathers the privacy-related product boundaries in one place, matching the dashboard promise that files stay private and scoped to the current review session.
+                This tab gathers the privacy-related product boundaries in one place, matching the dashboard promise that files stay private and scoped to the signed-in account.
               </p>
             </div>
 
@@ -78,7 +78,7 @@ export function PrivacyPage() {
                 </p>
               </div>
               <Badge tone="green" className="w-fit rounded-full px-4 py-2">
-                Frontend mock
+                  Auth connected
               </Badge>
             </div>
 
