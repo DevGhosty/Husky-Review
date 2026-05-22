@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { getAuth0LoginOptions } from '../auth/auth0-config';
+import { AlertCircle, X } from 'lucide-react';
+import { consumeAuthNotice, getAuth0LoginOptions } from '../auth/auth0-config';
 import { BrandLockup } from './brand-lockup';
 import { ThemeToggle } from './theme-toggle';
 import { Button } from './ui/button';
@@ -17,6 +18,14 @@ const hashLinkClass =
 export function MarketingShell({ children }: MarketingShellProps) {
   const location = useLocation();
   const { loginWithRedirect } = useAuth0();
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    const notice = consumeAuthNotice();
+    if (notice) {
+      setAuthNotice(notice);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const id = location.hash.replace(/^#/, '');
@@ -65,6 +74,23 @@ export function MarketingShell({ children }: MarketingShellProps) {
             </div>
           </nav>
         </header>
+        {authNotice ? (
+          <div
+            className="mx-4 mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900 shadow-soft dark:border-amber-400/35 dark:bg-amber-950/60 dark:text-amber-50 sm:mx-6"
+            role="alert"
+          >
+            <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+            <p className="flex-1">{authNotice}</p>
+            <button
+              type="button"
+              onClick={() => setAuthNotice(null)}
+              className="rounded-lg p-1 text-amber-800 transition-colors hover:bg-amber-100/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-amber-100 dark:hover:bg-amber-900/50"
+              aria-label="Dismiss sign-in message"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
         {children}
         <footer className="border-t border-border bg-card/85 px-5 py-10 backdrop-blur-sm sm:px-8 lg:px-12">
           <div className="mx-auto grid max-w-[86rem] gap-4 text-sm font-semibold leading-6 text-muted-foreground md:grid-cols-[1fr_auto] md:items-center">

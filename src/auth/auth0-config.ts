@@ -33,15 +33,24 @@ export function getAuth0LoginOptions(returnTo = '/app') {
   };
 }
 
-/** Auth0 redirects back with ?code=… or ?error=… while the SPA finishes the exchange */
+const AUTH_NOTICE_STORAGE_KEY = 'husky_review_auth_notice';
+
+/** Auth0 redirects back with ?code=… on success or ?error=… when login is denied */
 export function getAuth0CallbackSearchParams(search = typeof window !== 'undefined' ? window.location.search : '') {
   const params = new URLSearchParams(search);
+  const error = params.get('error');
   return {
-    hasAuthCallback: params.has('code') || params.has('state'),
-    error: params.get('error'),
+    hasAuthCallback: params.has('code'),
+    hasAuthError: Boolean(error),
+    error,
     errorDescription: params.get('error_description'),
   };
 }
+
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  uw_email_required: 'Use a @uw.edu Google account to access Husky-Review.',
+  google_required: 'Use Google sign-in to access Husky-Review.',
+};
 
 export function formatAuth0CallbackError(error: string | null, errorDescription: string | null): string | null {
   if (!error) {
@@ -49,7 +58,13 @@ export function formatAuth0CallbackError(error: string | null, errorDescription:
   }
 
   if (errorDescription) {
-    return errorDescription;
+    const mapped = AUTH_ERROR_MESSAGES[errorDescription];
+    if (mapped) {
+      return mapped;
+    }
+    if (!errorDescription.includes('_')) {
+      return errorDescription;
+    }
   }
 
   if (error === 'access_denied') {
@@ -57,6 +72,24 @@ export function formatAuth0CallbackError(error: string | null, errorDescription:
   }
 
   return `Sign-in failed (${error}).`;
+}
+
+export function stashAuthNotice(message: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  sessionStorage.setItem(AUTH_NOTICE_STORAGE_KEY, message);
+}
+
+export function consumeAuthNotice(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const message = sessionStorage.getItem(AUTH_NOTICE_STORAGE_KEY);
+  if (message) {
+    sessionStorage.removeItem(AUTH_NOTICE_STORAGE_KEY);
+  }
+  return message;
 }
 
 /** Origins that must appear in Auth0 Allowed Logout URLs (exact match for returnTo) */

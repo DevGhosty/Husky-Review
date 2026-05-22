@@ -2,6 +2,28 @@
 $ErrorActionPreference = "Stop"
 # Auth0 CLI writes normal output to stderr; do not treat it as terminating errors.
 $prevEap = $ErrorActionPreference
+function Invoke-Auth0Cli {
+  param([Parameter(Mandatory = $true)][string[]]$Auth0Args)
+  $ErrorActionPreference = "Continue"
+  $output = & $Auth0 @Auth0Args 2>&1 | ForEach-Object { "$_" }
+  $script:LastAuth0ExitCode = $LASTEXITCODE
+  $ErrorActionPreference = $prevEap
+  return , $output
+}
+function Get-Auth0Json {
+  param([Parameter(Mandatory = $true)][string[]]$Auth0Args)
+  $lines = Invoke-Auth0Cli -Auth0Args $Auth0Args
+  if ($script:LastAuth0ExitCode -ne 0) {
+    throw "Auth0 CLI failed ($($Auth0Args -join ' ')), exit $script:LastAuth0ExitCode"
+  }
+  $text = ($lines | Out-String).Trim()
+  $start = $text.IndexOf('[')
+  if ($start -lt 0) { $start = $text.IndexOf('{') }
+  if ($start -lt 0) {
+    throw "Auth0 CLI returned no JSON for: $($Auth0Args -join ' ')"
+  }
+  return $text.Substring($start) | ConvertFrom-Json
+}
 $Root = Split-Path -Parent $PSScriptRoot
 $Auth0 = Join-Path $Root ".tools\auth0-cli\auth0.exe"
 
@@ -36,11 +58,9 @@ $origins = "$local,$production,https://*.vercel.app"
 $logout = "$local,$production,https://*.vercel.app"
 
 Write-Host "Checking Auth0 CLI session..."
-$ErrorActionPreference = "Continue"
-$tenantList = & $Auth0 tenants list 2>&1
-$ErrorActionPreference = $prevEap
+$tenantList = Invoke-Auth0Cli -Auth0Args @("tenants", "list")
 $tenantList | Out-String | Write-Host
-if ($LASTEXITCODE -ne 0) {
+if ($script:LastAuth0ExitCode -ne 0) {
   Write-Host ""
   Write-Host "Not logged in. Run:"
   Write-Host "  .\.tools\auth0-cli\auth0.exe login"
@@ -49,40 +69,57 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Updating SPA client $clientId ..."
-& $Auth0 apps update $clientId `
-  --callbacks $callbacks `
-  --logout-urls $logout `
-  --origins $origins `
-  --web-origins $origins
-
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Invoke-Auth0Cli -Auth0Args @(
+  "apps", "update", $clientId,
+  "--callbacks", $callbacks,
+  "--logout-urls", $logout,
+  "--origins", $origins,
+  "--web-origins", $origins
+) | Out-Null
+if ($script:LastAuth0ExitCode -ne 0) { exit $script:LastAuth0ExitCode }
 
 $actionPath = Join-Path $Root "auth0\actions\post-login-uw-google.js"
-$actionName = "Husky-Review UW Google Post-Login"
+$actionNames = @("Google + @uw.edu", "Husky-Review UW Google Post-Login")
 
 Write-Host "Ensuring post-login Action..."
-$existing = & $Auth0 actions list --json 2>$null | ConvertFrom-Json
-$action = $existing | Where-Object { $_.name -eq $actionName } | Select-Object -First 1
+$existing = Get-Auth0Json -Auth0Args @("actions", "list", "--json")
+$action = $existing | Where-Object { $actionNames -contains $_.name } | Select-Object -First 1
+$actionName = if ($action) { $action.name } else { $actionNames[0] }
+$actionCode = Get-Content $actionPath -Raw
 
 if (-not $action) {
-  & $Auth0 actions create `
-    --name $actionName `
-    --trigger post-login `
-    --code "$(Get-Content $actionPath -Raw)" `
-    --runtime node22 `
-    --deploy `
-    --yes
+  Invoke-Auth0Cli -Auth0Args @(
+    "--no-input", "actions", "create",
+    "--name", $actionName,
+    "--trigger", "post-login",
+    "--code", $actionCode,
+    "--runtime", "node22"
+  ) | Out-Host
+  if ($script:LastAuth0ExitCode -ne 0) { exit $script:LastAuth0ExitCode }
+  $existing = Get-Auth0Json -Auth0Args @("actions", "list", "--json")
+  $action = $existing | Where-Object { $actionNames -contains $_.name } | Select-Object -First 1
+  if (-not $action) {
+    Write-Error "Post-login Action was created but could not be found in actions list."
+  }
 } else {
-  & $Auth0 actions update $action.id `
-    --name $actionName `
-    --code "$(Get-Content $actionPath -Raw)" `
-    --deploy `
-    --yes
+  Invoke-Auth0Cli -Auth0Args @(
+    "--no-input", "actions", "update", $action.id,
+    "--name", $actionName,
+    "--code", $actionCode,
+    "--runtime", "node22",
+    "--force"
+  ) | Out-Host
+  if ($script:LastAuth0ExitCode -ne 0) { exit $script:LastAuth0ExitCode }
 }
+
+Invoke-Auth0Cli -Auth0Args @("--no-input", "actions", "deploy", $action.id) | Out-Host
+if ($script:LastAuth0ExitCode -ne 0) { exit $script:LastAuth0ExitCode }
 
 Write-Host "Setting SPA token endpoint auth to none (public client)..."
 $patchFile = Join-Path $Root "scripts\auth0-spa-patch.json"
-Get-Content $patchFile -Raw | & $Auth0 api patch "clients/$clientId" | Out-Null
+$ErrorActionPreference = "Continue"
+Get-Content $patchFile -Raw | & $Auth0 api patch "clients/$clientId" 2>&1 | Out-Null
+$ErrorActionPreference = $prevEap
 if ($LASTEXITCODE -ne 0) {
   Write-Error "Failed to patch SPA token settings. See scripts/auth0-spa-patch.json"
 }
