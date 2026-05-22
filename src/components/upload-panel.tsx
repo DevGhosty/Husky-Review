@@ -242,7 +242,7 @@ export function UploadPanel({
 
             <p className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 p-3 text-xs font-semibold leading-5 text-muted-foreground">
               <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-              Resume/session data is designed to be deleted after one hour.
+              Uploaded resumes are automatically deleted within one hour.
             </p>
           </div>
         </div>

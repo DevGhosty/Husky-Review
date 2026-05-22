@@ -24,7 +24,7 @@ const privacyList = [
   { label: 'Resume files', value: 'Private Supabase object paths with short-lived signed links', icon: FileWarning },
   { label: 'Job posting URL', value: 'Used to demonstrate matching workflow', icon: ShieldCheck },
   { label: 'Generated analysis', value: 'Still stored only in shared frontend state', icon: Database },
-  { label: 'Deletion policy', value: 'Designed around one-hour session expiry language', icon: Trash2 },
+  { label: 'Deletion policy', value: 'Resumes purged automatically within one hour (scheduled cleanup)', icon: Trash2 },
   { label: 'External services', value: 'Auth0 and Supabase are used for account access and persistence', icon: ServerOff },
   { label: 'Account data', value: 'Server APIs verify Auth0 tokens before touching Supabase service-role operations', icon: CheckCircle2 },
 ];

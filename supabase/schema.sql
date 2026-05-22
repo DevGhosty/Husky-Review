@@ -38,6 +38,9 @@ create table if not exists public.resumes (
 create index if not exists resumes_auth0_user_id_created_at_idx
   on public.resumes (auth0_user_id, created_at desc);
 
+create index if not exists resumes_created_at_idx
+  on public.resumes (created_at);
+
 grant usage on schema public to authenticated;
 grant select, insert, update on public.profiles to authenticated;
 grant select, insert, delete on public.resumes to authenticated;

@@ -24,7 +24,7 @@ import { hasJobPostingInput, jobPostingInputProgress } from '../lib/utils';
 
 const activityItems = [
   { label: 'Resume workspace', value: 'Ready', detail: 'Sample upload path available', icon: FileText },
-  { label: 'Privacy status', value: 'Session', detail: 'One-hour expiry language visible', icon: LockKeyhole },
+  { label: 'Privacy status', value: 'Session', detail: 'Resumes auto-delete within one hour', icon: LockKeyhole },
   { label: 'Next deadline', value: 'May 31', detail: 'Mock application planning date', icon: CalendarDays },
 ];
 
