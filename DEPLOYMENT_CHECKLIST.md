@@ -37,6 +37,7 @@
 ## Local Verification
 
 - [ ] Run `npm install`.
+- [ ] Run `npm run audit` (remaining high findings are in the dev-only `vercel` CLI, not the production Vite bundle).
 - [ ] Run `npm run build`.
 - [ ] Run `npm run dev`.
 - [ ] Run `npm run dev:vercel` when testing API routes locally.
@@ -69,5 +70,7 @@
 - [ ] `public.resumes` has RLS enabled.
 - [ ] Policies use `auth.jwt()->>'sub'`.
 - [ ] `resumes_auth0_user_id_created_at_idx` exists.
+- [ ] `resumes_created_at_idx` exists (supports one-hour purge cron).
+- [ ] `CRON_SECRET` is set in Vercel; cron `/api/cron/purge-expired-resumes` runs every 15 minutes.
 - [ ] Private resume objects are stored under `<auth0-sub>/<timestamp>-<filename>`.
 - [ ] Signed URLs are short-lived.

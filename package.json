@@ -8,6 +8,7 @@
     "dev:vercel": "vercel dev",
     "build": "tsc --noEmit && vite build",
     "test:auth": "node scripts/verify-auth-boundary.mjs",
+    "audit": "npm audit --audit-level=high",
     "auth0:setup": "node scripts/setup-auth0-tenant.mjs",
     "auth0:setup:cli": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-auth0-via-cli.ps1",
     "auth0:login": "powershell -NoProfile -Command \"& .tools/auth0-cli/auth0.exe login\"",
@@ -33,6 +34,9 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.15.0",
     "tailwind-merge": "^2.6.1"
+  },
+  "overrides": {
+    "tar": "^7.5.11"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",
