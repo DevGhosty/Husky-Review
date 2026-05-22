@@ -15,7 +15,7 @@
   "crons": [
     {
       "path": "/api/cron/purge-expired-resumes",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 8 * * *"
     }
   ],
   "headers": [

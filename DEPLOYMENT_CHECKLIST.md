@@ -71,6 +71,6 @@
 - [ ] Policies use `auth.jwt()->>'sub'`.
 - [ ] `resumes_auth0_user_id_created_at_idx` exists.
 - [ ] `resumes_created_at_idx` exists (supports one-hour purge cron).
-- [ ] `CRON_SECRET` is set in Vercel; cron `/api/cron/purge-expired-resumes` runs every 15 minutes.
+- [ ] `CRON_SECRET` is set in Vercel; cron `/api/cron/purge-expired-resumes` runs daily on Hobby (`0 8 * * *` UTC) or more often on Pro.
 - [ ] Private resume objects are stored under `<auth0-sub>/<timestamp>-<filename>`.
 - [ ] Signed URLs are short-lived.
