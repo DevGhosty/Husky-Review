@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock3, MapPinned, Sparkles } from 'lucide-react';
+import { ArrowLeft, Clock3, MapPinned } from 'lucide-react';
 import { RoadmapTimeline } from '../components/roadmap-timeline';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Surface } from '../components/layout/surface';
-import { recommendations } from '../data/mockData';
 import { useReview } from '../context/review-context';
 
 export function RoadmapPage() {
-  const { status, deadline, selectedIds, showSampleReview } = useReview();
+  const { status, deadline, selectedIds, analysis } = useReview();
+  const recommendations = analysis?.recommendations || [];
+  const roadmapWeeks = analysis?.roadmapWeeks || [];
   const selectedRecommendations = recommendations.filter((recommendation) => selectedIds.includes(recommendation.id));
 
   return (
@@ -26,7 +27,7 @@ export function RoadmapPage() {
                 Plan the next three weeks with verified actions.
               </h1>
               <p className="type-lead mt-5 max-w-2xl">
-                Review the week-by-week action plan and the recommendation cards currently attached to it. This page uses mock data only.
+                Review the week-by-week action plan and the recommendation cards currently attached to it.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:w-[24rem]">
@@ -36,16 +37,21 @@ export function RoadmapPage() {
                   Start review
                 </Link>
               </Button>
-              <Button className="h-12" onClick={showSampleReview} disabled={status === 'loading'}>
-                <Sparkles className="size-4" aria-hidden="true" />
-                Load sample
+              <Button asChild className="h-12" disabled={status === 'loading'}>
+                <Link to="/app/resources">Resources</Link>
               </Button>
             </div>
           </div>
         </Surface>
       </section>
 
-      <RoadmapTimeline status={status} deadline={deadline} selectedIds={selectedIds} />
+      <RoadmapTimeline
+        status={status}
+        deadline={deadline}
+        selectedIds={selectedIds}
+        recommendations={recommendations}
+        roadmapWeeks={roadmapWeeks}
+      />
 
       <section className="mx-auto max-w-[86rem] px-5 pb-16 sm:px-8 lg:px-12">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -93,15 +99,11 @@ export function RoadmapPage() {
               </span>
               <h2 className="mt-5 text-xl font-semibold text-foreground">No recommendations selected yet</h2>
               <p className="type-body mx-auto mt-2 max-w-lg">
-                Load the sample review or run the mock analysis from the dashboard to attach activities to this roadmap.
+                Run a review from the dashboard to attach verified activities to this roadmap.
               </p>
               <div className="mt-6 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
                 <Button asChild className="h-12 sm:min-w-[11rem]">
                   <Link to="/app#workflow">Open workflow</Link>
-                </Button>
-                <Button variant="secondary" className="h-12 sm:min-w-[11rem]" onClick={showSampleReview}>
-                  <Sparkles className="size-4" aria-hidden />
-                  Load sample
                 </Button>
               </div>
             </Surface>

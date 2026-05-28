@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CONFIG } from './auth0-config';
 import { defaultProfileSettings, type ProfileSettings } from '../lib/profile-settings';
-import type { ActivityType } from '../types/analysis';
+import type { ActivityType, ReviewAnalysis, ReviewQuotaStatus, SavedReviewSummary } from '../types/analysis';
 
 export function hasSupabaseConfig() {
   return Boolean(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
@@ -138,6 +138,121 @@ export async function deleteResume(accessToken: string, resumeId: string): Promi
     const error = await response.json();
     throw new Error(error.message || 'Failed to delete resume');
   }
+}
+
+export async function analyzeReview(
+  accessToken: string,
+  input: {
+    resumeId: string;
+    jobDescription: string;
+    jobPostingUrl?: string;
+    deadline?: string;
+    userApiKey?: string;
+  },
+): Promise<ReviewAnalysis> {
+  const response = await fetch('/api/reviews/analyze', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to analyze review');
+  }
+
+  return response.json();
+}
+
+export async function fetchReviews(accessToken: string): Promise<SavedReviewSummary[]> {
+  const response = await fetch('/api/reviews', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to fetch reviews');
+  }
+
+  return response.json();
+}
+
+export async function fetchReview(accessToken: string, reviewId: string): Promise<ReviewAnalysis> {
+  const response = await fetch(`/api/reviews/${reviewId}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to fetch review');
+  }
+
+  return response.json();
+}
+
+export async function deleteReview(accessToken: string, reviewId: string): Promise<void> {
+  const response = await fetch(`/api/reviews/${reviewId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to delete review');
+  }
+}
+
+export async function fetchReviewQuota(accessToken: string): Promise<ReviewQuotaStatus> {
+  const response = await fetch('/api/reviews/quota', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to fetch review quota');
+  }
+
+  return response.json();
+}
+
+export async function updateReviewSelections(
+  accessToken: string,
+  reviewId: string,
+  selectedIds: string[],
+): Promise<ReviewAnalysis> {
+  const response = await fetch(`/api/reviews/${reviewId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ selectedIds }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to update roadmap selections');
+  }
+
+  return response.json();
 }
 
 export function profileRecordToSettings(record: ProfileRecord): ProfileSettings {

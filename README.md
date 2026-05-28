@@ -2,7 +2,7 @@
 
 **Actionable UWB Resume Review** is a web application concept for helping University of Washington Bothell students improve their resumes for specific job postings. Instead of giving generic resume advice, the project is designed to recommend real UWB opportunities that students can act on, including verified clubs, courses, fellowships, events, and research roles.
 
-The repository currently contains a mocked React frontend prototype plus the project proposal documentation. Backend analysis, Supabase storage, and AI integration are planned future work.
+The repository contains the Husky-Review React app, Auth0-protected workspace routes, Supabase-backed resume/review persistence, verified UWB catalog tables, and a server-side review analysis endpoint. When `ANTHROPIC_API_KEY` is configured, `/api/reviews/analyze` uses Claude for structured analysis with a 2-review weekly app-key limit per signed-in user. Students can paste their own Anthropic key for extra reviews; that key is sent only for the request and is not stored. Without a server key, local development falls back to deterministic catalog matching.
 
 ## Problem
 
@@ -23,32 +23,34 @@ Husky-Review addresses that gap by grounding recommendations in a curated databa
 
 ## Planned Features
 
-- Resume and job description parsing.
+- Resume upload and server-side text extraction.
 - Structured gap analysis for missing skills, keywords, and experience signals.
 - Verified UWB activity database with source, active status, and last-verified date.
-- Embedding-based retrieval against pre-embedded activity descriptions.
-- LLM-assisted ranking and classification of recommendations.
+- Catalog-backed retrieval against verified activity descriptions and skills.
+- Optional Claude-assisted ranking and classification of recommendations.
+- Per-user weekly app-key review quota, with bring-your-own-key support for extra reviews.
+- Token-conscious AI context packing: trimmed resume/posting text plus only the top verified catalog candidates.
 - In-Time vs Next-Time activity grouping.
 - Week-by-week roadmap for improving a resume before or after a deadline.
-- Privacy-conscious session handling with resume data deleted after one hour.
+- Privacy-conscious account handling with scheduled cleanup for uploaded resume files.
 
 ## Planned Tech Stack
 
 - **Frontend:** React, Vite, Tailwind CSS
 - **Backend:** Node.js, Express
 - **Database and sessions:** Supabase
-- **AI analysis and embeddings:** Anthropic Claude API
+- **AI analysis:** Anthropic Claude API with deterministic local fallback
 - **Deployment target:** Vercel
 - **Project site target:** GitHub Pages
 
 ## Security and Privacy Goals
 
-- Store API keys only on the server through environment variables.
+- Store the app API key only on the server through environment variables; user-supplied Anthropic keys are request-only and not persisted.
 - Validate resume file type before upload processing.
 - Enforce input length limits for resumes and job descriptions.
 - Apply rate limiting to inference endpoints.
 - Use Supabase row-level security policies for session access.
-- Automatically delete uploaded resume/session data after one hour.
+- Remove uploaded resume/session data through the scheduled retention cleanup.
 - Document any protected-route credentials in this README only if such routes are added.
 
 ## Local Setup
@@ -79,6 +81,7 @@ ANTHROPIC_API_KEY=
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+CRON_SECRET=
 ```
 
 Do not commit real API keys or production credentials.

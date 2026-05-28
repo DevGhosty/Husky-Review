@@ -1,46 +1,21 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, BookmarkCheck, CalendarDays, FileText, Sparkles, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, BookmarkCheck, CalendarDays, FileText, Trash2 } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Surface } from '../components/layout/surface';
 import { formatDeadline } from '../lib/utils';
-import { defaultDeadline, matchScore, recommendations } from '../data/mockData';
 import { useReview } from '../context/review-context';
 import { useResumes } from '../hooks/useResumes';
-import { useState } from 'react';
-
-
-const mockSavedReviews = [
-  {
-    id: 'healthcare-admin-internship',
-    title: 'Healthcare Admin Internship Review',
-    role: 'Program coordinator intern — community wellness',
-    deadline: defaultDeadline,
-    score: matchScore.score,
-    selectedCount: 4,
-  },
-  {
-    id: 'marketing-coordinator',
-    title: 'Marketing Coordinator Draft',
-    role: 'Campus communications and outreach role',
-    deadline: '2026-06-14',
-    score: 71,
-    selectedCount: 3,
-  },
-  {
-    id: 'research-assistant',
-    title: 'Research Assistant Prep',
-    role: 'Faculty lab collaboration and data support',
-    deadline: '2026-07-02',
-    score: 68,
-    selectedCount: 2,
-  },
-];
+import { useReviews } from '../hooks/useReviews';
 
 export function SavedReviewsPage() {
-  const { status, selectedIds, showSampleReview } = useReview();
+  const navigate = useNavigate();
+  const { analysis, loadReviewById, selectSavedResume } = useReview();
+  const { reviews, loading: reviewsLoading, error: reviewsError, deleteReview } = useReviews();
   const { resumes, loading: resumesLoading, error: resumesError, deleteResume } = useResumes();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
 
   const handleDeleteResume = async (id: string) => {
     setDeletingId(id);
@@ -51,7 +26,14 @@ export function SavedReviewsPage() {
     }
   };
 
-  const savedReviews = mockSavedReviews;
+  const handleDeleteReview = async (id: string) => {
+    setDeletingReviewId(id);
+    try {
+      await deleteReview(id);
+    } finally {
+      setDeletingReviewId(null);
+    }
+  };
 
   return (
     <main>
@@ -64,19 +46,18 @@ export function SavedReviewsPage() {
                 Saved Reviews
               </Badge>
               <h1 className="mt-4 max-w-3xl type-page-title type-page-title--brand">
-                Mock review history and saved resumes.
+                Review history and saved resumes.
               </h1>
               <p className="mt-5 max-w-2xl type-lead">
-                Uploaded resumes are stored in your account-backed Supabase path. Review cards remain mocked until the analysis pipeline is connected.
+                Uploaded resumes and completed reviews are stored in your account-backed Supabase workspace.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:w-[25rem]">
               <Button asChild variant="secondary" className="h-12">
                 <Link to="/app#workflow">Start new review</Link>
               </Button>
-              <Button className="h-12" onClick={showSampleReview}>
-                <Sparkles className="size-4" aria-hidden="true" />
-                Load sample
+              <Button asChild className="h-12">
+                <Link to="/app/roadmap">Open roadmap</Link>
               </Button>
             </div>
           </div>
@@ -84,87 +65,106 @@ export function SavedReviewsPage() {
       </section>
 
       <section className="mx-auto max-w-[86rem] px-5 pb-16 sm:px-8 lg:px-12">
-        {savedReviews.length === 0 ? (
+        {reviewsLoading ? (
+          <Surface variant="stroke" className="flex flex-col items-center rounded-[1.8rem] p-8 text-center">
+            <span className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/12 to-husky-gold/20 text-primary shadow-soft ring-1 ring-border/50">
+              <BookmarkCheck className="size-7 motion-safe:animate-pulse" aria-hidden />
+            </span>
+            <h2 className="mt-5 text-xl font-semibold text-foreground">Loading saved reviews</h2>
+            <p className="type-body mx-auto mt-2 max-w-lg">Fetching your account-scoped review history.</p>
+          </Surface>
+        ) : reviewsError ? (
+          <Surface variant="stroke" className="rounded-[1.6rem] border border-red-200 bg-red-50 p-5 text-center">
+            <p className="text-sm font-semibold text-red-600">{reviewsError}</p>
+          </Surface>
+        ) : reviews.length === 0 ? (
           <Surface variant="stroke" className="flex flex-col items-center rounded-[1.8rem] p-8 text-center">
             <span className="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/12 to-husky-gold/20 text-primary shadow-soft ring-1 ring-border/50">
               <BookmarkCheck className="size-7" aria-hidden />
             </span>
             <h2 className="mt-5 text-xl font-semibold text-foreground">No saved reviews yet</h2>
             <p className="type-body mx-auto mt-2 max-w-lg">
-              Run a review from the dashboard to build your first saved record. This frontend uses mock data only.
+              Run a review from the dashboard to build your first saved record.
             </p>
             <div className="mt-6 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
               <Button asChild className="h-12 sm:min-w-[11rem]">
                 <Link to="/app#workflow">Start new review</Link>
               </Button>
-              <Button className="h-12 sm:min-w-[11rem]" onClick={showSampleReview}>
-                <Sparkles className="size-4" aria-hidden />
-                Load sample
-              </Button>
             </div>
           </Surface>
         ) : (
-        <div className="grid gap-5 lg:grid-cols-3">
-          {savedReviews.map((review, index) => (
-            <Surface key={review.id} variant="card" className="relative overflow-hidden rounded-[1.8rem] p-5 transition motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-premium">
-              <div className="absolute -right-14 -top-14 size-32 rounded-full bg-husky-gold/20 blur-2xl" aria-hidden="true" />
-              <div className="relative flex items-start justify-between gap-4">
-                <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
-                  <FileText className="size-6" aria-hidden="true" />
-                </span>
-                <Badge tone={index === 0 && status === 'success' ? 'green' : 'gray'}>
-                  {index === 0 && status === 'success' ? 'Current sample' : 'Mock record'}
-                </Badge>
-              </div>
-              <h2 className="relative mt-5 text-xl font-black text-foreground">{review.title}</h2>
-              <p className="relative mt-2 text-sm leading-6 text-muted-foreground">{review.role}</p>
-              <div className="relative mt-5 grid grid-cols-2 gap-3">
-                <div className="stat-tile rounded-2xl p-4">
-                  <p className="text-xs font-bold text-muted-foreground">Match score</p>
-                  <p className="mt-1 text-2xl font-black text-primary">{review.score}%</p>
+          <div className="grid gap-5 lg:grid-cols-3">
+            {reviews.map((review) => (
+              <Surface key={review.id} variant="card" className="relative overflow-hidden rounded-[1.8rem] p-5 transition motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-premium">
+                <div className="absolute -right-14 -top-14 size-32 rounded-full bg-husky-gold/20 blur-2xl" aria-hidden="true" />
+                <div className="relative flex items-start justify-between gap-4">
+                  <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                    <FileText className="size-6" aria-hidden="true" />
+                  </span>
+                  <Badge tone={analysis?.id === review.id ? 'green' : 'gray'}>
+                    {analysis?.id === review.id ? 'Current review' : 'Saved review'}
+                  </Badge>
                 </div>
-                <div className="stat-tile rounded-2xl p-4">
-                  <p className="text-xs font-bold text-muted-foreground">Roadmap items</p>
-                  <p className="mt-1 text-2xl font-black text-foreground">
-                    {index === 0 && selectedIds.length > 0 ? selectedIds.length : review.selectedCount}
-                  </p>
+                <h2 className="relative mt-5 text-xl font-black text-foreground">{review.title}</h2>
+                <p className="relative mt-2 text-sm leading-6 text-muted-foreground">{review.role}</p>
+                <div className="relative mt-5 grid grid-cols-2 gap-3">
+                  <div className="stat-tile rounded-2xl p-4">
+                    <p className="text-xs font-bold text-muted-foreground">Match score</p>
+                    <p className="mt-1 text-2xl font-black text-primary">{review.score}%</p>
+                  </div>
+                  <div className="stat-tile rounded-2xl p-4">
+                    <p className="text-xs font-bold text-muted-foreground">Roadmap items</p>
+                    <p className="mt-1 text-2xl font-black text-foreground">{review.selectedCount}</p>
+                  </div>
                 </div>
-              </div>
-              <p className="relative mt-5 flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                <CalendarDays className="size-4 text-primary" aria-hidden="true" />
-                Deadline {formatDeadline(review.deadline)}
-              </p>
-              <Button asChild variant={index === 0 ? 'primary' : 'secondary'} className="relative mt-5 w-full">
-                <Link to={index === 0 ? '/app/roadmap' : '/app/resources'}>
-                  {index === 0 ? 'Open roadmap' : 'View related resources'}
-                  <ArrowRight className="size-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            </Surface>
-          ))}
-        </div>
+                <p className="relative mt-5 flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                  <CalendarDays className="size-4 text-primary" aria-hidden="true" />
+                  Deadline {review.deadline ? formatDeadline(review.deadline) : 'not set'}
+                </p>
+                <p className="relative mt-2 text-xs font-bold text-muted-foreground">
+                  Resume {review.resumeFilename || 'not recorded'} - Updated {new Date(review.updatedAt).toLocaleDateString()}
+                </p>
+                <div className="relative mt-5 flex gap-2">
+                  <Button
+                    variant={analysis?.id === review.id ? 'primary' : 'secondary'}
+                    className="flex-1"
+                    onClick={async () => {
+                      await loadReviewById(review.id);
+                      navigate('/app/roadmap');
+                    }}
+                  >
+                    Open roadmap
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleDeleteReview(review.id)}
+                    disabled={deletingReviewId === review.id}
+                    className="px-3"
+                    aria-label={`Delete review ${review.title}`}
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </Button>
+                </div>
+              </Surface>
+            ))}
+          </div>
         )}
-
-        <Surface variant="stroke" className="mt-6 rounded-[1.6rem] p-5 text-center">
-          <p className="text-sm font-semibold leading-6 text-muted-foreground">
-            {recommendations.length} mocked recommendation records remain available for preview.
-          </p>
-        </Surface>
       </section>
 
-      {/* Saved Resumes Section */}
       <section className="mx-auto max-w-[86rem] px-5 pb-16 sm:px-8 lg:px-12">
-        <h2 className="text-2xl font-bold text-foreground mb-4">Your Saved Resumes</h2>
+        <h2 className="mb-4 text-2xl font-bold text-foreground">Your Saved Resumes</h2>
 
         {resumesLoading && (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <div className="py-12 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
             <p className="mt-2 text-muted-foreground">Loading resumes...</p>
           </div>
         )}
 
         {resumesError && (
-          <Surface variant="stroke" className="rounded-[1.6rem] p-5 text-center border border-red-200 bg-red-50">
+          <Surface variant="stroke" className="rounded-[1.6rem] border border-red-200 bg-red-50 p-5 text-center">
             <p className="text-sm font-semibold text-red-600">{resumesError}</p>
           </Surface>
         )}
@@ -188,12 +188,22 @@ export function SavedReviewsPage() {
                   </span>
                   <Badge tone="green">Account file</Badge>
                 </div>
-                <h3 className="relative mt-5 text-xl font-black text-foreground truncate">{resume.filename}</h3>
+                <h3 className="relative mt-5 truncate text-xl font-black text-foreground">{resume.filename}</h3>
                 <p className="relative mt-2 text-sm leading-6 text-muted-foreground">
                   {new Date(resume.uploaded_at).toLocaleDateString()}
                 </p>
 
                 <div className="relative mt-5 flex gap-2">
+                  <Button
+                    variant="primary"
+                    className="flex-1"
+                    onClick={() => {
+                      selectSavedResume(resume.id, resume.filename);
+                      navigate('/app#workflow');
+                    }}
+                  >
+                    Use
+                  </Button>
                   <Button asChild variant="secondary" className="flex-1">
                     <a href={resume.download_url || resume.file_url} target="_blank" rel="noopener noreferrer">
                       Open

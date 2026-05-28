@@ -55,7 +55,7 @@ const selectClassName =
 const privacySummaryItems = [
   'Uploaded resume files are stored in private Supabase storage paths scoped to your Auth0 account.',
   'Profile preferences sync to Supabase when the project and Auth0 third-party auth are configured.',
-  'Generated analysis and roadmap selections remain mocked until the review pipeline is connected.',
+  'Generated analysis and roadmap selections are saved with your authenticated review records.',
 ];
 
 function getActiveSection(hash: string): ProfileSectionId {
@@ -137,7 +137,7 @@ function SectionPanel({
 
 export function ProfilePage() {
   const activeSection = useProfileSectionNav();
-  const { status, fileName, selectedIds, showSampleReview } = useReview();
+  const { status, fileName, selectedIds } = useReview();
   const {
     settings,
     setDisplayName,
@@ -185,20 +185,17 @@ export function ProfilePage() {
               </span>
               <div>
                 <Badge tone="gold" className="rounded-full px-4 py-2">
-                  Student preview
+                  Student workspace
                 </Badge>
                 <h1 className="type-page-title mt-3 max-w-2xl text-white">{settings.displayName}</h1>
                 <p className="mt-2 text-sm font-medium text-white/65">
-                  {settings.major} · Class of {settings.graduationYear}
+                  {settings.major} - Class of {settings.graduationYear}
                 </p>
               </div>
             </div>
-            <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[20rem]">
+            <div className="grid w-full gap-3 lg:w-auto lg:min-w-[12rem]">
               <Button asChild variant="outline" className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white">
                 <Link to="/app#workflow">Start review</Link>
-              </Button>
-              <Button className="h-12 bg-white text-husky-purple hover:bg-husky-gold/90" onClick={showSampleReview}>
-                Load sample profile
               </Button>
             </div>
           </div>
@@ -256,7 +253,7 @@ export function ProfilePage() {
           <SectionPanel
             id="overview"
             title="Overview"
-            description="Basic student context and workspace readiness for the mocked review flow."
+            description="Basic student context and workspace readiness for the review flow."
             icon={UserRound}
           >
             <div className="grid gap-5 lg:grid-cols-3">
@@ -303,12 +300,12 @@ export function ProfilePage() {
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Badge tone="purple">{settings.major}</Badge>
-              <Badge tone="gray">UWB student preview</Badge>
+              <Badge tone="gray">UWB student workspace</Badge>
               <Badge tone={syncStatus === 'synced' ? 'green' : syncStatus === 'error' ? 'gold' : 'gray'}>
                 {syncStatus === 'synced' ? 'Profile synced' : syncStatus === 'loading' ? 'Syncing profile' : 'Local fallback'}
               </Badge>
               <Badge tone={status === 'success' ? 'green' : 'gray'}>
-                {status === 'success' ? 'Sample review loaded' : 'No active review'}
+                {status === 'success' ? 'Review loaded' : 'No active review'}
               </Badge>
             </div>
             {syncError ? <p className="mt-3 text-sm font-semibold text-amber-700 dark:text-amber-300">{syncError}</p> : null}
@@ -323,7 +320,7 @@ export function ProfilePage() {
                 className="mt-3 h-2.5 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold"
               />
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Completion reflects current mocked review state, selected recommendations, and whether a sample resume has been loaded.
+                Completion reflects current review state, selected recommendations, and whether a resume has been loaded.
               </p>
             </div>
           </SectionPanel>
@@ -444,7 +441,7 @@ export function ProfilePage() {
               <div className="inset-row flex items-start gap-3 rounded-2xl p-4">
                 <GraduationCap className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <p className="text-sm leading-6 text-muted-foreground">
-                  These map to the activity types Husky-Review pulls from the UWB catalog—courses, clubs, events, research, fellowships, and projects. Preferences are stored locally and can later inform ranking once authenticated student profiles are connected.
+                  These map to the activity types Husky-Review pulls from the UWB catalog: courses, clubs, events, research, fellowships, and projects. Preferences are stored locally and can later inform ranking once authenticated student profiles are connected.
                 </p>
               </div>
             </div>
@@ -473,7 +470,7 @@ export function ProfilePage() {
           <SectionPanel
             id="privacy"
             title="Privacy & data"
-            description="Understand what this prototype stores and how to reset your local profile settings."
+            description="Understand what this workspace stores and how to reset your local profile settings."
             icon={ShieldCheck}
           >
             <div className="grid gap-3">

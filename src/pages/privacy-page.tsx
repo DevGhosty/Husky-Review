@@ -22,10 +22,10 @@ const privacyPrinciples = [
 
 const privacyList = [
   { label: 'Resume files', value: 'Private Supabase object paths with short-lived signed links', icon: FileWarning },
-  { label: 'Job posting URL', value: 'Used to demonstrate matching workflow', icon: ShieldCheck },
-  { label: 'Generated analysis', value: 'Still stored only in shared frontend state', icon: Database },
-  { label: 'Deletion policy', value: 'Resumes purged automatically within one hour (scheduled cleanup)', icon: Trash2 },
-  { label: 'External services', value: 'Auth0 and Supabase are used for account access and persistence', icon: ServerOff },
+  { label: 'Job posting URL', value: 'Stored with the review record for reopening saved analysis', icon: ShieldCheck },
+  { label: 'Generated analysis', value: 'Stored in account-scoped review records in Supabase', icon: Database },
+  { label: 'Deletion policy', value: 'Resumes are purged by scheduled cleanup after the retention window', icon: Trash2 },
+  { label: 'External services', value: 'Auth0, Supabase, and optional server-side Anthropic analysis are used for the product workflow', icon: ServerOff },
   { label: 'Account data', value: 'Server APIs verify Auth0 tokens before touching Supabase service-role operations', icon: CheckCircle2 },
 ];
 

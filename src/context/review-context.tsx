@@ -1,31 +1,32 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import {
-  defaultDeadline,
-  loadingSteps,
-  recommendations,
-  sampleFileName,
-  sampleJobDescription,
-  sampleJobPostingUrl,
-  successSelectedIds,
-} from '../data/mockData';
-import type { ReviewStatus } from '../types/analysis';
+import { getAccessTokenRequestOptions } from '../auth/auth0-config';
+import { fetchReview, updateReviewSelections } from '../auth/supabase-client';
+import { defaultDeadline, loadingSteps } from '../data/reviewFlow';
+import type { ReviewAnalysis, ReviewStatus } from '../types/analysis';
 
 interface ReviewContextValue {
   status: ReviewStatus;
   loadingStepIndex: number;
   resumeFile: File | null;
+  resumeId: string;
   fileName: string;
   jobDescription: string;
   jobPostingUrl: string;
   deadline: string;
   selectedIds: string[];
+  analysis: ReviewAnalysis | null;
+  error: string | null;
   setResumeFile: (file: File | null) => void;
-  setFileName: (fileName: string) => void;
+  setResumeId: (resumeId: string) => void;
+  selectSavedResume: (resumeId: string, fileName: string) => void;
   setJobDescription: (description: string) => void;
   setJobPostingUrl: (url: string) => void;
   setDeadline: (deadline: string) => void;
-  runMockAnalysis: () => void;
-  showSampleReview: () => void;
+  startAnalysis: () => void;
+  completeAnalysis: (analysis: ReviewAnalysis) => void;
+  failAnalysis: (message: string) => void;
+  loadReviewById: (reviewId: string) => Promise<void>;
   toggleRecommendation: (id: string) => void;
   resetReview: () => void;
 }
@@ -37,16 +38,18 @@ interface ReviewProviderProps {
 }
 
 export function ReviewProvider({ children }: ReviewProviderProps) {
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
   const [status, setStatus] = useState<ReviewStatus>('idle');
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [resumeFile, setResumeFileValue] = useState<File | null>(null);
+  const [resumeId, setResumeIdValue] = useState('');
   const [fileName, setFileNameValue] = useState('');
   const [jobDescription, setJobDescriptionValue] = useState('');
   const [jobPostingUrl, setJobPostingUrlValue] = useState('');
   const [deadline, setDeadlineValue] = useState(defaultDeadline);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  const allRecommendationIds = useMemo(() => recommendations.map((recommendation) => recommendation.id), []);
+  const [analysis, setAnalysis] = useState<ReviewAnalysis | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status !== 'loading') {
@@ -56,35 +59,34 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
     setLoadingStepIndex(0);
     const interval = window.setInterval(() => {
       setLoadingStepIndex((currentStep) => Math.min(currentStep + 1, loadingSteps.length - 1));
-    }, 520);
+    }, 720);
 
-    const timeout = window.setTimeout(() => {
-      window.clearInterval(interval);
-      setStatus('success');
-      setSelectedIds(successSelectedIds);
-    }, 2300);
-
-    return () => {
-      window.clearInterval(interval);
-      window.clearTimeout(timeout);
-    };
+    return () => window.clearInterval(interval);
   }, [status]);
 
   function clearResultState() {
     setStatus((currentStatus) => (currentStatus === 'idle' ? currentStatus : 'idle'));
     setLoadingStepIndex(0);
     setSelectedIds([]);
-  }
-
-  function setFileName(fileNameValue: string) {
-    setResumeFileValue(null);
-    setFileNameValue(fileNameValue);
-    clearResultState();
+    setAnalysis(null);
+    setError(null);
   }
 
   function setResumeFile(file: File | null) {
     setResumeFileValue(file);
+    setResumeIdValue('');
     setFileNameValue(file?.name || '');
+    clearResultState();
+  }
+
+  function setResumeId(nextResumeId: string) {
+    setResumeIdValue(nextResumeId);
+  }
+
+  function selectSavedResume(nextResumeId: string, nextFileName: string) {
+    setResumeFileValue(null);
+    setResumeIdValue(nextResumeId);
+    setFileNameValue(nextFileName);
     clearResultState();
   }
 
@@ -103,35 +105,79 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
     clearResultState();
   }
 
-  function runMockAnalysis() {
+  function startAnalysis() {
     setStatus('loading');
+    setError(null);
   }
 
-  function showSampleReview() {
+  function completeAnalysis(nextAnalysis: ReviewAnalysis) {
     setStatus('success');
     setLoadingStepIndex(loadingSteps.length - 1);
-    setFileNameValue((current) => current || sampleFileName);
-    setJobDescriptionValue((current) => current || sampleJobDescription);
-    setJobPostingUrlValue((current) => current || sampleJobPostingUrl);
-    setDeadlineValue((current) => current || defaultDeadline);
-    setSelectedIds(allRecommendationIds.slice(0, 4));
+    setAnalysis(nextAnalysis);
+    setResumeIdValue(nextAnalysis.resumeId);
+    setFileNameValue(nextAnalysis.fileName);
+    setJobDescriptionValue(nextAnalysis.jobDescription);
+    setJobPostingUrlValue(nextAnalysis.jobPostingUrl);
+    setDeadlineValue(nextAnalysis.deadline || defaultDeadline);
+    setSelectedIds(nextAnalysis.selectedIds || []);
+    setError(null);
+  }
+
+  function failAnalysis(message: string) {
+    setStatus('error');
+    setError(message);
+  }
+
+  async function loadReviewById(reviewId: string) {
+    if (!isAuthenticated) {
+      failAnalysis('Sign in to open saved reviews.');
+      return;
+    }
+
+    startAnalysis();
+    try {
+      const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+      completeAnalysis(await fetchReview(token, reviewId));
+    } catch (loadError) {
+      failAnalysis((loadError as Error).message);
+    }
   }
 
   function toggleRecommendation(id: string) {
-    setSelectedIds((currentIds) =>
-      currentIds.includes(id) ? currentIds.filter((currentId) => currentId !== id) : [...currentIds, id],
-    );
+    const nextSelectedIds = selectedIds.includes(id)
+      ? selectedIds.filter((currentId) => currentId !== id)
+      : [...selectedIds, id];
+
+    setSelectedIds(nextSelectedIds);
+    setAnalysis((current) => (current ? { ...current, selectedIds: nextSelectedIds } : current));
+
+    if (!analysis || !isAuthenticated) {
+      return;
+    }
+
+    void getAccessTokenSilently(getAccessTokenRequestOptions())
+      .then((token) => updateReviewSelections(token, analysis.id, nextSelectedIds))
+      .then((updatedAnalysis) => {
+        setAnalysis(updatedAnalysis);
+        setSelectedIds(updatedAnalysis.selectedIds || []);
+      })
+      .catch((selectionError) => {
+        setError((selectionError as Error).message);
+      });
   }
 
   function resetReview() {
     setStatus('idle');
     setLoadingStepIndex(0);
     setResumeFileValue(null);
+    setResumeIdValue('');
     setFileNameValue('');
     setJobDescriptionValue('');
     setJobPostingUrlValue('');
     setDeadlineValue(defaultDeadline);
     setSelectedIds([]);
+    setAnalysis(null);
+    setError(null);
   }
 
   const value = useMemo(
@@ -139,22 +185,28 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
       status,
       loadingStepIndex,
       resumeFile,
+      resumeId,
       fileName,
       jobDescription,
       jobPostingUrl,
       deadline,
       selectedIds,
+      analysis,
+      error,
       setResumeFile,
-      setFileName,
+      setResumeId,
+      selectSavedResume,
       setJobDescription,
       setJobPostingUrl,
       setDeadline,
-      runMockAnalysis,
-      showSampleReview,
+      startAnalysis,
+      completeAnalysis,
+      failAnalysis,
+      loadReviewById,
       toggleRecommendation,
       resetReview,
     }),
-    [deadline, fileName, jobDescription, jobPostingUrl, loadingStepIndex, resumeFile, selectedIds, status],
+    [analysis, deadline, error, fileName, jobDescription, jobPostingUrl, loadingStepIndex, resumeFile, resumeId, selectedIds, status],
   );
 
   return <ReviewContext.Provider value={value}>{children}</ReviewContext.Provider>;

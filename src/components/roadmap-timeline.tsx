@@ -1,7 +1,6 @@
 import { CalendarCheck2, CheckCircle2 } from 'lucide-react';
-import { recommendations, roadmapWeeks } from '../data/mockData';
 import { cn, formatDeadline } from '../lib/utils';
-import type { ReviewStatus } from '../types/analysis';
+import type { Recommendation, ReviewStatus, RoadmapWeek } from '../types/analysis';
 import { Section } from './layout/section';
 import { Badge } from './ui/badge';
 
@@ -9,9 +8,11 @@ interface RoadmapTimelineProps {
   status: ReviewStatus;
   deadline: string;
   selectedIds: string[];
+  recommendations: Recommendation[];
+  roadmapWeeks: RoadmapWeek[];
 }
 
-export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimelineProps) {
+export function RoadmapTimeline({ status, deadline, selectedIds, recommendations, roadmapWeeks }: RoadmapTimelineProps) {
   const isReady = status === 'success';
   const selectedRecommendations = recommendations.filter((recommendation) => selectedIds.includes(recommendation.id));
 
@@ -27,7 +28,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
             <p className="mt-4 text-base leading-7 text-white/75">
               {isReady
                 ? `The roadmap is organized around the ${formatDeadline(deadline)} deadline and updates as recommendations are added or removed.`
-                : 'Run the mocked review to turn the upload and job posting into a sequenced action plan.'}
+                : 'Run a review to turn the upload and job posting into a sequenced action plan.'}
             </p>
             <div className="mt-8 rounded-[1.4rem] border border-white/10 bg-white/[0.08] p-5 shadow-inset">
               <p className="text-sm font-semibold text-white/70">Selected recommendation focus</p>
@@ -89,7 +90,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds }: RoadmapTimeli
                               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                                 {status === 'loading'
                                   ? 'Recommendations are being placed into the right week.'
-                                  : 'Start a review or view the sample roadmap to preview this section.'}
+                                  : 'Start a review to build this section from verified recommendations.'}
                               </p>
                             </div>
                           )}

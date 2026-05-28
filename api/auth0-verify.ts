@@ -2,6 +2,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 
 const ALLOWED_EMAIL_DOMAIN = 'uw.edu';
 const GENERIC_UNAUTHORIZED = 'Unauthorized';
+const DEFAULT_CLAIM_NAMESPACE = 'https://husky-review.app/claims';
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
@@ -40,13 +41,26 @@ function getBearerToken(authHeader?: string) {
   return token;
 }
 
-function getTokenEmail(payload: JWTPayload): string | null {
-  const email = payload.email;
+function getClaimNamespace() {
+  return (process.env.AUTH0_CLAIM_NAMESPACE || DEFAULT_CLAIM_NAMESPACE).trim().replace(/\/+$/, '');
+}
+
+function getStringClaim(payload: JWTPayload, name: string): string | null {
+  const namespaced = payload[`${getClaimNamespace()}/${name}`];
+  if (typeof namespaced === 'string' && namespaced.trim()) {
+    return namespaced.trim();
+  }
+
+  const email = payload[name];
   if (typeof email === 'string' && email.trim()) {
-    return email.trim().toLowerCase();
+    return email.trim();
   }
 
   return null;
+}
+
+export function getTokenEmail(payload: JWTPayload): string | null {
+  return getStringClaim(payload, 'email')?.toLowerCase() || null;
 }
 
 function assertAllowedEmail(payload: JWTPayload) {
@@ -85,7 +99,10 @@ export async function verifyAuth0Token(authHeader: string): Promise<Auth0Claims>
 
     assertAllowedEmail(payload);
 
-    return payload as Auth0Claims;
+    return {
+      ...payload,
+      email: getTokenEmail(payload) || undefined,
+    } as Auth0Claims;
   } catch (error) {
     if ((error as any).statusCode) {
       throw error;

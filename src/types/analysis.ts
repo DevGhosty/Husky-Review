@@ -1,4 +1,4 @@
-export type ReviewStatus = 'idle' | 'loading' | 'success';
+export type ReviewStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export type ActivityType =
   | 'club'
@@ -15,6 +15,12 @@ export interface GapCategory {
   summary: string;
   items: string[];
   score: number;
+}
+
+export interface MatchScore {
+  score: number;
+  label: string;
+  summary: string;
 }
 
 export interface Recommendation {
@@ -48,4 +54,43 @@ export interface RoadmapWeek {
 export interface LoadingStep {
   label: string;
   description: string;
+}
+
+export interface ReviewAnalysis {
+  id: string;
+  title: string;
+  role: string;
+  resumeId: string;
+  fileName: string;
+  jobDescription: string;
+  jobPostingUrl: string;
+  deadline: string;
+  matchScore: MatchScore;
+  gapCategories: GapCategory[];
+  recommendations: Recommendation[];
+  roadmapWeeks: RoadmapWeek[];
+  selectedIds: string[];
+  aiProvider?: 'app-key' | 'user-key' | 'deterministic';
+  quota?: ReviewQuotaStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewQuotaStatus {
+  source: 'app-key' | 'user-key' | 'deterministic';
+  limit: number;
+  remaining: number | null;
+  resetAt: string | null;
+}
+
+export interface SavedReviewSummary {
+  id: string;
+  title: string;
+  role: string;
+  deadline: string;
+  score: number;
+  selectedCount: number;
+  resumeFilename: string;
+  createdAt: string;
+  updatedAt: string;
 }
