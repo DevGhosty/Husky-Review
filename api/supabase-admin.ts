@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export const RESUME_BUCKET = 'resumes';
 
@@ -31,7 +31,8 @@ function getAllowedOrigins(): string[] {
   return Array.from(new Set([...DEFAULT_ALLOWED_ORIGINS, ...configured]));
 }
 
-let _adminClient: ReturnType<typeof createClient> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _adminClient: SupabaseClient<any> | null = null;
 
 export function getSupabaseAdmin() {
   if (_adminClient) return _adminClient;
@@ -80,7 +81,7 @@ export function sendInternalError(res: any, context: string, cause: unknown) {
   return res.status(500).json({ message: 'Internal server error' });
 }
 
-export async function withSignedUrl(supabase: ReturnType<typeof getSupabaseAdmin>, row: ResumeRow) {
+export async function withSignedUrl(supabase: SupabaseClient<any>, row: ResumeRow) {
   const { data } = await supabase.storage.from(RESUME_BUCKET).createSignedUrl(row.storage_path, 60 * 10);
 
   return {
