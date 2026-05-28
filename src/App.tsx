@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { AppShell } from './components/app-shell';
 import { MarketingShell } from './components/marketing-shell';
 import { ProtectedRoute } from './components/protected-route';
@@ -23,6 +24,7 @@ function App() {
   return (
     <ReviewProvider>
       <ProfileSettingsProvider>
+        <Analytics />
         <Routes>
           {/* Public marketing routes */}
           <Route
