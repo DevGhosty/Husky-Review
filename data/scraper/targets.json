@@ -1,0 +1,244 @@
+[
+  {
+    "campus": "B",
+    "note": "UW Bothell",
+    "depts": [
+      "css", "cssskl", "acmpt",
+      "bbus", "bbecn", "bbskl", "bacct", "elcbus",
+      "beduc", "lede",
+      "bimd",
+      "bisaes", "bcwrit", "bculst", "biscla", "bdata", "bearth", "bes",
+      "bisgws", "bisgst", "bis", "bisia", "bisskl", "bislep", "bismcs",
+      "bpolst", "bispsy", "bissts",
+      "bhlth", "bhs", "bnurs",
+      "bbio", "bchem", "bce", "bee", "bengr", "bmath", "bme", "bphys", "bst", "stmath",
+      "barab", "bchin", "bcore", "blead", "bjapan", "bkorea", "bspan", "bcusp", "bwrit"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — Milgard School of Business",
+    "depts": [
+      "t acct", "t bus", "tbanlt", "tbecon", "t bgen",
+      "t fin", "t is", "t mgmt", "t mktg"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — Core / University Studies",
+    "depts": [
+      "t core", "t univ"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — School of Education",
+    "depts": [
+      "t educ", "tedadm", "t edld", "t spsy", "t edsm", "t edss", "t edsp"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — School of Engineering and Technology",
+    "depts": [
+      "tce", "tces", "tcss", "t csl", "tece", "tee",
+      "t info", "t inst", "tme"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — Global Affairs / Innovation",
+    "depts": [
+      "t intl", "t gh", "tgid"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — School of Interdisciplinary Arts and Sciences",
+    "depts": [
+      "t amst", "t anth", "t arts", "t biol", "tbiomd", "t chem", "tchin",
+      "t com", "tcultr", "tecon", "tesc", "test", "t egl", "t film",
+      "t geog", "t geos", "t hist", "tias", "t lax", "t law", "t lit",
+      "tmath", "tnprft", "t phil", "t phys", "tpol s", "tpsych",
+      "trelig", "t soc", "tspan", "tstat", "t womn", "twrt"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — School of Nursing and Healthcare Leadership",
+    "depts": [
+      "t hlth", "thlead", "t nurs"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — School of Social Work and Criminal Justice",
+    "depts": [
+      "t crim", "tsocwf", "t socw"
+    ]
+  },
+  {
+    "campus": "T",
+    "note": "UW Tacoma — School of Urban Studies",
+    "depts": [
+      "tcmp", "t gis", "t sud", "t ude", "t urb"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Undergraduate Interdisciplinary",
+    "depts": [
+      "arctic", "honors", "lead", "academ"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Arts and Sciences",
+    "depts": [
+      "afram", "aes", "aas", "chstu", "swa", "taglg",
+      "ais",
+      "anth", "archy", "bio a",
+      "amath", "cfrm",
+      "art", "art h", "design", "artsci", "arts",
+      "asian", "beng", "chin", "hindi", "indn", "indo", "japan", "khmer",
+      "korean", "snkrt", "s asia", "seasia", "urdu", "viet",
+      "astr", "astbio",
+      "biol",
+      "chem",
+      "cms", "c lit",
+      "cl ar", "cl li", "clas", "greek", "latin",
+      "com", "commld",
+      "chid",
+      "relig",
+      "cse",
+      "dance", "dxarts", "dis st", "drama",
+      "econ", "engl",
+      "french", "ital", "txtds",
+      "gwss",
+      "gen st", "gis", "indiv",
+      "geog", "german",
+      "hstam", "hstcmp", "hstafm", "hstas", "hstlac", "hsteu", "hstaa", "hstry",
+      "hps",
+      "hum", "intsci",
+      "jsis", "jsis a", "jsis b", "jsis c", "jsis d", "jsis e", "jew st", "thai",
+      "labor", "lsj",
+      "asl", "ling",
+      "lit", "math",
+      "amhar", "arab", "aramic", "coptic", "egypt", "geez", "hebr", "bibheb",
+      "modheb", "ladino", "melc", "prsan",
+      "turkish", "tkish", "chgtai", "kazakh", "kyrgyz", "uygur", "uzbek", "ugarit",
+      "music", "musap", "mused", "musen", "muhst", "musicp", "mustec",
+      "nbio", "neusci",
+      "ethics", "phil",
+      "phys",
+      "pol s",
+      "psycap", "psycln", "psych",
+      "danish", "esto", "finn", "icel", "latv", "lith", "norw", "scand", "swed",
+      "bcms", "bulgr", "czech", "georg", "glits", "polsh", "romn", "russ", "slavic", "slvn", "ukr",
+      "socsci", "soc",
+      "port", "span", "spling",
+      "sphsc",
+      "stat",
+      "csss", "csde"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Built Environments",
+    "depts": [
+      "arch", "b e", "cm", "l arch", "r e",
+      "cep", "ipm", "urban", "urbdp"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Business (Foster)",
+    "depts": [
+      "acctg", "admin", "b a", "ba rm", "bus an", "b cmu", "b econ", "b pol",
+      "ebiz", "entre", "fin", "hrmob", "i s", "msis", "i bus",
+      "mgmt", "mktg", "opmgt", "o e", "qmeth", "st mgt", "scm"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Education",
+    "depts": [
+      "educ", "ece", "ecfs", "edtep", "edlps", "edpsy", "edspe"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Engineering",
+    "depts": [
+      "a a", "a e",
+      "chem e", "nme",
+      "cee", "cesi", "cewa", "cesg", "cet",
+      "cse d",
+      "e e",
+      "engr", "techin",
+      "hcde",
+      "ind e",
+      "ms e",
+      "esms", "m e", "meie"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Environment",
+    "depts": [
+      "fish", "atmos", "c env", "ess", "envir",
+      "esrm", "sbse", "sefs",
+      "fhl", "smea", "marbio", "ocean",
+      "q sci", "qerm", "quat"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Information School",
+    "depts": [
+      "info", "insc", "imt", "lis", "museum"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Interdisciplinary Graduate",
+    "depts": [
+      "bpsd", "data", "hcid", "hdd", "mcb", "moleng", "neuro", "pubsch", "stss"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Interschool Programs",
+    "depts": [
+      "bioen", "medeng", "pharbe", "g h"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Nursing",
+    "depts": [
+      "nsg", "nurs", "nclin", "nmeth", "iecmh"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Public Health",
+    "depts": [
+      "biost", "env h", "epi", "hihim", "hserv", "hsmgmt", "nutr", "pabio", "phi", "sph"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Public Policy",
+    "depts": [
+      "pubpol", "ppm"
+    ]
+  },
+  {
+    "campus": "none",
+    "note": "UW Seattle — Social Work",
+    "depts": [
+      "soc wf", "soc wl", "soc w"
+    ]
+  }
+]
