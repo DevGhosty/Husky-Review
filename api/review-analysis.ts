@@ -557,13 +557,21 @@ export async function buildReviewAnalysis(input: AnalysisInput) {
   };
 }
 
-export function extractResumeText(buffer: Buffer, contentType: string | null, fileName: string) {
+export async function extractResumeText(buffer: Buffer, contentType: string | null, fileName: string) {
   if (buffer.subarray(0, 4).toString() === '%PDF') {
-    const raw = buffer.toString('latin1');
-    const matches = Array.from(raw.matchAll(/\(([^()]{3,})\)/g))
-      .map((match) => match[1].replace(/\\[nrtbf()\\]/g, ' '))
-      .join(' ');
-    return matches.replace(/\s+/g, ' ').slice(0, 20000) || fileName;
+    try {
+      // Import the inner module directly to avoid a test-file side-effect in pdf-parse's index.js.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfLib = await import('pdf-parse/lib/pdf-parse.js' as any);
+      const pdfParse = (pdfLib.default ?? pdfLib) as (
+        buf: Buffer,
+        opts?: { max?: number },
+      ) => Promise<{ text: string }>;
+      const { text } = await pdfParse(buffer, { max: 0 });
+      return text.replace(/\s+/g, ' ').trim().slice(0, 20000) || fileName;
+    } catch {
+      return fileName;
+    }
   }
 
   const raw = buffer.toString('utf8');

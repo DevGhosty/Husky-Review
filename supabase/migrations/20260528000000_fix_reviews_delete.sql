@@ -1,4 +1,5 @@
--- Grant explicit delete permissions to service_role for reviews-related tables
+-- Grant explicit delete permissions to service_role for all resume/review tables
+grant select, insert, update, delete on public.resumes to service_role;
 grant select, insert, update, delete on public.reviews to service_role;
 grant select, insert, update, delete on public.review_recommendations to service_role;
 grant select, insert, delete on public.review_roadmap_actions to service_role;

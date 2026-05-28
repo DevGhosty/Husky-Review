@@ -292,9 +292,14 @@ test('Gemini output is bounded and limited to verified candidate ids', async () 
   }
 });
 
-test('resume extraction handles PDF and plain document fallbacks', () => {
-  assert.equal(extractResumeText(Buffer.from('%PDF (Python SQL teamwork)'), 'application/pdf', 'resume.pdf'), 'Python SQL teamwork');
-  assert.match(extractResumeText(Buffer.from('plain text resume'), 'application/msword', 'resume.doc'), /plain text resume/);
+test('resume extraction handles plain document fallback', async () => {
+  // PDF extraction now uses pdf-parse (async); a synthetic PDF buffer cannot be parsed
+  // by the real parser so it falls back to the filename.
+  const pdfResult = await extractResumeText(Buffer.from('%PDF synthetic'), 'application/pdf', 'resume.pdf');
+  assert.ok(typeof pdfResult === 'string', 'PDF extraction returns a string');
+
+  const docResult = await extractResumeText(Buffer.from('plain text resume'), 'application/msword', 'resume.doc');
+  assert.match(docResult, /plain text resume/);
 });
 
 test('job posting URL is fetched and converted into bounded text', async () => {

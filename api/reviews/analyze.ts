@@ -151,7 +151,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const resumeBuffer = Buffer.from(await fileData.arrayBuffer());
-    const resumeText = extractResumeText(resumeBuffer, resumeRow.content_type, resumeRow.filename);
+    const resumeText = await extractResumeText(resumeBuffer, resumeRow.content_type, resumeRow.filename);
     const resolvedPosting = await resolveJobDescription({
       jobDescription: input.jobDescription,
       jobPostingUrl: input.jobPostingUrl,
