@@ -1,5 +1,5 @@
-import { requireAuth } from './auth0-verify';
-import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders } from './supabase-admin';
+import { requireAuth } from './auth0-verify.js';
+import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders } from './supabase-admin.js';
 
 export default async function handler(req: any, res: any) {
   setApiHeaders(res, 'GET', req.headers?.origin);

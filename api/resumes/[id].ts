@@ -1,5 +1,5 @@
-import { requireAuth } from '../auth0-verify';
-import { getSupabaseAdmin, RESUME_BUCKET, sendError, sendInternalError, setApiHeaders, withSignedUrl, type ResumeRow } from '../supabase-admin';
+import { requireAuth } from '../auth0-verify.js';
+import { getSupabaseAdmin, RESUME_BUCKET, sendError, sendInternalError, setApiHeaders, withSignedUrl, type ResumeRow } from '../supabase-admin.js';
 
 export default async function handler(req: any, res: any) {
   setApiHeaders(res, 'GET,DELETE', req.headers?.origin);

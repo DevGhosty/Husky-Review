@@ -1,4 +1,4 @@
-import { requireAuth } from '../auth0-verify';
+import { requireAuth } from '../auth0-verify.js';
 import {
   getSupabaseAdmin,
   RESUME_BUCKET,
@@ -7,7 +7,7 @@ import {
   setApiHeaders,
   withSignedUrl,
   type ResumeRow,
-} from '../supabase-admin';
+} from '../supabase-admin.js';
 
 export const config = {
   api: {
@@ -29,7 +29,7 @@ const ALLOWED_CONTENT_TYPES = new Set([
 ]);
 
 function safePathSegment(value: string) {
-  return value.replace(/[^a-zA-Z0-9._=|:-]/g, '_');
+  return value.replace(/[^a-zA-Z0-9._=-]/g, '_');
 }
 
 function safeFilename(value: string) {

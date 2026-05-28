@@ -1,4 +1,4 @@
-import type { getSupabaseAdmin } from './supabase-admin';
+import type { getSupabaseAdmin } from './supabase-admin.js';
 
 export const WEEKLY_APP_KEY_REVIEW_LIMIT = 2;
 
@@ -9,13 +9,13 @@ export interface ReviewQuotaStatus {
   resetAt: string | null;
 }
 
-export function getAppAnthropicKey() {
-  return process.env.ANTHROPIC_API_KEY?.trim() || '';
+export function getAppGeminiKey() {
+  return process.env.GEMINI_API_KEY?.trim() || '';
 }
 
 function quotaLimitError(resetAt?: string) {
   const resetLabel = resetAt ? new Date(resetAt).toLocaleDateString('en-US') : 'next week';
-  const error = new Error(`Weekly app-key review limit reached. Add your own Anthropic API key to run more reviews before ${resetLabel}.`);
+  const error = new Error(`Weekly app-key review limit reached. Try again after ${resetLabel}.`);
   (error as any).statusCode = 429;
   throw error;
 }

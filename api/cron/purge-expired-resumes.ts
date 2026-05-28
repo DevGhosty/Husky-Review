@@ -1,4 +1,4 @@
-import { getSupabaseAdmin, RESUME_BUCKET, sendError, sendInternalError } from '../supabase-admin';
+import { getSupabaseAdmin, RESUME_BUCKET, sendError, sendInternalError } from '../supabase-admin.js';
 
 const RETENTION_MS = 60 * 60 * 1000;
 

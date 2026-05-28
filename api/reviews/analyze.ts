@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { requireAuth } from '../auth0-verify';
+import { requireAuth } from '../auth0-verify.js';
 import {
   MAX_JOB_DESCRIPTION_CHARS,
   MAX_POSTING_URL_CHARS,
   MIN_JOB_DESCRIPTION_CHARS,
   normalizeJobPostingUrl,
   resolveJobDescription,
-} from '../job-posting';
-import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders, type ResumeRow } from '../supabase-admin';
-import { buildReviewAnalysis, extractResumeText, type ActivityRow } from '../review-analysis';
-import { checkAppKeyQuota, consumeAppKeyQuota, deterministicQuotaStatus, getAppAnthropicKey, userKeyQuotaStatus } from '../review-quota';
+} from '../job-posting.js';
+import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders, type ResumeRow } from '../supabase-admin.js';
+import { buildReviewAnalysis, extractResumeText, type ActivityRow } from '../review-analysis.js';
+import { checkAppKeyQuota, consumeAppKeyQuota, deterministicQuotaStatus, getAppGeminiKey, userKeyQuotaStatus } from '../review-quota.js';
 
 function validateAnalyzeBody(body: any) {
   const resumeId = typeof body?.resumeId === 'string' ? body.resumeId.trim() : '';
@@ -121,7 +121,7 @@ export default async function handler(req: any, res: any) {
     const auth = await requireAuth(req.headers.authorization);
     const input = validateAnalyzeBody(req.body);
     const supabase = getSupabaseAdmin();
-    const appKey = getAppAnthropicKey();
+    const appKey = getAppGeminiKey();
     const usingUserKey = Boolean(input.userApiKey);
     let quota = usingUserKey ? userKeyQuotaStatus() : appKey ? null : deterministicQuotaStatus();
 

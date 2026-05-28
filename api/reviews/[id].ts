@@ -1,5 +1,5 @@
-import { requireAuth } from '../auth0-verify';
-import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders } from '../supabase-admin';
+import { requireAuth } from '../auth0-verify.js';
+import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders } from '../supabase-admin.js';
 
 function getReviewId(req: any) {
   return typeof req.query.id === 'string' ? req.query.id : req.query.id?.[0];

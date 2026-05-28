@@ -16,11 +16,16 @@ export function SavedReviewsPage() {
   const { resumes, loading: resumesLoading, error: resumesError, deleteResume } = useResumes();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+  const [deleteResumeErrors, setDeleteResumeErrors] = useState<Record<string, string>>({});
+  const [deleteReviewErrors, setDeleteReviewErrors] = useState<Record<string, string>>({});
 
   const handleDeleteResume = async (id: string) => {
     setDeletingId(id);
+    setDeleteResumeErrors((prev) => ({ ...prev, [id]: '' }));
     try {
       await deleteResume(id);
+    } catch (err) {
+      setDeleteResumeErrors((prev) => ({ ...prev, [id]: (err as Error).message || 'Delete failed' }));
     } finally {
       setDeletingId(null);
     }
@@ -28,8 +33,11 @@ export function SavedReviewsPage() {
 
   const handleDeleteReview = async (id: string) => {
     setDeletingReviewId(id);
+    setDeleteReviewErrors((prev) => ({ ...prev, [id]: '' }));
     try {
       await deleteReview(id);
+    } catch (err) {
+      setDeleteReviewErrors((prev) => ({ ...prev, [id]: (err as Error).message || 'Delete failed' }));
     } finally {
       setDeletingReviewId(null);
     }
@@ -147,6 +155,9 @@ export function SavedReviewsPage() {
                     <Trash2 className="size-4" aria-hidden="true" />
                   </Button>
                 </div>
+                {deleteReviewErrors[review.id] && (
+                  <p className="relative mt-2 text-xs font-medium text-red-600">{deleteReviewErrors[review.id]}</p>
+                )}
               </Surface>
             ))}
           </div>
@@ -220,6 +231,9 @@ export function SavedReviewsPage() {
                     <Trash2 className="size-4" aria-hidden="true" />
                   </Button>
                 </div>
+                {deleteResumeErrors[resume.id] && (
+                  <p className="relative mt-2 text-xs font-medium text-red-600">{deleteResumeErrors[resume.id]}</p>
+                )}
               </Surface>
             ))}
           </div>

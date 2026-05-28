@@ -1,6 +1,6 @@
-import { requireAuth } from '../auth0-verify';
-import { deterministicQuotaStatus, getAppAnthropicKey, getAppKeyQuotaStatus } from '../review-quota';
-import { getSupabaseAdmin, sendError, setApiHeaders } from '../supabase-admin';
+import { requireAuth } from '../auth0-verify.js';
+import { deterministicQuotaStatus, getAppGeminiKey, getAppKeyQuotaStatus } from '../review-quota.js';
+import { getSupabaseAdmin, sendError, setApiHeaders } from '../supabase-admin.js';
 
 export default async function handler(req: any, res: any) {
   setApiHeaders(res, 'GET', req.headers?.origin);
@@ -16,7 +16,7 @@ export default async function handler(req: any, res: any) {
   try {
     const auth = await requireAuth(req.headers.authorization);
 
-    if (!getAppAnthropicKey()) {
+    if (!getAppGeminiKey()) {
       return res.status(200).json(deterministicQuotaStatus());
     }
 

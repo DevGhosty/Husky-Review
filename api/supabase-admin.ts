@@ -31,7 +31,11 @@ function getAllowedOrigins(): string[] {
   return Array.from(new Set([...DEFAULT_ALLOWED_ORIGINS, ...configured]));
 }
 
+let _adminClient: ReturnType<typeof createClient> | null = null;
+
 export function getSupabaseAdmin() {
+  if (_adminClient) return _adminClient;
+
   const supabaseUrl = process.env.SUPABASE_URL?.trim();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
@@ -41,9 +45,10 @@ export function getSupabaseAdmin() {
     throw error;
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
+  _adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
+  return _adminClient;
 }
 
 export function setApiHeaders(res: any, methods: string, requestOrigin?: string) {
