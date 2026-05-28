@@ -113,6 +113,7 @@ returns table (
   reset_at timestamptz
 )
 language plpgsql
+set search_path = public, pg_temp
 as $$
 declare
   v_row public.review_ai_usage_limits%rowtype;
@@ -177,6 +178,7 @@ returns table (
   reset_at timestamptz
 )
 language sql
+set search_path = public, pg_temp
 as $$
   select
     case

@@ -7,13 +7,13 @@
 - [ ] Auth0 callback URLs include `http://localhost:5173/app`, production `/app`, and Vercel preview pattern (e.g. `https://*.vercel.app/app`).
 - [ ] Auth0 logout URLs include `http://localhost:5173`, production origin, and `https://*.vercel.app` (exact match for `returnTo`; fixes “sign out does nothing”).
 - [ ] Auth0 web origins match logout origins (no path suffix).
-- [ ] Auth0 post-login Action adds `role: "authenticated"` and `email` to access tokens (and ID tokens).
+- [ ] Auth0 post-login Action adds ID-token `role: "authenticated"` for Supabase and namespaced `email` / `role` claims for Vercel API access tokens.
 - [ ] Auth0 post-login Action denies non-Google connections and non-`@uw.edu` email addresses.
 - [ ] Auth0 application has Google OAuth enabled and every other login connection disabled.
 - [ ] Auth0 Universal Login displays only the Google sign-in option for the Husky-Review app.
 - [ ] Supabase project created.
 - [ ] Supabase Third-Party Auth integration for Auth0 enabled.
-- [ ] [`supabase/schema.sql`](./supabase/schema.sql) has been run.
+- [ ] SQL files in [`supabase/migrations`](./supabase/migrations) have been applied in timestamp order.
 - [ ] `resumes` storage bucket is private.
 - [ ] RLS is enabled for `profiles`, `resumes`, and storage policies.
 
@@ -25,8 +25,10 @@
 - [ ] `VITE_AUTH0_CALLBACK_URL`
 - [ ] `AUTH0_DOMAIN`
 - [ ] `AUTH0_AUDIENCE`
+- [ ] `AUTH0_CLAIM_NAMESPACE` (same namespace used by the Auth0 Action; defaults to `https://husky-review.app/claims`)
 - [ ] `AUTH0_ALLOWED_ORIGINS` (comma-separated; API CORS allowlist)
 - [ ] `CRON_SECRET` (server-only; protects resume purge cron)
+- [ ] `ANTHROPIC_API_KEY` (server-only; optional locally but required for Claude-backed production analysis)
 - [ ] `VITE_SUPABASE_URL`
 - [ ] `VITE_SUPABASE_ANON_KEY`
 - [ ] `SUPABASE_URL`
@@ -49,6 +51,8 @@
 - [ ] Change profile settings, refresh, and confirm they persist.
 - [ ] Upload a resume from the dashboard and click Analyze.
 - [ ] Confirm the resume appears on `/app/saved-reviews`.
+- [ ] Run a review and confirm the saved review appears on `/app/saved-reviews`.
+- [ ] Open the saved review and confirm `/app/roadmap` uses persisted recommendations.
 - [ ] Open the resume signed URL.
 - [ ] Delete the resume and confirm it disappears.
 
@@ -62,6 +66,8 @@
 - [ ] Confirm API calls include `Authorization: Bearer ...`.
 - [ ] Confirm API calls without tokens return `401`.
 - [ ] Confirm invalid tokens return `401`.
+- [ ] Confirm a third app-key review in the same 7-day window returns `429` and the UI offers BYOK.
+- [ ] Confirm a valid user-supplied Anthropic key can run an additional review and is not persisted.
 - [ ] Confirm Vercel function logs show no Supabase service-role key exposure.
 
 ## Supabase Verification
@@ -70,7 +76,9 @@
 - [ ] `public.resumes` has RLS enabled.
 - [ ] Policies use `auth.jwt()->>'sub'`.
 - [ ] `resumes_auth0_user_id_created_at_idx` exists.
-- [ ] `resumes_created_at_idx` exists (supports one-hour purge cron).
+- [ ] `resumes_created_at_idx` exists (supports retention cleanup).
+- [ ] `reviews_auth0_user_id_created_at_idx` exists.
+- [ ] `review_ai_usage_limits` exists and `consume_weekly_review_quota` / `check_weekly_review_quota` are executable only by `service_role`.
 - [ ] `CRON_SECRET` is set in Vercel; cron `/api/cron/purge-expired-resumes` runs daily on Hobby (`0 8 * * *` UTC) or more often on Pro.
 - [ ] Private resume objects are stored under `<auth0-sub>/<timestamp>-<filename>`.
 - [ ] Signed URLs are short-lived.
