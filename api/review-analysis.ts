@@ -529,7 +529,7 @@ async function buildGeminiAnalysis(input: AnalysisInput) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.warn('Gemini analysis failed', { status: response.status, errorBodyPrefix: errorText.replace(/\s+/g, ' ').slice(0, 300) });
+    console.warn(`Gemini HTTP ${response.status}`, { errorBodyPrefix: errorText.replace(/\s+/g, ' ').slice(0, 300) });
     throw new Error(`Gemini analysis failed with ${response.status}`);
   }
 
