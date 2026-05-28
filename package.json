@@ -26,6 +26,7 @@
     "@fontsource-variable/quicksand": "^5.2.10",
     "@fontsource/baloo-2": "^5.2.7",
     "@supabase/supabase-js": "^2.0.0",
+    "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jose": "^5.9.6",
