@@ -78,6 +78,43 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+async function throwApiError(response: Response, fallbackMessage: string): Promise<never> {
+  const contentType = response.headers.get('content-type') || '';
+  let message = fallbackMessage;
+
+  try {
+    if (contentType.includes('application/json')) {
+      const error = await response.json();
+      if (typeof error?.message === 'string' && error.message.trim()) {
+        message = error.message.trim();
+      }
+    } else {
+      const text = (await response.text()).replace(/\s+/g, ' ').trim();
+      if (text) {
+        message = `${fallbackMessage}: ${text.slice(0, 240)}`;
+      }
+    }
+  } catch {
+    // Preserve the fallback when the server returns malformed error content.
+  }
+
+  throw new Error(message);
+}
+
+async function readApiJson<T>(response: Response, fallbackMessage: string): Promise<T> {
+  if (!response.ok) {
+    await throwApiError(response, fallbackMessage);
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = (await response.text()).replace(/\s+/g, ' ').trim();
+    throw new Error(`${fallbackMessage}: expected JSON but received ${response.status} ${response.statusText}${text ? ` (${text.slice(0, 160)})` : ''}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export async function fetchUserResumes(accessToken: string): Promise<ResumeRecord[]> {
   const response = await fetch('/api/resumes', {
     method: 'GET',
@@ -87,12 +124,7 @@ export async function fetchUserResumes(accessToken: string): Promise<ResumeRecor
     },
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch resumes');
-  }
-
-  return response.json();
+  return readApiJson<ResumeRecord[]>(response, 'Failed to fetch resumes');
 }
 
 export async function uploadResume(
@@ -117,12 +149,7 @@ export async function uploadResume(
     }),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to upload resume');
-  }
-
-  return response.json();
+  return readApiJson<ResumeRecord>(response, 'Failed to upload resume');
 }
 
 export async function deleteResume(accessToken: string, resumeId: string): Promise<void> {
@@ -135,8 +162,7 @@ export async function deleteResume(accessToken: string, resumeId: string): Promi
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to delete resume');
+    await throwApiError(response, 'Failed to delete resume');
   }
 }
 
@@ -159,12 +185,7 @@ export async function analyzeReview(
     body: JSON.stringify(input),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to analyze review');
-  }
-
-  return response.json();
+  return readApiJson<ReviewAnalysis>(response, 'Failed to analyze review');
 }
 
 export async function fetchReviews(accessToken: string): Promise<SavedReviewSummary[]> {
@@ -176,12 +197,7 @@ export async function fetchReviews(accessToken: string): Promise<SavedReviewSumm
     },
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch reviews');
-  }
-
-  return response.json();
+  return readApiJson<SavedReviewSummary[]>(response, 'Failed to fetch reviews');
 }
 
 export async function fetchReview(accessToken: string, reviewId: string): Promise<ReviewAnalysis> {
@@ -193,12 +209,7 @@ export async function fetchReview(accessToken: string, reviewId: string): Promis
     },
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch review');
-  }
-
-  return response.json();
+  return readApiJson<ReviewAnalysis>(response, 'Failed to fetch review');
 }
 
 export async function deleteReview(accessToken: string, reviewId: string): Promise<void> {
@@ -211,8 +222,7 @@ export async function deleteReview(accessToken: string, reviewId: string): Promi
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to delete review');
+    await throwApiError(response, 'Failed to delete review');
   }
 }
 
@@ -225,12 +235,7 @@ export async function fetchReviewQuota(accessToken: string): Promise<ReviewQuota
     },
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch review quota');
-  }
-
-  return response.json();
+  return readApiJson<ReviewQuotaStatus>(response, 'Failed to fetch review quota');
 }
 
 export async function updateReviewSelections(
@@ -247,12 +252,7 @@ export async function updateReviewSelections(
     body: JSON.stringify({ selectedIds }),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to update roadmap selections');
-  }
-
-  return response.json();
+  return readApiJson<ReviewAnalysis>(response, 'Failed to update roadmap selections');
 }
 
 export function profileRecordToSettings(record: ProfileRecord): ProfileSettings {
