@@ -37,6 +37,10 @@ tmp/
 temp/
 *.tmp
 
+# Scraper session cookies
+cookies.txt
+*.cookies.txt
+
 # Vercel
 .vercel/
 
