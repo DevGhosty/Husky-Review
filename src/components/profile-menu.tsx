@@ -53,7 +53,7 @@ export function ProfileMenu() {
   const { isAuthenticated, isLoading, loginWithRedirect, user, logout } = useAuth0();
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const displayName = user?.name || user?.nickname || settings.displayName;
+  const displayName = user?.name || user?.nickname || settings.displayName || 'UW student';
   const subtitle = user?.email ? user.email : user ? 'Signed in with Google' : 'Sign in with your @uw.edu Google account';
 
   const initials = displayName

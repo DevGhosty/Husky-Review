@@ -9,6 +9,7 @@ export type ActivityType =
   | 'research';
 
 export type RecommendationGroup = 'in-time' | 'next-time';
+export type RecommendationCampus = 'seattle' | 'bothell' | 'tacoma';
 
 export interface GapCategory {
   title: string;
@@ -31,6 +32,7 @@ export interface Recommendation {
   whyItHelps: string;
   tags: string[];
   active: boolean;
+  campus: RecommendationCampus;
   lastVerified: string;
   confidence: number;
   sourceLabel: string;

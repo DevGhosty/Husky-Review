@@ -6,6 +6,12 @@ import { Button } from '../components/ui/button';
 import { Surface } from '../components/layout/surface';
 import { useReview } from '../context/review-context';
 
+const campusLabels = {
+  seattle: 'UW Seattle',
+  bothell: 'UW Bothell',
+  tacoma: 'UW Tacoma',
+} as const;
+
 export function RoadmapPage() {
   const { status, deadline, selectedIds, analysis } = useReview();
   const recommendations = analysis?.recommendations || [];
@@ -73,6 +79,7 @@ export function RoadmapPage() {
                   <Badge tone={recommendation.group === 'in-time' ? 'gold' : 'purple'}>{recommendation.group === 'in-time' ? 'In-Time' : 'Next-Time'}</Badge>
                   <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{recommendation.confidence}%</span>
                 </div>
+                <Badge tone="gray" className="mt-3 w-fit">{campusLabels[recommendation.campus]}</Badge>
                 <h2 className="mt-4 text-lg font-semibold text-foreground">{recommendation.name}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{recommendation.roadmapAction}</p>
                 <p className="mt-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground">

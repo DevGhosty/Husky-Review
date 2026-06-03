@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { Link, useLocation } from 'react-router-dom';
 import {
   Bell,
+  CheckCircle2,
   GraduationCap,
   LockKeyhole,
+  MapPin,
   Moon,
   Palette,
   ShieldCheck,
@@ -15,8 +17,11 @@ import {
 } from 'lucide-react';
 import { useProfileSettings } from '../context/profile-settings-context';
 import { useReview } from '../context/review-context';
-import { ACTIVITY_INTEREST_OPTIONS, UW_MAJORS } from '../data/uwb-catalog';
+import { ACTIVITY_INTEREST_OPTIONS } from '../data/uwb-catalog';
 import {
+  campusLabel,
+  campusOptions,
+  hasRequiredProfileFields,
   profileSectionHref,
   profileSections,
   type ProfileSectionId,
@@ -80,6 +85,19 @@ function useProfileSectionNav() {
   return activeSection;
 }
 
+function safeReturnTo(value: string | null) {
+  if (!value) {
+    return '/app';
+  }
+
+  try {
+    const decoded = decodeURIComponent(value);
+    return decoded.startsWith('/app') ? decoded : '/app';
+  } catch {
+    return value.startsWith('/app') ? value : '/app';
+  }
+}
+
 function SettingSwitchRow({
   label,
   description,
@@ -136,12 +154,15 @@ function SectionPanel({
 }
 
 export function ProfilePage() {
+  const location = useLocation();
   const activeSection = useProfileSectionNav();
   const { status, fileName, selectedIds } = useReview();
   const {
     settings,
+    profileComplete,
     setDisplayName,
     setMajor,
+    setCampus,
     setBooleanPref,
     setTargetRole,
     toggleActivityInterest,
@@ -152,9 +173,19 @@ export function ProfilePage() {
   } = useProfileSettings();
   const [dark, setDark] = useState(() => isDarkMode());
 
-  const completion = Math.min(100, (fileName ? 38 : 0) + (status === 'success' ? 42 : 0) + Math.min(selectedIds.length, 4) * 5);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const returnTo = safeReturnTo(searchParams.get('returnTo'));
+  const isSetupMode = searchParams.get('setup') === '1';
+  const requiredProfileFields = [
+    Boolean(settings.displayName.trim()),
+    Boolean(settings.major.trim()),
+    Boolean(settings.campus),
+  ];
+  const profileCompletion = Math.round((requiredProfileFields.filter(Boolean).length / requiredProfileFields.length) * 100);
+  const profileReady = hasRequiredProfileFields(settings);
+  const workspaceCompletion = Math.min(100, (fileName ? 38 : 0) + (status === 'success' ? 42 : 0) + Math.min(selectedIds.length, 4) * 5);
 
-  const initials = settings.displayName
+  const initials = (settings.displayName || 'UW')
     .split(' ')
     .map((part) => part[0])
     .join('')
@@ -185,18 +216,26 @@ export function ProfilePage() {
               </span>
               <div>
                 <Badge tone="gold" className="rounded-full px-4 py-2">
-                  Student workspace
+                  {profileComplete ? 'Student workspace' : 'Profile setup'}
                 </Badge>
-                <h1 className="type-page-title mt-3 max-w-2xl text-white">{settings.displayName}</h1>
+                <h1 className="type-page-title mt-3 max-w-2xl text-white">
+                  {settings.displayName.trim() || 'Build your UW profile'}
+                </h1>
                 <p className="mt-2 text-sm font-medium text-white/65">
-                  {settings.major} - Class of {settings.graduationYear}
+                  {settings.major.trim() || 'Major not set'} - {campusLabel(settings.campus)}
                 </p>
               </div>
             </div>
             <div className="grid w-full gap-3 lg:w-auto lg:min-w-[12rem]">
-              <Button asChild variant="outline" className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white">
-                <Link to="/app#workflow">Start review</Link>
-              </Button>
+              {profileComplete ? (
+                <Button asChild variant="outline" className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white">
+                  <Link to={isSetupMode ? returnTo : '/app#workflow'}>{isSetupMode ? 'Continue' : 'Start review'}</Link>
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" className="h-12 border-white/20 text-white opacity-75" disabled>
+                  Complete profile
+                </Button>
+              )}
             </div>
           </div>
         </Surface>
@@ -252,8 +291,8 @@ export function ProfilePage() {
         <div className="grid gap-6">
           <SectionPanel
             id="overview"
-            title="Overview"
-            description="Basic student context and workspace readiness for the review flow."
+            title={isSetupMode ? 'Complete your profile' : 'Overview'}
+            description="Name, major, and campus are required so recommendations start with the right UW opportunities."
             icon={UserRound}
           >
             <div className="grid gap-5 lg:grid-cols-3">
@@ -263,24 +302,39 @@ export function ProfilePage() {
                   id="display-name"
                   value={settings.displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder="Your name"
                   className="h-11 rounded-xl px-3"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="major">Major</Label>
-                <select
+                <Input
                   id="major"
                   value={settings.major}
                   onChange={(event) => setMajor(event.target.value)}
+                  placeholder="Computer Science, Biology, Business..."
+                  className="h-11 rounded-xl px-3"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="campus">Campus</Label>
+                <select
+                  id="campus"
+                  value={settings.campus}
+                  onChange={(event) => setCampus(event.target.value as typeof settings.campus)}
                   className={selectClassName}
                 >
-                  {UW_MAJORS.map((major) => (
-                    <option key={major} value={major}>
-                      {major}
+                  <option value="">Select campus</option>
+                  {campusOptions.map((campus) => (
+                    <option key={campus.id} value={campus.id}>
+                      {campus.label}
                     </option>
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="graduation-year">Graduation year</Label>
                 <select
@@ -296,10 +350,46 @@ export function ProfilePage() {
                   ))}
                 </select>
               </div>
+              <div className="lg:col-span-2">
+                <SettingSwitchRow
+                  label="Recommend from other campuses"
+                  description="Include opportunities from Seattle, Bothell, and Tacoma while still preferring your home campus."
+                  checked={settings.includeOtherCampuses}
+                  onCheckedChange={(checked) => setBooleanPref('includeOtherCampuses', checked)}
+                  disabled={!settings.campus}
+                />
+              </div>
             </div>
 
+            {isSetupMode || !profileComplete ? (
+              <div className="mt-5 rounded-[1.4rem] border border-husky-gold/35 bg-husky-gold/10 p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="flex items-center gap-2 text-sm font-black text-foreground">
+                      {profileReady ? <CheckCircle2 className="size-5 text-emerald-600" aria-hidden="true" /> : <MapPin className="size-5 text-primary" aria-hidden="true" />}
+                      {profileReady ? 'Profile ready' : 'Profile required'}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      Complete these basics once, then Husky-Review can filter campus opportunities on every review.
+                    </p>
+                  </div>
+                  {profileComplete ? (
+                    <Button asChild className="h-11">
+                      <Link to={returnTo}>Continue to workspace</Link>
+                    </Button>
+                  ) : (
+                    <Button type="button" className="h-11" disabled>
+                      Complete required fields
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-5 flex flex-wrap gap-2">
-              <Badge tone="purple">{settings.major}</Badge>
+              <Badge tone={profileComplete ? 'green' : 'gold'}>{profileComplete ? 'Profile complete' : `${profileCompletion}% profile`}</Badge>
+              <Badge tone="purple">{settings.major.trim() || 'Major not set'}</Badge>
+              <Badge tone="gray">{campusLabel(settings.campus)}</Badge>
               <Badge tone="gray">UW student workspace</Badge>
               <Badge tone={syncStatus === 'synced' ? 'green' : syncStatus === 'error' ? 'gold' : 'gray'}>
                 {syncStatus === 'synced' ? 'Profile synced' : syncStatus === 'loading' ? 'Syncing profile' : 'Local fallback'}
@@ -313,10 +403,10 @@ export function ProfilePage() {
             <div className="mt-6 rounded-[1.4rem] border border-border bg-muted/30 p-5 dark:bg-muted/20">
               <div className="flex items-center justify-between gap-4">
                 <p className="text-sm font-semibold text-foreground">Readiness workspace</p>
-                <p className="text-2xl font-black text-primary">{completion}%</p>
+                <p className="text-2xl font-black text-primary">{workspaceCompletion}%</p>
               </div>
               <Progress
-                value={completion}
+                value={workspaceCompletion}
                 className="mt-3 h-2.5 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold"
               />
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -332,6 +422,13 @@ export function ProfilePage() {
             icon={Sparkles}
           >
             <div className="grid gap-3">
+              <SettingSwitchRow
+                label="Recommend from other campuses"
+                description="Expand beyond your home campus when an opportunity is a strong fit."
+                checked={settings.includeOtherCampuses}
+                onCheckedChange={(checked) => setBooleanPref('includeOtherCampuses', checked)}
+                disabled={!settings.campus}
+              />
               <SettingSwitchRow
                 label="Prioritize In-Time activities"
                 description="Surface deadline-friendly actions before longer-term resume builders."

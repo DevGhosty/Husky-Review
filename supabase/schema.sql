@@ -6,12 +6,15 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.profiles (
   auth0_user_id text primary key,
-  display_name text not null default 'Sam Husky',
-  major text not null default 'Business Administration',
+  display_name text not null default '',
+  major text not null default '',
+  campus text
+    check (campus is null or campus in ('seattle', 'bothell', 'tacoma')),
   graduation_year text not null default '2027',
   prioritize_in_time boolean not null default true,
   show_verification_dates boolean not null default true,
   include_long_term boolean not null default true,
+  include_other_campuses boolean not null default false,
   deadline_reminders boolean not null default true,
   roadmap_alerts boolean not null default true,
   resource_updates boolean not null default true,
@@ -19,6 +22,7 @@ create table if not exists public.profiles (
   target_role text not null default 'internship'
     check (target_role in ('internship', 'co-op', 'full-time')),
   activity_interests text[] not null default array['club', 'course', 'event'],
+  profile_completed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

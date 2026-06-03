@@ -21,6 +21,12 @@ const typeLabels: Record<Recommendation['type'], string> = {
   research: 'Research',
 };
 
+const campusLabels: Record<Recommendation['campus'], string> = {
+  seattle: 'UW Seattle',
+  bothell: 'UW Bothell',
+  tacoma: 'UW Tacoma',
+};
+
 export function RecommendationCard({ recommendation, selected, onToggle, staggerIndex }: RecommendationCardProps) {
   return (
     <Card
@@ -40,6 +46,7 @@ export function RecommendationCard({ recommendation, selected, onToggle, stagger
                 {recommendation.group === 'in-time' ? 'In-Time' : 'Next-Time'}
               </Badge>
               <Badge tone="gray">{typeLabels[recommendation.type]}</Badge>
+              <Badge tone="gray">{campusLabels[recommendation.campus]}</Badge>
             </div>
             <h3 className="mt-4 text-xl font-semibold leading-tight tracking-normal text-foreground">{recommendation.name}</h3>
           </div>
