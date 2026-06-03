@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useProfileSettings } from '../context/profile-settings-context';
 import { filterUwMajors } from '../data/uw-majors';
 import { cn } from '../lib/utils';
 import { Input } from './ui/input';
@@ -13,12 +14,16 @@ interface MajorComboboxProps {
 }
 
 export function MajorCombobox({ id, value, onChange, placeholder, className }: MajorComboboxProps) {
+  const { settings } = useProfileSettings();
   const listId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  const suggestions = useMemo(() => filterUwMajors(value), [value]);
+  const suggestions = useMemo(
+    () => filterUwMajors(value, 8, settings.campus),
+    [settings.campus, value],
+  );
 
   useEffect(() => {
     setActiveIndex(-1);

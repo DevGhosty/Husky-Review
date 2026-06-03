@@ -1,41 +1,77 @@
+import type { Campus } from '../lib/profile-settings';
+
 /** Common UW majors for profile autocomplete (free-text entry still allowed). */
 export const UW_MAJORS = [
   'Accounting',
   'Aeronautics & Astronautics',
   'American Ethnic Studies',
+  'American Indian Studies',
   'Anthropology',
   'Applied Computing',
+  'Applied Mathematics',
+  'Architectural Design',
+  'Architectural Studies',
   'Architecture',
+  'Art',
   'Art History',
+  'Arts, Media and Culture',
+  'Asian Languages & Cultures',
+  'Asian Studies',
+  'Astronomy',
+  'Atmospheric and Climate Science',
   'Biochemistry',
   'Bioengineering',
   'Biology',
+  'Biomedical Sciences',
   'Business Administration',
   'Chemical Engineering',
   'Chemistry',
   'Civil Engineering',
   'Communication',
+  'Community, Environment & Planning',
+  'Comparative History of Ideas',
   'Comparative Literature',
   'Computer Engineering',
   'Computer Science',
+  'Computer Science & Software Engineering',
+  'Computer Science and Systems',
+  'Conservation & Restoration Science',
   'Construction Management',
+  'Criminal Justice',
+  'Culture, Literature & the Arts',
+  'Data Visualization',
+  'Developmental and Youth Studies',
   'Drama',
+  'Earth System Science',
+  'Earth & Space Sciences',
   'Economics',
+  'Economics and Policy Analysis',
   'Education',
+  'Educational Studies',
   'Electrical Engineering',
   'English',
   'Environmental Science',
+  'Environmental Studies',
+  'Environmental Sustainability',
+  'Ethnic, Gender and Labor Studies',
   'Finance',
+  'Gender, Women & Sexuality Studies',
   'Geography',
   'Global Studies',
   'Health Studies',
   'History',
   'Human Centered Design & Engineering',
   'Informatics',
+  'Information Technology',
+  'Interactive Media Design',
+  'Interdisciplinary Arts',
   'Interdisciplinary Arts & Sciences',
+  'Law, Economics & Public Policy',
+  'Law and Policy',
   'Law, Societies, and Justice',
   'Marketing',
   'Materials Science & Engineering',
+  'Mathematical Thinking & Visualization',
   'Mathematics',
   'Mechanical Engineering',
   'Media & Communication Studies',
@@ -44,40 +80,239 @@ export const UW_MAJORS = [
   'Nursing',
   'Philosophy',
   'Physics',
+  'Politics, Philosophy and Economics',
   'Political Science',
   'Psychology',
   'Public Health',
+  'Science, Technology & Society',
+  'Social Welfare',
   'Sociology',
+  'Spanish Language and Cultures',
   'Statistics',
+  'Sustainable Urban Development',
+  'Urban Design',
+  'Urban Studies',
+  'Writing Studies',
   'Other',
 ] as const;
 
 export type UwMajor = (typeof UW_MAJORS)[number];
 
-const normalizedMajors = UW_MAJORS.map((major) => ({
-  label: major,
-  normalized: major.toLowerCase(),
-}));
+/**
+ * Undergraduate majors by campus (official catalog / admissions sources, 2025–26).
+ * @see https://admit.washington.edu/academics/majors/
+ * @see https://www.uwb.edu/catalog/degree-programs
+ * @see https://www.tacoma.uw.edu/catalog/degree-programs
+ */
+export const UW_MAJORS_BY_CAMPUS: Record<Campus, readonly string[]> = {
+  seattle: [
+    'Aeronautics & Astronautics',
+    'American Ethnic Studies',
+    'American Indian Studies',
+    'Anthropology',
+    'Applied & Computational Mathematical Sciences',
+    'Applied Mathematics',
+    'Aquatic Conservation & Ecology',
+    'Architectural Design',
+    'Architectural Studies',
+    'Art',
+    'Art History',
+    'Asian Languages & Cultures',
+    'Asian Studies',
+    'Astronomy',
+    'Atmospheric and Climate Science',
+    'Biochemistry',
+    'Bioengineering',
+    'Biology',
+    'Business Administration',
+    'Chemical Engineering',
+    'Chemistry',
+    'Chinese',
+    'Cinema & Media Studies',
+    'Civil Engineering',
+    'Classical Studies',
+    'Classics',
+    'Communication',
+    'Community, Environment & Planning',
+    'Comparative History of Ideas',
+    'Comparative Literature',
+    'Comparative Religion',
+    'Computational Finance & Risk Management',
+    'Computer Engineering',
+    'Computer Science',
+    'Construction Management',
+    'Dance',
+    'Design',
+    'Disability Studies',
+    'Drama',
+    'Early Childhood & Family Studies',
+    'Earth & Space Sciences',
+    'Economics',
+    'Education Studies',
+    'Education, Communities & Organizations',
+    'Electrical & Computer Engineering',
+    'English – Creative Writing',
+    'English – Language, Literature & Culture',
+    'Environmental Design & Sustainability',
+    'Environmental Engineering',
+    'Environmental Public Health',
+    'Environmental Science & Terrestrial Resource Management',
+    'Environmental Studies',
+    'Ethnomusicology',
+    'European Studies',
+    'Food Systems, Nutrition, & Health',
+    'French',
+    'Gender, Women & Sexuality Studies',
+    'Geography',
+    'German',
+    'Global Literary Studies',
+    'Greek',
+    'History',
+    'History & Philosophy of Science',
+    'Human Centered Design & Engineering',
+    'Individualized Studies',
+    'Industrial Engineering',
+    'Informatics',
+    'International Studies',
+    'Italian',
+    'Japanese',
+    'Jewish Studies',
+    'Korean',
+    'Landscape Architecture',
+    'Latin',
+    'Latin American & Caribbean Studies',
+    'Law, Societies & Justice',
+    'Linguistics',
+    'Marine Biology',
+    'Materials Science & Engineering',
+    'Mathematics',
+    'Mechanical Engineering',
+    'Medical Laboratory Science',
+    'Microbiology',
+    'Middle Eastern Languages & Cultures',
+    'Music',
+    'Music Composition',
+    'Music Education',
+    'Neuroscience',
+    'Nursing',
+    'Oceanography',
+    'Philosophy',
+    'Physics',
+    'Political Science',
+    'Psychology',
+    'Public Health – Global Health',
+    'Public Service & Policy',
+    'Real Estate',
+    'Scandinavian Area Studies',
+    'Slavic Languages & Literatures',
+    'Social Welfare',
+    'Sociology',
+    'South Asian Languages & Cultures',
+    'Spanish',
+    'Speech & Hearing Sciences',
+    'Statistics',
+    'Sustainable Bioresource Systems Engineering',
+  ],
+  bothell: [
+    'American & Ethnic Studies',
+    'Applied Computing',
+    'Biology',
+    'Business Administration',
+    'Business Administration: Accounting',
+    'Business Administration: Finance',
+    'Business Administration: Leadership & Strategic Innovation',
+    'Business Administration: Marketing',
+    'Business Administration: Supply Chain Management',
+    'Chemistry',
+    'Computer Engineering',
+    'Computer Science & Software Engineering',
+    'Computer Science & Software Engineering: Information Assurance & Cybersecurity',
+    'Conservation & Restoration Science',
+    'Culture, Literature & the Arts',
+    'Data Visualization',
+    'Developmental and Youth Studies',
+    'Earth System Science',
+    'Economics',
+    'Educational Studies: Elementary Education',
+    'Electrical Engineering',
+    'Environmental Studies',
+    'Gender, Women, & Sexuality Studies',
+    'Global Studies',
+    'Health Studies',
+    'Interactive Media Design',
+    'Interdisciplinary Arts',
+    'Interdisciplinary Studies: Individualized Study',
+    'Law, Economics & Public Policy',
+    'Mathematical Thinking & Visualization',
+    'Mathematics',
+    'Mechanical Engineering',
+    'Media & Communications Studies',
+    'Nursing',
+    'Physics',
+    'Psychology',
+    'Science, Technology & Society',
+    'Society, Ethics & Human Behavior',
+  ],
+  tacoma: [
+    'Arts, Media and Culture',
+    'Biomedical Sciences',
+    'Business Administration',
+    'Civil Engineering',
+    'Communication',
+    'Computer Engineering',
+    'Computer Science and Systems',
+    'Criminal Justice',
+    'Economics and Policy Analysis',
+    'Education',
+    'Electrical Engineering',
+    'Environmental Science',
+    'Environmental Sustainability',
+    'Ethnic, Gender and Labor Studies',
+    'History',
+    'Information Technology',
+    'Law and Policy',
+    'Mathematics',
+    'Mechanical Engineering',
+    'Nursing',
+    'Politics, Philosophy and Economics',
+    'Psychology',
+    'Social Welfare',
+    'Spanish Language and Cultures',
+    'Sustainable Urban Development',
+    'Urban Design',
+    'Urban Studies',
+    'Writing Studies',
+  ],
+};
 
-export function filterUwMajors(query: string, limit = 8): string[] {
+function majorsForCampus(campus?: Campus | ''): readonly string[] {
+  if (campus && campus in UW_MAJORS_BY_CAMPUS) {
+    return UW_MAJORS_BY_CAMPUS[campus];
+  }
+  return UW_MAJORS;
+}
+
+function matchesQuery(major: string, trimmed: string, terms: string[]) {
+  const lower = major.toLowerCase();
+  if (lower.includes(trimmed.toLowerCase())) {
+    return true;
+  }
+  return terms.every((term) => lower.includes(term));
+}
+
+export function filterUwMajors(query: string, limit = 8, campus?: Campus | ''): string[] {
+  const pool = majorsForCampus(campus);
   const trimmed = query.trim();
+
   if (!trimmed) {
-    return UW_MAJORS.slice(0, limit);
+    return pool.slice(0, limit);
   }
 
   const terms = trimmed.toLowerCase().split(/\s+/).filter(Boolean);
-  const matches = normalizedMajors
-    .filter(({ normalized, label }) => {
-      if (label.toLowerCase().includes(trimmed.toLowerCase())) {
-        return true;
-      }
-      return terms.every((term) => normalized.includes(term));
-    })
-    .map(({ label }) => label);
+  const matches = pool.filter((major) => matchesQuery(major, trimmed, terms));
 
-  const exact = trimmed;
-  if (!matches.some((major) => major.toLowerCase() === exact.toLowerCase())) {
-    return [exact, ...matches].slice(0, limit);
+  if (!matches.some((major) => major.toLowerCase() === trimmed.toLowerCase())) {
+    return [trimmed, ...matches].slice(0, limit);
   }
 
   return matches.slice(0, limit);

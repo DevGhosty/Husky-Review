@@ -184,6 +184,10 @@ test('major search filters UW catalog suggestions', () => {
 
   const custom = filterUwMajors('Custom Interdisciplinary Major');
   assert.equal(custom[0], 'Custom Interdisciplinary Major');
+
+  const bothellMatches = filterUwMajors('computer', 8, 'bothell');
+  assert.ok(bothellMatches.every((major) => major.toLowerCase().includes('computer')));
+  assert.ok(!bothellMatches.some((major) => major === 'Aeronautics & Astronautics'));
 });
 
 test('profile completion stamps complete profiles and clears incomplete profiles', () => {
