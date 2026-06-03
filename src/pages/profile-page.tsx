@@ -185,7 +185,6 @@ export function ProfilePage() {
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const returnTo = safeReturnTo(searchParams.get('returnTo'));
-  const isSetupMode = searchParams.get('setup') === '1';
   const requiredProfileFields = [
     Boolean(settings.displayName.trim()),
     Boolean(settings.major.trim()),
@@ -193,6 +192,7 @@ export function ProfilePage() {
   ];
   const profileCompletion = Math.round((requiredProfileFields.filter(Boolean).length / requiredProfileFields.length) * 100);
   const profileReady = hasRequiredProfileFields(settings);
+  const isSetupMode = searchParams.get('setup') === '1' && !profileComplete;
   const workspaceCompletion = Math.min(100, (fileName ? 38 : 0) + (status === 'success' ? 42 : 0) + Math.min(selectedIds.length, 4) * 5);
   const isSaving = explicitSavePending;
   const showSetupBanner = isSetupMode;
@@ -248,6 +248,14 @@ export function ProfilePage() {
       allowSavedProfileNavigationRef.current = false;
     }, 0);
   }, [navigate, pendingSetupReturnTo, profileComplete]);
+
+  useEffect(() => {
+    if (searchParams.get('setup') !== '1' || !profileComplete) {
+      return;
+    }
+
+    navigate('/app/profile', { replace: true });
+  }, [navigate, profileComplete, searchParams]);
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {

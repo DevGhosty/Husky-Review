@@ -36,7 +36,6 @@ interface ProfileSettingsContextValue {
   toggleActivityInterest: (interest: ActivityType) => void;
   setGraduationYear: (graduationYear: string) => void;
   resetSettings: () => void;
-  commitProfileSetup: () => void;
   saveProfile: () => Promise<void>;
   revertToSavedBaseline: () => void;
   isProfileDirty: () => boolean;
@@ -74,14 +73,12 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
   const userId = user?.sub;
   const [settings, setSettings] = useState<ProfileSettings>(defaultProfileSettings);
   const [savedBaseline, setSavedBaseline] = useState('');
-  const [remoteReady, setRemoteReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState<ProfileSettingsContextValue['syncStatus']>('local');
   const [syncError, setSyncError] = useState<string | null>(null);
   const lastRemoteSettingsRef = useRef('');
   const savedBaselineRef = useRef('');
   const settingsRef = useRef(defaultProfileSettings);
   const activeUserIdRef = useRef<string | undefined>(undefined);
-  const saveInFlightRef = useRef(false);
 
   settingsRef.current = settings;
 
@@ -123,7 +120,6 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
 
     if (!isAuthenticated || !userId) {
       activeUserIdRef.current = undefined;
-      setRemoteReady(false);
       setSyncStatus('local');
       setSyncError(null);
       lastRemoteSettingsRef.current = '';
@@ -138,7 +134,6 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     }
 
     activeUserIdRef.current = userId;
-    setRemoteReady(false);
     setSyncError(null);
     lastRemoteSettingsRef.current = '';
     const loaded = loadProfileSettings(userId);
@@ -184,7 +179,6 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       if (error) {
         setSyncStatus('error');
         setSyncError(error.message);
-        setRemoteReady(false);
         return;
       }
 
@@ -211,8 +205,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         setSettings(merged);
       }
 
-      setRemoteReady(true);
-      setSyncStatus(serializeForRemote(settingsRef.current) === lastRemoteSettingsRef.current ? 'synced' : 'loading');
+      setSyncStatus(serializeForRemote(settingsRef.current) === lastRemoteSettingsRef.current ? 'synced' : 'local');
     }
 
     void loadRemoteProfile(client, userId);
@@ -221,51 +214,6 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       cancelled = true;
     };
   }, [isAuthenticated, isLoading, supabase, user, userId]);
-
-  useEffect(() => {
-    const client = supabase;
-
-    if (!isAuthenticated || !userId || !client || !remoteReady || saveInFlightRef.current) {
-      return;
-    }
-
-    const serialized = serializeForRemote(settings);
-    if (serialized === lastRemoteSettingsRef.current) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      async function saveRemoteProfile(activeClient: NonNullable<typeof client>, activeUserId: string) {
-        if (saveInFlightRef.current) {
-          return;
-        }
-
-        setSyncStatus('loading');
-        setSyncError(null);
-
-        const persisted = prepareProfileSettingsForPersistence(settings);
-        const { error } = await activeClient
-          .from('profiles')
-          .upsert(settingsToProfileRecord(activeUserId, persisted), { onConflict: 'auth0_user_id' });
-
-        if (error) {
-          setSyncStatus('error');
-          setSyncError(error.message);
-          return;
-        }
-
-        lastRemoteSettingsRef.current = serializeForRemote(persisted);
-        settingsRef.current = persisted;
-        saveProfileSettings(persisted, activeUserId);
-        setSettings(persisted);
-        setSyncStatus('synced');
-      }
-
-      void saveRemoteProfile(client, userId);
-    }, 450);
-
-    return () => window.clearTimeout(timer);
-  }, [isAuthenticated, remoteReady, settings, supabase, userId]);
 
   const isDirty = useMemo(() => isProfileDirty(), [isProfileDirty, savedBaseline, settings]);
 
@@ -288,11 +236,9 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     }
 
     const persisted = prepareProfileSettingsForPersistence(settingsRef.current, { stampCompletion: true });
-    saveInFlightRef.current = true;
 
     const client = supabase;
     if (!client) {
-      saveInFlightRef.current = false;
       const message = 'Supabase profile sync is not configured. Save your profile after Supabase is connected.';
       setSyncStatus('error');
       setSyncError(message);
@@ -318,15 +264,12 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       settingsRef.current = persisted;
       setSettings(persisted);
       lastRemoteSettingsRef.current = serializeForRemote(persisted);
-      setRemoteReady(true);
       setSyncStatus('synced');
     } catch (error) {
       const message = (error as Error).message || 'Profile sync failed.';
       setSyncStatus('error');
       setSyncError(message);
       throw error;
-    } finally {
-      saveInFlightRef.current = false;
     }
   }, [supabase, syncBaseline, userId]);
 
@@ -367,16 +310,6 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         syncBaseline(cleared);
         settingsRef.current = cleared;
         setSettings(cleared);
-      },
-      commitProfileSetup: () => {
-        const persisted = syncBaseline(
-          prepareProfileSettingsForPersistence(settingsRef.current, { stampCompletion: true }),
-        );
-        if (userId) {
-          saveProfileSettings(persisted, userId);
-        }
-        settingsRef.current = persisted;
-        setSettings(persisted);
       },
       saveProfile,
       revertToSavedBaseline,
