@@ -52,7 +52,7 @@ const targetRoleOptions: { id: TargetRole; label: string }[] = [
 const graduationYears = ['2025', '2026', '2027', '2028', '2029'];
 
 const selectClassName =
-  'h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30';
+  'h-11 w-full rounded-xl border border-input bg-card px-3 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-card dark:text-foreground [color-scheme:light] dark:[color-scheme:dark]';
 
 const trustSummaryItems = [
   'Resumes and analysis stay scoped to your signed-in account.',
@@ -169,9 +169,9 @@ export function ProfilePage() {
     toggleActivityInterest,
     setGraduationYear,
     resetSettings,
-    commitProfileSetup,
     saveProfile,
     revertToSavedBaseline,
+    isProfileDirty,
     syncStatus,
     syncError,
   } = useProfileSettings();
@@ -192,7 +192,7 @@ export function ProfilePage() {
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      isDirty &&
+      isProfileDirty() &&
       currentLocation.pathname === '/app/profile' &&
       nextLocation.pathname !== '/app/profile',
   );
@@ -215,7 +215,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
-      if (!isDirty) {
+      if (!isProfileDirty()) {
         return;
       }
       event.preventDefault();
@@ -223,7 +223,7 @@ export function ProfilePage() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
+  }, [isProfileDirty]);
 
   const initials = (settings.displayName || 'UW')
     .split(' ')
@@ -238,8 +238,12 @@ export function ProfilePage() {
     }
   }
 
-  function handleCompleteProfile() {
-    commitProfileSetup();
+  async function handleCompleteProfile() {
+    if (!profileReady) {
+      return;
+    }
+
+    await saveProfile();
     if (isSetupMode) {
       navigate(returnTo, { replace: true });
     }
@@ -256,10 +260,12 @@ export function ProfilePage() {
           type="button"
           variant="outline"
           className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white"
-          disabled={!profileReady}
-          onClick={handleCompleteProfile}
+          disabled={!profileReady || isSaving}
+          onClick={() => {
+            void handleCompleteProfile();
+          }}
         >
-          Complete profile
+          {isSaving ? 'Saving…' : isSetupMode ? 'Save & continue' : 'Complete profile'}
         </Button>
       );
     }
@@ -305,8 +311,10 @@ export function ProfilePage() {
                 <p className="mt-2 text-sm font-medium text-white/65">
                   {settings.major.trim() || 'Major not set'} - {campusLabel(settings.campus)}
                 </p>
-                {isDirty && profileComplete && !isSetupMode ? (
-                  <p className="mt-2 text-xs font-semibold text-husky-gold">Unsaved changes</p>
+                {isDirty ? (
+                  <p className="mt-2 text-xs font-semibold text-husky-gold">
+                    {profileComplete ? 'Unsaved changes' : 'Save your profile to continue'}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -443,9 +451,16 @@ export function ProfilePage() {
                       Complete these basics once, then Husky-Review can filter campus opportunities on every review.
                     </p>
                   </div>
-                  <Button type="button" className="h-11" disabled={!profileReady} onClick={handleCompleteProfile}>
-                    {profileReady ? 'Complete profile' : 'Complete required fields'}
-                  </Button>
+                    <Button
+                      type="button"
+                      className="h-11"
+                      disabled={!profileReady || isSaving}
+                      onClick={() => {
+                        void handleCompleteProfile();
+                      }}
+                    >
+                      {isSaving ? 'Saving…' : profileReady ? 'Save & continue' : 'Complete required fields'}
+                    </Button>
                 </div>
               </div>
             ) : null}
