@@ -26,6 +26,7 @@ import { useResumes } from '../hooks/useResumes';
 import { useReviewQuota } from '../hooks/useReviewQuota';
 import { hasRequiredProfileFields } from '../lib/profile-settings';
 import { hasJobPostingInput, jobPostingInputProgress } from '../lib/utils';
+import type { ReviewQuotaStatus } from '../types/analysis';
 
 const activityItems = [
   { label: 'Resume workspace', value: 'Ready', detail: 'Private upload path available', icon: FileText },
@@ -43,6 +44,7 @@ export function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userApiKey, setUserApiKey] = useState('');
   const [quotaRefreshKey, setQuotaRefreshKey] = useState(0);
+  const [sessionQuota, setSessionQuota] = useState<ReviewQuotaStatus | null>(null);
   const { settings, profileComplete, saveProfile } = useProfileSettings();
   const { resumes, loading: resumesLoading } = useResumes();
   const { quota, loading: quotaLoading, error: quotaError } = useReviewQuota(quotaRefreshKey);
@@ -81,9 +83,17 @@ export function DashboardPage() {
     }
   }, [location.hash]);
 
+  useEffect(() => {
+    if (quota) {
+      setSessionQuota(quota);
+    }
+  }, [quota]);
+
   function scrollToWorkflow() {
     workflowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  const activeQuota = analysis?.quota ?? sessionQuota ?? quota;
 
   async function analyzeReview() {
     setSubmitError(null);
@@ -127,6 +137,9 @@ export function DashboardPage() {
         userApiKey: userApiKey.trim() || undefined,
       });
       completeAnalysis(analysis);
+      if (analysis.quota) {
+        setSessionQuota(analysis.quota);
+      }
       setQuotaRefreshKey((current) => current + 1);
     } catch (error) {
       setSubmitError((error as Error).message);
@@ -261,8 +274,8 @@ export function DashboardPage() {
           savedResumes={resumes}
           selectedResumeId={resumeId}
           resumesLoading={resumesLoading}
-          quota={quota}
-          quotaLoading={quotaLoading}
+          quota={activeQuota}
+          quotaLoading={quotaLoading && !activeQuota}
           quotaError={quotaError}
           isSubmitting={isSubmitting}
           submitError={submitError}
