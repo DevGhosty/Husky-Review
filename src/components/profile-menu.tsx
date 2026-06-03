@@ -21,6 +21,7 @@ import {
 } from '../auth/auth0-config';
 import { useReview } from '../context/review-context';
 import { useProfileSettings } from '../context/profile-settings-context';
+import { resolveProfilePictureUrl } from '../lib/profile-picture';
 import { profileSectionHref, profileSections } from '../lib/profile-settings';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
@@ -52,6 +53,7 @@ export function ProfileMenu() {
   const [authError, setAuthError] = useState<string | null>(null);
 
   const displayName = user?.name || user?.nickname || settings.displayName || 'UW student';
+  const pictureUrl = resolveProfilePictureUrl(settings.avatarUrl, user?.picture);
   const subtitle = user?.email ? user.email : user ? 'Signed in with Google' : 'Sign in with your @uw.edu Google account';
 
   const initials = displayName
@@ -98,7 +100,7 @@ export function ProfileMenu() {
       <DropdownMenuTrigger asChild>
         <button type="button" aria-label="Open profile menu" className={triggerClass}>
           <Avatar className="size-8">
-            {user?.picture ? <AvatarImage src={user.picture} alt={displayName} /> : null}
+            {pictureUrl ? <AvatarImage src={pictureUrl} alt={displayName} /> : null}
             <AvatarFallback className="bg-primary/10 text-sm font-black text-primary">{initials}</AvatarFallback>
           </Avatar>
           <ChevronDown className="hidden size-4 text-primary sm:block" aria-hidden="true" />

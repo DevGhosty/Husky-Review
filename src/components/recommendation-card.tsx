@@ -1,5 +1,6 @@
 import { Check, Clock3, ExternalLink, Plus, Star, X } from 'lucide-react';
 import type { Recommendation } from '../types/analysis';
+import { resolveSourceLink } from '../lib/source-link';
 import { cn, formatPercent } from '../lib/utils';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -35,6 +36,8 @@ export function RecommendationCard({
   onToggle,
   staggerIndex,
 }: RecommendationCardProps) {
+  const sourceHref = resolveSourceLink(recommendation.sourceLabel, recommendation.sourceUrl);
+
   return (
     <Card
       className={cn(
@@ -98,10 +101,22 @@ export function RecommendationCard({
         </div>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-            <ExternalLink className="size-3.5" aria-hidden="true" />
-            {recommendation.sourceLabel}
-          </span>
+          {sourceHref ? (
+            <a
+              href={sourceHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary underline-offset-2 hover:underline"
+            >
+              <ExternalLink className="size-3.5" aria-hidden="true" />
+              {recommendation.sourceLabel}
+            </a>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+              <ExternalLink className="size-3.5" aria-hidden="true" />
+              {recommendation.sourceLabel}
+            </span>
+          )}
           <Button
             variant={selected ? 'dark' : 'secondary'}
             className="h-10 px-4 text-sm shadow-soft"

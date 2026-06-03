@@ -99,6 +99,7 @@ interface StoredRecommendation {
   lastVerified: string;
   confidence: number;
   sourceLabel: string;
+  sourceUrl: string;
   roadmapWeek: number;
   roadmapAction: string;
 }
@@ -466,6 +467,7 @@ function buildHeuristicAnalysis(input: AnalysisInput): StoredAnalysis {
       lastVerified: item.activity.last_verified || '',
       confidence,
       sourceLabel: sourceLabel(item.activity.source_url),
+      sourceUrl: item.activity.source_url,
       roadmapWeek: group === 'in-time' ? (index < 2 ? 1 : 2) : 3,
       roadmapAction: roadmapAction(item.activity, group, item.skillOverlap),
     };

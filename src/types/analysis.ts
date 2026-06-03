@@ -36,6 +36,7 @@ export interface Recommendation {
   lastVerified: string;
   confidence: number;
   sourceLabel: string;
+  sourceUrl?: string;
   roadmapWeek: number;
   roadmapAction: string;
 }
