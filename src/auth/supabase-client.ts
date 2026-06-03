@@ -251,6 +251,33 @@ export async function fetchReviewQuota(accessToken: string): Promise<ReviewQuota
   return readApiJson<ReviewQuotaStatus>(response, 'Failed to fetch review quota');
 }
 
+export async function fetchProfile(accessToken: string): Promise<ProfileRecord | null> {
+  const response = await fetch('/api/profile', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const result = await readApiJson<{ profile: ProfileRecord | null }>(response, 'Failed to fetch profile');
+  return result.profile;
+}
+
+export async function saveProfileRecord(accessToken: string, profile: ProfileRecord): Promise<ProfileRecord> {
+  const response = await fetch('/api/profile', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(profile),
+  });
+
+  const result = await readApiJson<{ profile: ProfileRecord }>(response, 'Failed to save profile');
+  return result.profile;
+}
+
 export async function updateReviewSelections(
   accessToken: string,
   reviewId: string,

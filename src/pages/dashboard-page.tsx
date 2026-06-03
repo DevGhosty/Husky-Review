@@ -24,6 +24,7 @@ import { useProfileSettings } from '../context/profile-settings-context';
 import { useReview } from '../context/review-context';
 import { useResumes } from '../hooks/useResumes';
 import { useReviewQuota } from '../hooks/useReviewQuota';
+import { hasRequiredProfileFields } from '../lib/profile-settings';
 import { hasJobPostingInput, jobPostingInputProgress } from '../lib/utils';
 
 const activityItems = [
@@ -42,7 +43,7 @@ export function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userApiKey, setUserApiKey] = useState('');
   const [quotaRefreshKey, setQuotaRefreshKey] = useState(0);
-  const { profileComplete, saveProfile } = useProfileSettings();
+  const { settings, profileComplete, saveProfile } = useProfileSettings();
   const { resumes, loading: resumesLoading } = useResumes();
   const { quota, loading: quotaLoading, error: quotaError } = useReviewQuota(quotaRefreshKey);
   const {
@@ -89,7 +90,7 @@ export function DashboardPage() {
     setIsSubmitting(true);
 
     try {
-      if (!profileComplete) {
+      if (!profileComplete && !hasRequiredProfileFields(settings)) {
         throw new Error('Complete your profile with name, major, and campus before running a review.');
       }
 
