@@ -180,6 +180,7 @@ export function ProfilePage() {
   } = useProfileSettings();
   const [explicitSaveError, setExplicitSaveError] = useState<string | null>(null);
   const [explicitSavePending, setExplicitSavePending] = useState(false);
+  const [pendingSetupReturnTo, setPendingSetupReturnTo] = useState<string | null>(null);
   const allowSavedProfileNavigationRef = useRef(false);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
@@ -235,6 +236,20 @@ export function ProfilePage() {
   }, [blocker.state, revertToSavedBaseline]);
 
   useEffect(() => {
+    if (!pendingSetupReturnTo || !profileComplete) {
+      return;
+    }
+
+    allowSavedProfileNavigationRef.current = true;
+    navigate(pendingSetupReturnTo, { replace: true });
+    setPendingSetupReturnTo(null);
+
+    window.setTimeout(() => {
+      allowSavedProfileNavigationRef.current = false;
+    }, 0);
+  }, [navigate, pendingSetupReturnTo, profileComplete]);
+
+  useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
       if (!isProfileDirty()) {
         return;
@@ -269,11 +284,7 @@ export function ProfilePage() {
     try {
       await saveProfile();
       if (isSetupMode) {
-        allowSavedProfileNavigationRef.current = true;
-        navigate(returnTo, { replace: true });
-        window.setTimeout(() => {
-          allowSavedProfileNavigationRef.current = false;
-        }, 0);
+        setPendingSetupReturnTo(returnTo);
       }
     } catch (saveError) {
       setExplicitSaveError((saveError as Error).message || 'Profile could not sync. Please try saving again.');
