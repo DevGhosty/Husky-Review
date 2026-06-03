@@ -20,6 +20,7 @@ import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Surface } from '../components/layout/surface';
 import { analyzeReview as analyzeReviewRequest, uploadResume } from '../auth/supabase-client';
+import { useProfileSettings } from '../context/profile-settings-context';
 import { useReview } from '../context/review-context';
 import { useResumes } from '../hooks/useResumes';
 import { useReviewQuota } from '../hooks/useReviewQuota';
@@ -30,6 +31,8 @@ const activityItems = [
   { label: 'Privacy status', value: 'Private', detail: 'Resumes are removed by scheduled cleanup', icon: LockKeyhole },
 ];
 
+const PROFILE_SYNC_ANALYSIS_ERROR = 'Profile could not sync. Please save your profile again before running a review.';
+
 export function DashboardPage() {
   const workflowRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -39,6 +42,7 @@ export function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userApiKey, setUserApiKey] = useState('');
   const [quotaRefreshKey, setQuotaRefreshKey] = useState(0);
+  const { profileComplete, saveProfile } = useProfileSettings();
   const { resumes, loading: resumesLoading } = useResumes();
   const { quota, loading: quotaLoading, error: quotaError } = useReviewQuota(quotaRefreshKey);
   const {
@@ -82,13 +86,23 @@ export function DashboardPage() {
 
   async function analyzeReview() {
     setSubmitError(null);
+    setIsSubmitting(true);
 
     try {
-      startAnalysis();
+      if (!profileComplete) {
+        throw new Error('Complete your profile with name, major, and campus before running a review.');
+      }
+
+      try {
+        await saveProfile();
+      } catch {
+        throw new Error(PROFILE_SYNC_ANALYSIS_ERROR);
+      }
+
       let activeResumeId = resumeId;
+      startAnalysis();
 
       if (resumeFile) {
-        setIsSubmitting(true);
         const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
         const uploadedResume = await uploadResume(token, resumeFile, {
           jobPostingUrl,

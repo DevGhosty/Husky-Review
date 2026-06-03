@@ -252,9 +252,13 @@ export function ProfilePage() {
       return;
     }
 
-    await saveProfile();
-    if (isSetupMode) {
-      navigate(returnTo, { replace: true });
+    try {
+      await saveProfile();
+      if (isSetupMode) {
+        navigate(returnTo, { replace: true });
+      }
+    } catch {
+      // Keep the student on the profile page; syncError explains the save failure.
     }
   }
 
@@ -264,11 +268,17 @@ export function ProfilePage() {
       return;
     }
 
-    await saveProfile();
+    try {
+      await saveProfile();
+    } catch {
+      // Keep the visible draft in place; syncError explains the save failure.
+    }
   }
 
   const handleSaveProfile = useCallback(() => {
-    void saveProfile();
+    void saveProfile().catch(() => {
+      // syncError is rendered in the overview panel.
+    });
   }, [saveProfile]);
 
   function renderHeroAction() {

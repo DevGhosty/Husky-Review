@@ -93,7 +93,6 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     const persisted = prepareProfileSettingsForPersistence(next);
     const baseline = serializeForRemote(persisted);
     savedBaselineRef.current = baseline;
-    lastRemoteSettingsRef.current = baseline;
     setSavedBaseline(baseline);
     return persisted;
   }, []);
@@ -213,7 +212,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       }
 
       setRemoteReady(true);
-      setSyncStatus('synced');
+      setSyncStatus(serializeForRemote(settingsRef.current) === lastRemoteSettingsRef.current ? 'synced' : 'loading');
     }
 
     void loadRemoteProfile(client, userId);
@@ -276,42 +275,53 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
 
   const saveProfile = useCallback(async () => {
     if (!userId) {
-      return;
+      const message = 'Sign in before saving your profile.';
+      setSyncStatus('error');
+      setSyncError(message);
+      throw new Error(message);
     }
 
-    const persisted = syncBaseline(
-      prepareProfileSettingsForPersistence(settingsRef.current, { stampCompletion: true }),
-    );
-    saveProfileSettings(persisted, userId);
-    settingsRef.current = persisted;
-    setSettings(persisted);
+    const persisted = prepareProfileSettingsForPersistence(settingsRef.current, { stampCompletion: true });
     saveInFlightRef.current = true;
 
     const client = supabase;
     if (!client) {
-      setSyncStatus('synced');
       saveInFlightRef.current = false;
-      return;
+      const message = 'Supabase profile sync is not configured. Save your profile after Supabase is connected.';
+      setSyncStatus('error');
+      setSyncError(message);
+      throw new Error(message);
     }
 
     setSyncStatus('loading');
     setSyncError(null);
 
-    const { error } = await client
-      .from('profiles')
-      .upsert(settingsToProfileRecord(userId, persisted), { onConflict: 'auth0_user_id' });
+    try {
+      const { error } = await client
+        .from('profiles')
+        .upsert(settingsToProfileRecord(userId, persisted), { onConflict: 'auth0_user_id' });
 
-    saveInFlightRef.current = false;
+      if (error) {
+        setSyncStatus('error');
+        setSyncError(error.message);
+        throw new Error(error.message);
+      }
 
-    if (error) {
+      syncBaseline(persisted);
+      saveProfileSettings(persisted, userId);
+      settingsRef.current = persisted;
+      setSettings(persisted);
+      lastRemoteSettingsRef.current = serializeForRemote(persisted);
+      setRemoteReady(true);
+      setSyncStatus('synced');
+    } catch (error) {
+      const message = (error as Error).message || 'Profile sync failed.';
       setSyncStatus('error');
-      setSyncError(error.message);
-      return;
+      setSyncError(message);
+      throw error;
+    } finally {
+      saveInFlightRef.current = false;
     }
-
-    lastRemoteSettingsRef.current = serializeForRemote(persisted);
-    setRemoteReady(true);
-    setSyncStatus('synced');
   }, [supabase, syncBaseline, userId]);
 
   const value = useMemo<ProfileSettingsContextValue>(

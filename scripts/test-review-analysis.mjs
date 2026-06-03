@@ -28,6 +28,7 @@ const { filterActivitiesByInterests, matchesActivityInterests } = await importTy
 const { fetchJobPostingText, isPublicAddress, postingHtmlToText, resolveJobDescription } = await importTypeScriptModule('../api/job-posting.ts');
 const { checkAppKeyQuota, getAppKeyQuotaStatus } = await importTypeScriptModule('../api/review-quota.ts');
 const { getTokenEmail } = await importTypeScriptModule('../api/auth0-verify.ts');
+const { campusNameToCampus, getCompletedProfileCampus } = await importTypeScriptModule('../api/profile-completion.ts');
 const {
   completeProfileSettings,
   defaultProfileSettings,
@@ -259,6 +260,30 @@ test('profile reconcile keeps local completion when remote profile lacks profile
   const merged = reconcileProfileSettings(local, remote);
   assert.equal(merged.profileCompletedAt, '2026-06-03T10:00:00.000Z');
   assert.equal(isProfileComplete(merged), true);
+});
+
+test('api profile completion accepts only completed server profile rows', () => {
+  const completedProfile = {
+    display_name: 'Alex Husky',
+    major: 'Informatics',
+    campus: 'seattle',
+    profile_completed_at: '2026-06-03T10:00:00.000Z',
+  };
+
+  assert.equal(getCompletedProfileCampus(completedProfile), 'seattle');
+  assert.equal(getCompletedProfileCampus({ ...completedProfile, profile_completed_at: null }), null);
+  assert.equal(getCompletedProfileCampus({ ...completedProfile, display_name: '   ' }), null);
+  assert.equal(getCompletedProfileCampus({ ...completedProfile, major: '' }), null);
+  assert.equal(getCompletedProfileCampus({ ...completedProfile, campus: 'everett' }), null);
+  assert.equal(getCompletedProfileCampus(null), null);
+});
+
+test('api profile completion normalizes supported campus variants', () => {
+  assert.equal(campusNameToCampus('B'), 'bothell');
+  assert.equal(campusNameToCampus('T'), 'tacoma');
+  assert.equal(campusNameToCampus('bothell'), 'bothell');
+  assert.equal(campusNameToCampus('tacoma'), 'tacoma');
+  assert.equal(campusNameToCampus('seattle'), 'seattle');
 });
 
 test('campus-aware ranking prefers the profile campus when cross-campus candidates are present', () => {
