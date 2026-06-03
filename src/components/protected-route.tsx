@@ -9,6 +9,7 @@ import {
   getAuth0CallbackSearchParams,
   getAuth0LoginOptions,
   getAuth0LogoutOptions,
+  buildAppReturnTo,
   isAllowedEmail,
   isAuth0Configured,
   stashAuthNotice,
@@ -32,7 +33,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   const SESSION_CHECK_TIMEOUT_MS = 12_000;
 
-  const returnTo = location.pathname + location.search + location.hash;
+  const returnTo = buildAppReturnTo(location.pathname, location.search, location.hash);
   const callbackParams = getAuth0CallbackSearchParams(location.search);
   const callbackError = formatAuth0CallbackError(callbackParams.error, callbackParams.errorDescription);
   const isCompletingCallback =
@@ -216,6 +217,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!profileComplete && location.pathname !== '/app/profile') {
+    if (callbackParams.hasAuthCallback) {
+      return (
+        <main className="grid min-h-[calc(100vh-8rem)] place-items-center px-5 py-16">
+          <div className="text-center">
+            <Loader2 className="mx-auto size-10 animate-spin text-primary" aria-hidden="true" />
+            <p className="mt-4 text-sm font-semibold text-muted-foreground">Completing Google sign-in...</p>
+          </div>
+        </main>
+      );
+    }
+
     return <Navigate to={`/app/profile?setup=1&returnTo=${encodeURIComponent(returnTo)}`} replace />;
   }
 

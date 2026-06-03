@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App';
 import { TooltipProvider } from './components/ui/tooltip';
 import { Auth0ProviderWithNavigate } from './auth/auth0-provider';
@@ -9,14 +9,21 @@ import './index.css';
 
 initTheme();
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
+const router = createBrowserRouter([
+  {
+    path: '*',
+    element: (
       <Auth0ProviderWithNavigate>
         <TooltipProvider>
           <App />
         </TooltipProvider>
       </Auth0ProviderWithNavigate>
-    </BrowserRouter>
+    ),
+  },
+]);
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <RouterProvider router={router} />
   </React.StrictMode>,
 );
