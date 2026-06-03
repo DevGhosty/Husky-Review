@@ -7,6 +7,7 @@ import {
   sendSupabaseMutationError,
   setApiHeaders,
   withSignedUrl,
+  getRouteId,
   type ResumeRow,
 } from '../supabase-admin.js';
 
@@ -23,7 +24,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const auth = await requireAuth(req.headers.authorization);
-    const id = typeof req.query.id === 'string' ? req.query.id : req.query.id?.[0];
+    const id = getRouteId(req);
 
     if (!id) {
       return res.status(400).json({ message: 'Resume ID required' });

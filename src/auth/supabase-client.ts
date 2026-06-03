@@ -107,6 +107,10 @@ async function throwApiError(response: Response, fallbackMessage: string): Promi
     // Preserve the fallback when the server returns malformed error content.
   }
 
+  if (message === fallbackMessage) {
+    message = `${fallbackMessage} (HTTP ${response.status})`;
+  }
+
   throw new Error(message);
 }
 

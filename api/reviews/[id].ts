@@ -1,8 +1,8 @@
 import { requireAuth } from '../auth0-verify.js';
-import { getSupabaseAdmin, sendError, sendInternalError, sendSupabaseMutationError, setApiHeaders } from '../supabase-admin.js';
+import { getSupabaseAdmin, getRouteId, sendError, sendInternalError, sendSupabaseMutationError, setApiHeaders } from '../supabase-admin.js';
 
-function getReviewId(req: any) {
-  return typeof req.query.id === 'string' ? req.query.id : req.query.id?.[0];
+function getReviewId(req: { query?: Record<string, string | string[] | undefined>; url?: string }) {
+  return getRouteId(req);
 }
 
 function applySelectedIds(analysis: any, selectedIds: string[]) {

@@ -97,13 +97,36 @@ function shouldExposeDeletePermissionHint() {
 export function sendSupabaseMutationError(res: any, context: string, cause: unknown) {
   console.error(context, cause);
 
-  if (getPostgresErrorCode(cause) === '42501' && shouldExposeDeletePermissionHint()) {
+  const code = getPostgresErrorCode(cause);
+  const detail =
+    cause && typeof cause === 'object' && 'message' in cause && typeof (cause as { message?: unknown }).message === 'string'
+      ? (cause as { message: string }).message
+      : undefined;
+
+  if (code === '42501') {
     return res.status(500).json({
-      message: 'Database delete permissions missing — apply migration 20260528000000_fix_reviews_delete.sql',
+      message: shouldExposeDeletePermissionHint()
+        ? 'Database delete permissions missing — apply migration 20260528000000_fix_reviews_delete.sql'
+        : 'Internal server error',
     });
   }
 
+  if (shouldExposeDeletePermissionHint() && detail) {
+    return res.status(500).json({ message: `Delete failed: ${detail}` });
+  }
+
   return res.status(500).json({ message: 'Internal server error' });
+}
+
+export function getRouteId(req: { query?: Record<string, string | string[] | undefined>; url?: string }) {
+  const fromQuery = typeof req.query?.id === 'string' ? req.query.id : req.query?.id?.[0];
+  if (fromQuery) {
+    return fromQuery;
+  }
+
+  const url = req.url || '';
+  const match = url.match(/\/api\/(?:resumes|reviews)\/([^/?#]+)/);
+  return match?.[1];
 }
 
 export async function withSignedUrl(supabase: SupabaseClient<any>, row: ResumeRow) {
