@@ -253,7 +253,13 @@ export function UploadPanel({
                 </div>
               </div>
               <Button
-                className="h-12 min-w-44 shadow-premium disabled:opacity-100 disabled:border disabled:border-border disabled:bg-muted disabled:text-muted-foreground"
+                variant="primary"
+                className={cn(
+                  'h-12 min-w-44',
+                  canAnalyze || isLoading
+                    ? 'shadow-glow disabled:opacity-100'
+                    : 'shadow-none disabled:opacity-100 disabled:border disabled:border-husky-purple/25 disabled:bg-secondary disabled:text-secondary-foreground disabled:hover:translate-y-0',
+                )}
                 disabled={!canAnalyze}
                 onClick={onAnalyze}
                 aria-busy={isLoading}
