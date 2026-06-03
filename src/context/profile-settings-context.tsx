@@ -38,6 +38,7 @@ interface ProfileSettingsContextValue {
   commitProfileSetup: () => void;
   saveProfile: () => Promise<void>;
   revertToSavedBaseline: () => void;
+  isProfileDirty: () => boolean;
   syncStatus: 'local' | 'loading' | 'synced' | 'error';
   syncError: string | null;
 }
@@ -76,19 +77,32 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
   const [syncStatus, setSyncStatus] = useState<ProfileSettingsContextValue['syncStatus']>('local');
   const [syncError, setSyncError] = useState<string | null>(null);
   const lastRemoteSettingsRef = useRef('');
+  const savedBaselineRef = useRef('');
+  const settingsRef = useRef(defaultProfileSettings);
   const activeUserIdRef = useRef<string | undefined>(undefined);
   const saveInFlightRef = useRef(false);
+
+  settingsRef.current = settings;
 
   function updateSettings(updater: (current: ProfileSettings) => ProfileSettings) {
     setSettings((current) => normalizeProfileSettingsDraft(updater(current)));
   }
 
-  const acknowledgeBaseline = useCallback((next: ProfileSettings) => {
+  const syncBaseline = useCallback((next: ProfileSettings) => {
     const persisted = prepareProfileSettingsForPersistence(next);
     const baseline = serializeForRemote(persisted);
-    setSavedBaseline(baseline);
+    savedBaselineRef.current = baseline;
     lastRemoteSettingsRef.current = baseline;
+    setSavedBaseline(baseline);
     return persisted;
+  }, []);
+
+  const isProfileDirty = useCallback(() => {
+    const baseline = savedBaselineRef.current;
+    if (!baseline) {
+      return false;
+    }
+    return serializeForRemote(settingsRef.current) !== baseline;
   }, []);
 
   const supabase = useMemo(() => {
@@ -113,6 +127,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       setSyncStatus('local');
       setSyncError(null);
       lastRemoteSettingsRef.current = '';
+      savedBaselineRef.current = '';
       setSavedBaseline('');
       setSettings(defaultProfileSettings);
       return;
@@ -127,9 +142,9 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     setSyncError(null);
     lastRemoteSettingsRef.current = '';
     const loaded = loadProfileSettings(userId);
+    syncBaseline(loaded);
     setSettings(loaded);
-    setSavedBaseline(serializeForRemote(loaded));
-  }, [isAuthenticated, isLoading, userId]);
+  }, [isAuthenticated, isLoading, syncBaseline, userId]);
 
   useEffect(() => {
     if (!userId || !isAuthenticated) {
@@ -180,12 +195,10 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
 
       if (data) {
         const remoteSettings = profileRecordToSettings(data);
-        lastRemoteSettingsRef.current = serializeForRemote(remoteSettings);
-        setSavedBaseline(lastRemoteSettingsRef.current);
+        syncBaseline(remoteSettings);
         setSettings(remoteSettings);
       } else {
-        lastRemoteSettingsRef.current = serializeForRemote(defaultProfileSettings);
-        setSavedBaseline(lastRemoteSettingsRef.current);
+        syncBaseline(defaultProfileSettings);
         setSettings((current) => {
           if (current.displayName.trim()) {
             return current;
@@ -250,27 +263,26 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     return () => window.clearTimeout(timer);
   }, [isAuthenticated, remoteReady, settings, supabase, userId]);
 
-  const isDirty = useMemo(() => {
-    if (!savedBaseline) {
-      return false;
-    }
-    return serializeForRemote(settings) !== savedBaseline;
-  }, [savedBaseline, settings]);
+  const isDirty = useMemo(() => isProfileDirty(), [isProfileDirty, savedBaseline, settings]);
 
   const revertToSavedBaseline = useCallback(() => {
-    if (!savedBaseline) {
+    const baseline = savedBaselineRef.current;
+    if (!baseline) {
       return;
     }
-    setSettings(parseProfileSettingsBaseline(savedBaseline));
-  }, [savedBaseline]);
+    const restored = parseProfileSettingsBaseline(baseline);
+    settingsRef.current = restored;
+    setSettings(restored);
+  }, []);
 
   const saveProfile = useCallback(async () => {
     if (!userId) {
       return;
     }
 
-    const persisted = acknowledgeBaseline(settings);
+    const persisted = syncBaseline(settingsRef.current);
     saveProfileSettings(persisted, userId);
+    settingsRef.current = persisted;
     setSettings(persisted);
     saveInFlightRef.current = true;
 
@@ -297,7 +309,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     }
 
     setSyncStatus('synced');
-  }, [acknowledgeBaseline, remoteReady, settings, supabase, userId]);
+  }, [remoteReady, supabase, syncBaseline, userId]);
 
   const value = useMemo<ProfileSettingsContextValue>(
     () => ({
@@ -333,26 +345,25 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       },
       resetSettings: () => {
         const cleared = clearProfileSettings(userId);
-        const baseline = serializeForRemote(cleared);
-        lastRemoteSettingsRef.current = baseline;
-        setSavedBaseline(baseline);
+        syncBaseline(cleared);
+        settingsRef.current = cleared;
         setSettings(cleared);
       },
       commitProfileSetup: () => {
-        setSettings((current) => {
-          const persisted = prepareProfileSettingsForPersistence(current);
-          const baseline = serializeForRemote(persisted);
-          setSavedBaseline(baseline);
-          lastRemoteSettingsRef.current = baseline;
-          return persisted;
-        });
+        const persisted = syncBaseline(settingsRef.current);
+        if (userId) {
+          saveProfileSettings(persisted, userId);
+        }
+        settingsRef.current = persisted;
+        setSettings(persisted);
       },
       saveProfile,
       revertToSavedBaseline,
+      isProfileDirty,
       syncStatus,
       syncError,
     }),
-    [isDirty, saveProfile, revertToSavedBaseline, settings, syncError, syncStatus, userId],
+    [isDirty, isProfileDirty, saveProfile, revertToSavedBaseline, settings, syncBaseline, syncError, syncStatus, userId],
   );
 
   return <ProfileSettingsContext.Provider value={value}>{children}</ProfileSettingsContext.Provider>;

@@ -117,6 +117,15 @@
     @apply bg-background text-foreground;
   }
 
+  select {
+    @apply bg-card text-foreground;
+  }
+
+  select option {
+    background-color: var(--card);
+    color: var(--foreground);
+  }
+
   h1,
   h2,
   h3 {
