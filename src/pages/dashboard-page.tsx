@@ -270,7 +270,7 @@ export function DashboardPage() {
             <p className="type-eyebrow">Workspace pages</p>
             <h2 className="type-section-title type-section-title--brand mt-2">Continue through the tool navigation.</h2>
             <p className="type-body mt-3 max-w-2xl sm:text-[0.9375rem] sm:leading-relaxed">
-              The app shell separates roadmap planning, resources, saved reviews, privacy, and profile settings around the current review.
+              The app shell separates roadmap planning, resources, saved reviews, and profile settings around the current review.
             </p>
           </div>
           <div className="grid min-w-0 w-full gap-3 sm:grid-cols-3">

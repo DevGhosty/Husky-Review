@@ -133,6 +133,19 @@ export function normalizeProfileSettingsDraft(settings: ProfileSettings): Profil
 }
 
 /** Persisted snapshot (localStorage + Supabase): trim text fields and stamp completion. */
+/** Stable serialization for dirty-state comparison and remote sync. */
+export function profileSettingsBaseline(settings: ProfileSettings): string {
+  return JSON.stringify(prepareProfileSettingsForPersistence(settings));
+}
+
+export function parseProfileSettingsBaseline(serialized: string): ProfileSettings {
+  try {
+    return parseStoredSettings(JSON.parse(serialized) as Partial<ProfileSettings>);
+  } catch {
+    return defaultProfileSettings;
+  }
+}
+
 export function prepareProfileSettingsForPersistence(
   settings: ProfileSettings,
   completedAt = new Date().toISOString(),
@@ -209,7 +222,6 @@ const profileSectionIds = {
   notifications: 'notifications',
   careerGoals: 'career-goals',
   appearance: 'appearance',
-  privacy: 'privacy',
 } as const;
 
 export type ProfileSectionId = (typeof profileSectionIds)[keyof typeof profileSectionIds];
@@ -220,7 +232,6 @@ export const profileSections = [
   { id: profileSectionIds.notifications, label: 'Notifications' },
   { id: profileSectionIds.careerGoals, label: 'Career goals' },
   { id: profileSectionIds.appearance, label: 'Appearance' },
-  { id: profileSectionIds.privacy, label: 'Privacy & data' },
 ] as const;
 
 export function profileSectionHref(sectionId: ProfileSectionId): string {

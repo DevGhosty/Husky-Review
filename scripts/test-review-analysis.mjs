@@ -34,7 +34,9 @@ const {
   isProfileComplete,
   loadProfileSettings,
   normalizeProfileSettingsDraft,
+  parseProfileSettingsBaseline,
   prepareProfileSettingsForPersistence,
+  profileSettingsBaseline,
   profileStorageKey,
   saveProfileSettings,
 } = await importTypeScriptModule('../src/lib/profile-settings.ts');
@@ -188,6 +190,25 @@ test('major search filters UW catalog suggestions', () => {
   const bothellMatches = filterUwMajors('computer', 8, 'bothell');
   assert.ok(bothellMatches.every((major) => major.toLowerCase().includes('computer')));
   assert.ok(!bothellMatches.some((major) => major === 'Aeronautics & Astronautics'));
+});
+
+test('profile settings baseline detects dirty drafts and round-trips', () => {
+  const saved = prepareProfileSettingsForPersistence({
+    ...defaultProfileSettings,
+    displayName: 'Alex Husky',
+    major: 'Informatics',
+    campus: 'seattle',
+    profileCompletedAt: '2026-06-03T10:00:00.000Z',
+  });
+
+  const baseline = profileSettingsBaseline(saved);
+  const dirtyDraft = normalizeProfileSettingsDraft({ ...saved, includeOtherCampuses: true });
+  assert.notEqual(profileSettingsBaseline(dirtyDraft), baseline);
+
+  const restored = parseProfileSettingsBaseline(baseline);
+  assert.equal(restored.displayName, 'Alex Husky');
+  assert.equal(restored.major, 'Informatics');
+  assert.equal(restored.campus, 'seattle');
 });
 
 test('profile completion stamps complete profiles and clears incomplete profiles', () => {
