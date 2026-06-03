@@ -538,7 +538,7 @@ export function ProfilePage() {
               <div className="inset-row flex items-start gap-3 rounded-2xl p-4">
                 <GraduationCap className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <p className="text-sm leading-6 text-muted-foreground">
-                  These map to the activity types Husky-Review pulls from the UW catalog: courses, clubs, events, research, fellowships, and projects. Preferences are stored locally and can later inform ranking once authenticated student profiles are connected.
+                  These map to the activity types Husky-Review pulls from the UW catalog: courses, clubs, events, research, fellowships, and projects. Saved interests filter catalog retrieval and recommendations during review analysis.
                 </p>
               </div>
             </div>

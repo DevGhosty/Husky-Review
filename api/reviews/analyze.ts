@@ -8,6 +8,7 @@ import {
   resolveJobDescription,
 } from '../job-posting.js';
 import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders, type ResumeRow } from '../supabase-admin.js';
+import { filterActivitiesByInterests, parseActivityInterests } from '../catalog-filters.js';
 import { buildReviewAnalysis, extractResumeText, type ActivityRow } from '../review-analysis.js';
 import { checkAppKeyQuota, consumeAppKeyQuota, deterministicQuotaStatus, getAppGeminiKey, userKeyQuotaStatus } from '../review-quota.js';
 
@@ -19,6 +20,9 @@ interface ProfileRow {
   campus: string | null;
   include_other_campuses: boolean | null;
   profile_completed_at: string | null;
+  activity_interests: string[] | null;
+  prioritize_in_time: boolean | null;
+  include_long_term: boolean | null;
 }
 
 const campusValues = new Set<Campus>(['seattle', 'bothell', 'tacoma']);
@@ -49,7 +53,13 @@ function campusNameToCampus(value: unknown): Campus | null {
   return null;
 }
 
-function requireCompleteProfile(profile: ProfileRow | null): { campus: Campus; includeOtherCampuses: boolean } {
+function requireCompleteProfile(profile: ProfileRow | null): {
+  campus: Campus;
+  includeOtherCampuses: boolean;
+  activityInterests: ReturnType<typeof parseActivityInterests>;
+  prioritizeInTime: boolean;
+  includeLongTerm: boolean;
+} {
   const campus = campusNameToCampus(profile?.campus);
   const complete = Boolean(
     profile?.profile_completed_at &&
@@ -67,6 +77,9 @@ function requireCompleteProfile(profile: ProfileRow | null): { campus: Campus; i
   return {
     campus,
     includeOtherCampuses: Boolean(profile?.include_other_campuses),
+    activityInterests: parseActivityInterests(profile?.activity_interests),
+    prioritizeInTime: profile?.prioritize_in_time !== false,
+    includeLongTerm: profile?.include_long_term !== false,
   };
 }
 
@@ -263,7 +276,7 @@ export default async function handler(req: any, res: any) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('display_name, major, campus, include_other_campuses, profile_completed_at')
+      .select('display_name, major, campus, include_other_campuses, profile_completed_at, activity_interests, prioritize_in_time, include_long_term')
       .eq('auth0_user_id', auth.userId)
       .maybeSingle<ProfileRow>();
 
@@ -343,11 +356,14 @@ export default async function handler(req: any, res: any) {
       return sendInternalError(res, 'Failed to fetch verified UW course sections', courseSectionsError);
     }
 
-    const catalogActivities = [
-      ...normalizeActivityRows(activities || []),
-      ...normalizeCampusOrgRows(campusOrgs || []),
-      ...normalizeCourseRows(courseSections || []),
-    ];
+    const catalogActivities = filterActivitiesByInterests(
+      [
+        ...normalizeActivityRows(activities || []),
+        ...normalizeCampusOrgRows(campusOrgs || []),
+        ...normalizeCourseRows(courseSections || []),
+      ],
+      profileScope.activityInterests,
+    );
 
     const reviewId = randomUUID();
     const analysis = await buildReviewAnalysis({
@@ -360,6 +376,9 @@ export default async function handler(req: any, res: any) {
       deadline: input.deadline,
       activities: catalogActivities,
       profileCampus: profileScope.campus,
+      activityInterests: profileScope.activityInterests,
+      prioritizeInTime: profileScope.prioritizeInTime,
+      includeLongTerm: profileScope.includeLongTerm,
       geminiApiKey: input.userApiKey || appKey || undefined,
       apiKeySource: input.userApiKey ? 'user-key' : appKey ? 'app-key' : undefined,
     });

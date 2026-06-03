@@ -13,6 +13,8 @@ export interface ActivityRow {
   registration_info: string | null;
 }
 
+import type { ActivityInterest } from './catalog-filters.js';
+
 export interface AnalysisInput {
   reviewId: string;
   resumeId: string;
@@ -23,6 +25,9 @@ export interface AnalysisInput {
   deadline: string;
   activities: ActivityRow[];
   profileCampus?: ActivityRow['campus'];
+  activityInterests?: ActivityInterest[];
+  prioritizeInTime?: boolean;
+  includeLongTerm?: boolean;
   geminiApiKey?: string;
   apiKeySource?: 'app-key' | 'user-key';
 }
@@ -115,6 +120,40 @@ function extractSkills(value: string) {
   return KNOWN_SKILLS.filter((skill) => lower.includes(skill));
 }
 
+function termFrequencyVector(tokens: string[]) {
+  const vector = new Map<string, number>();
+  for (const token of tokens) {
+    vector.set(token, (vector.get(token) || 0) + 1);
+  }
+  return vector;
+}
+
+function cosineSimilarity(left: Map<string, number>, right: Map<string, number>) {
+  let dot = 0;
+  let leftMagnitude = 0;
+  let rightMagnitude = 0;
+
+  for (const value of left.values()) {
+    leftMagnitude += value * value;
+  }
+  for (const value of right.values()) {
+    rightMagnitude += value * value;
+  }
+
+  for (const [term, leftWeight] of left) {
+    const rightWeight = right.get(term);
+    if (rightWeight) {
+      dot += leftWeight * rightWeight;
+    }
+  }
+
+  if (!leftMagnitude || !rightMagnitude) {
+    return 0;
+  }
+
+  return dot / (Math.sqrt(leftMagnitude) * Math.sqrt(rightMagnitude));
+}
+
 function titleFromJob(jobDescription: string, jobPostingUrl: string) {
   const firstLine = jobDescription
     .split(/\r?\n/)
@@ -184,8 +223,32 @@ function roadmapAction(activity: ActivityRow, group: string, matchedSkills: stri
   return `Save this opportunity for the next recruiting cycle and plan how it can build ${skillText}.`;
 }
 
+export function applyRecommendationPreferences<T extends { group: string; confidence: number }>(
+  recommendations: T[],
+  input: AnalysisInput,
+): T[] {
+  let filtered = recommendations;
+  if (input.includeLongTerm === false) {
+    filtered = filtered.filter((recommendation) => recommendation.group === 'in-time');
+  }
+
+  if (input.prioritizeInTime) {
+    filtered = [...filtered].sort((left, right) => {
+      if (left.group === right.group) {
+        return right.confidence - left.confidence;
+      }
+      return left.group === 'in-time' ? -1 : 1;
+    });
+  }
+
+  return filtered;
+}
+
 export function rankActivities(input: AnalysisInput) {
   const jobTokens = normalizeTokens(input.jobDescription);
+  const resumeTokens = normalizeTokens(input.resumeText);
+  const queryTokens = Array.from(new Set([...jobTokens, ...resumeTokens]));
+  const queryVector = termFrequencyVector(queryTokens);
   const jobSkillSignals = extractSkills(input.jobDescription);
   const resumeSkillSignals = extractSkills(input.resumeText);
   const missingSkills = jobSkillSignals.filter((skill) => !resumeSkillSignals.includes(skill)).slice(0, 6);
@@ -194,13 +257,21 @@ export function rankActivities(input: AnalysisInput) {
     .filter((activity) => activity.active && activity.source_url && activity.last_verified)
     .map((activity) => {
       const activityText = `${activity.name} ${activity.description || ''} ${(activity.skills || []).join(' ')}`.toLowerCase();
+      const activityTokens = normalizeTokens(activityText);
+      const activityVector = termFrequencyVector(activityTokens);
       const activitySkills = (activity.skills || []).map((skill) => skill.toLowerCase());
       const overlap = jobTokens.filter((token) => activityText.includes(token));
       const skillOverlap = [...missingSkills, ...jobSkillSignals].filter((skill) =>
         activitySkills.some((activitySkill) => activitySkill.includes(skill) || skill.includes(activitySkill)),
       );
       const homeCampusBoost = input.profileCampus && activity.campus === input.profileCampus ? 16 : 0;
-      const score = overlap.length * 8 + skillOverlap.length * 18 + (activity.category === 'event' ? 8 : 0) + homeCampusBoost;
+      const embeddingBoost = Math.round(cosineSimilarity(queryVector, activityVector) * 40);
+      const score =
+        overlap.length * 8 +
+        skillOverlap.length * 18 +
+        (activity.category === 'event' ? 8 : 0) +
+        homeCampusBoost +
+        embeddingBoost;
       return { activity, overlap, skillOverlap, score };
     })
     .filter((item) => item.score > 0)
@@ -253,7 +324,8 @@ function buildHeuristicAnalysis(input: AnalysisInput) {
     };
   });
 
-  const selectedIds = recommendations.filter((recommendation) => recommendation.group === 'in-time').slice(0, 3).map((item) => item.id);
+  const preferenceOrdered = applyRecommendationPreferences(recommendations, input);
+  const selectedIds = preferenceOrdered.filter((recommendation) => recommendation.group === 'in-time').slice(0, 3).map((item) => item.id);
   const gapCategories = [
     {
       title: 'Missing Skills',
@@ -299,7 +371,7 @@ function buildHeuristicAnalysis(input: AnalysisInput) {
           : 'The resume has a usable foundation, and the roadmap highlights the fastest ways to add verified proof.',
     },
     gapCategories,
-    recommendations,
+    recommendations: preferenceOrdered,
     roadmapWeeks: [
       {
         week: 1,
@@ -450,7 +522,8 @@ function normalizeAiAnalysis(value: any, input: AnalysisInput) {
         .filter(Boolean)
     : [];
 
-  const finalRecommendations = recommendations.length ? recommendations : fallback.recommendations;
+  const mergedRecommendations = recommendations.length ? recommendations : fallback.recommendations;
+  const finalRecommendations = applyRecommendationPreferences(mergedRecommendations, input);
   const recommendationIds = new Set(finalRecommendations.map((recommendation: any) => recommendation.id));
   const selectedIds = Array.isArray(value.selectedIds)
     ? value.selectedIds.filter((id: unknown) => typeof id === 'string' && recommendationIds.has(id)).slice(0, 5)

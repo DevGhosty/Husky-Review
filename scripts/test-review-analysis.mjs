@@ -23,7 +23,8 @@ async function importTypeScriptModule(path) {
   return import(pathToFileURL(modulePath).href);
 }
 
-const { buildReviewAnalysis, extractResumeText, rankActivities } = await importTypeScriptModule('../api/review-analysis.ts');
+const { applyRecommendationPreferences, buildReviewAnalysis, extractResumeText, rankActivities } = await importTypeScriptModule('../api/review-analysis.ts');
+const { filterActivitiesByInterests, matchesActivityInterests } = await importTypeScriptModule('../api/catalog-filters.ts');
 const { fetchJobPostingText, isPublicAddress, postingHtmlToText, resolveJobDescription } = await importTypeScriptModule('../api/job-posting.ts');
 const { checkAppKeyQuota, getAppKeyQuotaStatus } = await importTypeScriptModule('../api/review-quota.ts');
 const { getTokenEmail } = await importTypeScriptModule('../api/auth0-verify.ts');
@@ -622,6 +623,50 @@ test('quota status is readable when app-key quota is exhausted', async () => {
     () => checkAppKeyQuota(supabase, 'auth0|quota-test'),
     /Weekly app-key review limit reached/,
   );
+});
+
+test('catalog filters respect profile activity interests', () => {
+  assert.equal(matchesActivityInterests('club', ['club', 'course']), true);
+  assert.equal(matchesActivityInterests('event', ['club', 'course']), false);
+  assert.equal(matchesActivityInterests('program', ['fellowship']), true);
+
+  const filtered = filterActivitiesByInterests(baseInput.activities, ['club']);
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].name, 'UW Data Science Club');
+});
+
+test('review analysis honors includeLongTerm and prioritizeInTime preferences', () => {
+  const recommendations = [
+    { id: 'a', group: 'next-time', confidence: 90 },
+    { id: 'b', group: 'in-time', confidence: 70 },
+    { id: 'c', group: 'in-time', confidence: 95 },
+  ];
+
+  const withoutLongTerm = applyRecommendationPreferences(recommendations, {
+    ...baseInput,
+    includeLongTerm: false,
+    prioritizeInTime: true,
+  });
+  assert.deepEqual(
+    withoutLongTerm.map((item) => item.id),
+    ['c', 'b'],
+  );
+
+  const prioritized = applyRecommendationPreferences(recommendations, {
+    ...baseInput,
+    includeLongTerm: true,
+    prioritizeInTime: true,
+  });
+  assert.deepEqual(
+    prioritized.map((item) => item.id),
+    ['c', 'b', 'a'],
+  );
+});
+
+test('rankActivities uses cosine similarity to boost relevant catalog rows', () => {
+  const ranked = rankActivities(baseInput);
+  assert.ok(ranked.length >= 2);
+  assert.equal(ranked[0].activity.name, 'UW Data Science Club');
 });
 
 test('Auth0 verifier reads standard and namespaced email claims', () => {

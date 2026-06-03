@@ -5,10 +5,13 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Surface } from '../components/layout/surface';
 import { useReview } from '../context/review-context';
+import { useProfileSettings } from '../context/profile-settings-context';
+import { filterRecommendationsForDisplay } from '../lib/recommendation-display';
 
 export function ResourcesPage() {
   const { status, deadline, selectedIds, analysis, toggleRecommendation } = useReview();
-  const recommendations = analysis?.recommendations || [];
+  const { settings } = useProfileSettings();
+  const recommendations = filterRecommendationsForDisplay(analysis?.recommendations || [], settings);
   const resourceStats = [
     { label: 'Verified matches', value: recommendations.length.toString(), icon: ShieldCheck },
     { label: 'In-Time options', value: recommendations.filter((item) => item.group === 'in-time').length.toString(), icon: Filter },
@@ -62,6 +65,7 @@ export function ResourcesPage() {
         deadline={deadline}
         selectedIds={selectedIds}
         recommendations={recommendations}
+        showVerificationDates={settings.showVerificationDates}
         onToggleRecommendation={toggleRecommendation}
       />
     </main>

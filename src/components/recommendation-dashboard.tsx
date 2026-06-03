@@ -14,6 +14,7 @@ interface RecommendationDashboardProps {
   deadline: string;
   selectedIds: string[];
   recommendations: Recommendation[];
+  showVerificationDates?: boolean;
   onToggleRecommendation: (id: string) => void;
 }
 
@@ -30,7 +31,14 @@ const groups = [
   },
 ] as const;
 
-export function RecommendationDashboard({ status, deadline, selectedIds, recommendations, onToggleRecommendation }: RecommendationDashboardProps) {
+export function RecommendationDashboard({
+  status,
+  deadline,
+  selectedIds,
+  recommendations,
+  showVerificationDates = true,
+  onToggleRecommendation,
+}: RecommendationDashboardProps) {
   const isReady = status === 'success';
   const isLoading = status === 'loading';
 
@@ -72,6 +80,7 @@ export function RecommendationDashboard({ status, deadline, selectedIds, recomme
                       key={recommendation.id}
                       recommendation={recommendation}
                       selected={selectedIds.includes(recommendation.id)}
+                      showVerificationDates={showVerificationDates}
                       staggerIndex={cardIndex}
                       onToggle={onToggleRecommendation}
                     />

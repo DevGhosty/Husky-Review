@@ -4,7 +4,7 @@
 -- against a live official source before setting verified_by to a team member name.
 
 INSERT INTO activities
-  (name, category, description, skills, source_url, active, last_verified, verified_by,
+  (name, category, campus, description, skills, source_url, active, last_verified, verified_by,
    time_commitment, duration, cost, registration_info, notes)
 VALUES
 
@@ -12,6 +12,7 @@ VALUES
 
 ('ACM at UW Bothell',
  'club',
+ 'bothell',
  'Student chapter of the Association for Computing Machinery at UW Bothell. Hosts technical workshops, coding competitions, lightning talks, and networking events. Active membership supports resume entries in professional community involvement.',
  ARRAY['algorithms','competitive programming','leadership','networking','professional development'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -22,6 +23,7 @@ VALUES
 
 ('Women in Computing (WiC) at UWB',
  'club',
+ 'bothell',
  'Campus chapter supporting gender diversity in computing. Organizes mentorship programs, industry panels, hackathons, and professional workshops. Membership provides networking with women in tech and access to WiC-affiliated scholarships.',
  ARRAY['leadership','networking','mentorship','professional development','community building'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -32,6 +34,7 @@ VALUES
 
 ('UWB Robotics Club',
  'club',
+ 'bothell',
  'Hands-on robotics club where students build and program autonomous robots for competition and demonstration. Members gain experience with embedded systems, sensor integration, motor control, and team-based hardware-software co-design.',
  ARRAY['robotics','embedded systems','c++','python','hardware','teamwork','problem solving'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -42,6 +45,7 @@ VALUES
 
 ('UWB Game Development Club',
  'club',
+ 'bothell',
  'Game development club where students create original games using Unity, Unreal Engine, and web technologies. Members build portfolios of shipped game projects and develop skills in programming, game design, and asset creation.',
  ARRAY['unity','c#','game design','javascript','graphics programming','game development','teamwork'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -52,6 +56,7 @@ VALUES
 
 ('UWB Cybersecurity Club',
  'club',
+ 'bothell',
  'Cybersecurity club focused on capture-the-flag (CTF) competitions, security research, and ethical hacking practice. Members develop hands-on skills in network security, reverse engineering, web exploitation, and cryptography.',
  ARRAY['cybersecurity','ethical hacking','python','networking','linux','ctf','cryptography','reverse engineering'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -62,6 +67,7 @@ VALUES
 
 ('UWB Data Science Club',
  'club',
+ 'bothell',
  'Club for students interested in data science, analytics, and machine learning. Members work on collaborative data projects, participate in Kaggle competitions, and attend talks by industry data scientists.',
  ARRAY['python','pandas','machine learning','data analysis','sql','data visualization','statistics'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -72,6 +78,7 @@ VALUES
 
 ('UWB Entrepreneurship Club',
  'club',
+ 'bothell',
  'Student entrepreneurship organization supporting startup ideation, business plan development, and connections to the local tech startup ecosystem. Runs pitch competitions and links members to UWB entrepreneurship resources.',
  ARRAY['entrepreneurship','product management','leadership','business development','public speaking','pitching'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -82,6 +89,7 @@ VALUES
 
 ('UWB Math Club',
  'club',
+ 'bothell',
  'Mathematics club offering problem-solving sessions, Putnam Exam preparation, and talks on mathematical topics relevant to computing and engineering. Membership strengthens analytical and proof-writing skills valued in software engineering and research roles.',
  ARRAY['mathematics','algorithms','problem solving','discrete mathematics','statistics','proof writing'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -92,6 +100,7 @@ VALUES
 
 ('IEEE Student Branch at UWB',
  'club',
+ 'bothell',
  'Institute of Electrical and Electronics Engineers student chapter at UWB. Hosts workshops on hardware, networking, and embedded systems. Provides access to the IEEE digital library and entry to national student competitions.',
  ARRAY['hardware','networking','electrical engineering','embedded systems','professional development'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -102,6 +111,7 @@ VALUES
 
 ('DECA at UWB',
  'club',
+ 'bothell',
  'Business and entrepreneurship student organization that prepares students for case competitions in marketing, finance, and management. Relevant for CSS students targeting product management, business development, or technical program management roles.',
  ARRAY['business','marketing','leadership','communication','project management','case analysis'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -112,6 +122,7 @@ VALUES
 
 ('UWB Finance and Investment Club',
  'club',
+ 'bothell',
  'Club exploring financial markets, investment strategies, and quantitative finance. Students learn financial modeling, data analysis for financial applications, and presentation skills through mock portfolio competitions. Useful for students targeting fintech roles.',
  ARRAY['finance','data analysis','python','excel','quantitative analysis','communication'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -122,6 +133,7 @@ VALUES
 
 ('UWB Pre-Health Society',
  'club',
+ 'bothell',
  'Pre-health student organization providing academic resources, mentorship, and community service opportunities. Relevant for CSS students targeting health-tech intersections such as medical software, health informatics, and digital health startups.',
  ARRAY['leadership','community service','communication','teamwork','health informatics'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -132,6 +144,7 @@ VALUES
 
 ('UWB Psychology Club',
  'club',
+ 'bothell',
  'Psychology student organization hosting research discussions, speaker events, and volunteer opportunities. Useful for students interested in UX research, human-computer interaction, and user behavior analysis.',
  ARRAY['research','human factors','user research','communication','teamwork'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -142,6 +155,7 @@ VALUES
 
 ('UWB International Student Association',
  'club',
+ 'bothell',
  'Cultural and community organization supporting international students and cross-cultural exchange at UWB. Develops intercultural communication skills and global perspective valued by multinational tech companies.',
  ARRAY['communication','leadership','community building','cultural competency'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -152,6 +166,7 @@ VALUES
 
 ('UWB Environmental Science Club',
  'club',
+ 'bothell',
  'Student club focused on environmental sustainability and science outreach. Organizes community service projects and educational events. Relevant for students interested in climate tech, GIS, sustainability software, or civic technology roles.',
  ARRAY['sustainability','community engagement','project management','leadership','data analysis'],
  'https://www.uwb.edu/dsa/clubs-organizations',
@@ -164,6 +179,7 @@ VALUES
 
 ('CSS 342 – Data Structures, Algorithms, and Discrete Mathematics I',
  'course',
+ 'bothell',
  'First course in UWB''s data structures and algorithms sequence. Covers linked lists, stacks, queues, trees, and introductory algorithm analysis using C++. Foundational for technical interview performance at software engineering firms.',
  ARRAY['c++','data structures','algorithms','object-oriented programming','problem solving','discrete mathematics'],
  'https://myplan.uw.edu/course/#/courses/CSS%20342',
@@ -174,6 +190,7 @@ VALUES
 
 ('CSS 343 – Data Structures, Algorithms, and Discrete Mathematics II',
  'course',
+ 'bothell',
  'Continuation of CSS 342. Covers balanced BSTs, heaps, hash tables, graphs, graph algorithms, and advanced sorting. One of the highest-value courses for passing technical interviews at software engineering firms.',
  ARRAY['c++','data structures','algorithms','graphs','dynamic programming','problem solving'],
  'https://myplan.uw.edu/course/#/courses/CSS%20343',
@@ -184,6 +201,7 @@ VALUES
 
 ('CSS 370 – Technical Writing for Computing and Software Systems',
  'course',
+ 'bothell',
  'Technical communication course for computing students. Covers specification writing, API documentation, technical reports, and professional communication. Directly applicable to software engineering documentation, technical program management, and developer relations roles.',
  ARRAY['technical writing','documentation','communication','requirements specification','api documentation'],
  'https://myplan.uw.edu/course/#/courses/CSS%20370',
@@ -194,6 +212,7 @@ VALUES
 
 ('CSS 422 – Hardware and Computer Organization',
  'course',
+ 'bothell',
  'Architecture of modern computers including CPU design, memory hierarchy, instruction sets, and I/O systems. Foundational for embedded systems, firmware, systems programming, and hardware-adjacent software engineering.',
  ARRAY['computer architecture','assembly language','hardware','systems programming','c','memory management'],
  'https://myplan.uw.edu/course/#/courses/CSS%20422',
@@ -204,6 +223,7 @@ VALUES
 
 ('CSS 430 – Operating Systems',
  'course',
+ 'bothell',
  'Covers processes, threads, scheduling, memory management, file systems, and synchronization primitives. Highly relevant for backend infrastructure, cloud systems, embedded software, and systems engineering roles.',
  ARRAY['operating systems','c','c++','linux','multithreading','memory management','systems programming','concurrency'],
  'https://myplan.uw.edu/course/#/courses/CSS%20430',
@@ -214,6 +234,7 @@ VALUES
 
 ('CSS 432 – Network Programming',
  'course',
+ 'bothell',
  'TCP/IP networking, socket programming, client-server architecture, and network protocol implementation. Provides hands-on experience building networked applications in C/C++. Relevant for backend, distributed systems, and cloud infrastructure roles.',
  ARRAY['networking','socket programming','c','c++','tcp/ip','distributed systems','protocol design'],
  'https://myplan.uw.edu/course/#/courses/CSS%20432',
@@ -224,6 +245,7 @@ VALUES
 
 ('CSS 436 – Cloud Computing',
  'course',
+ 'bothell',
  'Hands-on cloud computing course covering AWS or equivalent, distributed systems concepts, serverless computing, containers, and scalable application design. Direct preparation for cloud engineering, DevOps, and backend SWE roles.',
  ARRAY['cloud computing','aws','docker','distributed systems','devops','serverless','kubernetes','scalability'],
  'https://myplan.uw.edu/course/#/courses/CSS%20436',
@@ -234,6 +256,7 @@ VALUES
 
 ('CSS 440 – Software Engineering Project',
  'course',
+ 'bothell',
  'Capstone software engineering course involving team-based development of a full-stack application from requirements gathering through delivery. Covers Agile practices, CI/CD, code review, and professional engineering workflows. Strong resume signal demonstrating end-to-end project ownership.',
  ARRAY['software engineering','agile','teamwork','full-stack development','project management','git','ci/cd','requirements engineering'],
  'https://myplan.uw.edu/course/#/courses/CSS%20440',
@@ -244,6 +267,7 @@ VALUES
 
 ('CSS 452 – Programming Languages',
  'course',
+ 'bothell',
  'Survey of programming language design including syntax, semantics, type systems, functional programming, and language implementation. Broadens language fluency relevant to compiler, interpreter, and language tooling roles.',
  ARRAY['programming languages','functional programming','type systems','compilers','language design','haskell'],
  'https://myplan.uw.edu/course/#/courses/CSS%20452',
@@ -254,6 +278,7 @@ VALUES
 
 ('CSS 471 – Introduction to Artificial Intelligence',
  'course',
+ 'bothell',
  'Introductory AI course covering search algorithms, constraint satisfaction, probabilistic reasoning, and machine learning fundamentals. Provides conceptual grounding for AI engineering, data science, and ML-adjacent software roles.',
  ARRAY['artificial intelligence','python','machine learning','search algorithms','probabilistic reasoning','constraint satisfaction'],
  'https://myplan.uw.edu/course/#/courses/CSS%20471',
@@ -264,6 +289,7 @@ VALUES
 
 ('CSS 475 – Computer Networking',
  'course',
+ 'bothell',
  'In-depth study of computer network protocols, the OSI model, TCP/IP stack, routing algorithms, and network security fundamentals. Relevant for network engineering, cloud infrastructure, and backend systems roles.',
  ARRAY['networking','tcp/ip','network protocols','security','routing','wireshark'],
  'https://myplan.uw.edu/course/#/courses/CSS%20475',
@@ -274,6 +300,7 @@ VALUES
 
 ('CSS 480 – Introduction to Software Engineering',
  'course',
+ 'bothell',
  'Covers the software development lifecycle, requirements engineering, design patterns, testing methodologies, and team development practices. Foundation course for the CSS capstone and directly applicable to industry software engineering roles.',
  ARRAY['software engineering','design patterns','testing','agile','requirements engineering','object-oriented design'],
  'https://myplan.uw.edu/course/#/courses/CSS%20480',
@@ -284,6 +311,7 @@ VALUES
 
 ('CSS 484 – Database Management Systems',
  'course',
+ 'bothell',
  'Relational database design, SQL, normalization, transactions, indexing, and query optimization. Essential for backend software engineering, data engineering, and full-stack development roles.',
  ARRAY['sql','databases','data modeling','postgresql','query optimization','transactions','relational algebra'],
  'https://myplan.uw.edu/course/#/courses/CSS%20484',
@@ -294,6 +322,7 @@ VALUES
 
 ('CSS 487 – Machine Learning',
  'course',
+ 'bothell',
  'Practical machine learning course covering supervised learning, unsupervised learning, neural networks, model evaluation, and ML engineering practices using Python. Strong resume credential for ML engineering, data science, and AI product roles.',
  ARRAY['machine learning','python','scikit-learn','neural networks','deep learning','data science','pytorch','model evaluation'],
  'https://myplan.uw.edu/course/#/courses/CSS%20487',
@@ -304,6 +333,7 @@ VALUES
 
 ('CSS 490 – Special Topics in Computing',
  'course',
+ 'bothell',
  'Variable-topic advanced course. Past topics include web development, open-source software engineering, applied AI, and security. Skills earned vary by topic. Check the current quarter''s MyPlan listing for the active topic.',
  ARRAY['varies by topic','software development','specialized computing'],
  'https://myplan.uw.edu/course/#/courses/CSS%20490',
@@ -316,6 +346,7 @@ VALUES
 
 ('CSS 499 – Directed Research',
  'research',
+ 'bothell',
  'Independent research course supervised by a CSS faculty member. Students propose and complete a research project in a computing subdomain. Produces a faculty reference and a research artifact — two of the strongest differentiators in competitive internship and graduate school applications.',
  ARRAY['research','independent study','technical writing','problem solving','project management','academic presentation'],
  'https://www.uwb.edu/css/research',
@@ -326,6 +357,7 @@ VALUES
 
 ('UW Undergraduate Research Program (URP)',
  'research',
+ 'bothell',
  'UW-wide program connecting undergraduates with paid or for-credit research positions across all departments. CSS students can apply for computing and data science research roles with UW Seattle and UWB faculty.',
  ARRAY['research','academic writing','data analysis','problem solving','python','statistics'],
  'https://www.washington.edu/undergradresearch/',
@@ -336,6 +368,7 @@ VALUES
 
 ('UWB STARS – Summer Teaching and Research Scholars',
  'research',
+ 'bothell',
  'Competitive summer program at UW Bothell pairing undergraduates with faculty mentors for an intensive research project. Participants present findings at the end-of-summer symposium. Strong credential for graduate school applications and research-oriented industry roles.',
  ARRAY['research','academic presentation','project management','technical writing','mentorship'],
  'https://www.uwb.edu/stars',
@@ -346,6 +379,7 @@ VALUES
 
 ('UW Reality Lab (XRML)',
  'research',
+ 'bothell',
  'UW research lab focused on extended reality (XR), augmented reality (AR), and virtual reality (VR). Open to students from the UW system including UWB. Demonstrates applied graphics, HCI, and systems programming skills in a high-visibility research lab.',
  ARRAY['augmented reality','virtual reality','computer graphics','unity','c++','human-computer interaction','research'],
  'https://realitylab.uw.edu',
@@ -356,6 +390,7 @@ VALUES
 
 ('CSS Faculty Research Labs at UWB',
  'research',
+ 'bothell',
  'Individual CSS faculty at UWB maintain active research in areas including security, machine learning, HCI, databases, and software engineering. Students can join a lab via CSS 499 or by emailing faculty directly. Lab membership is among the strongest resume signals for research and advanced engineering roles.',
  ARRAY['research','machine learning','cybersecurity','databases','human-computer interaction','software engineering'],
  'https://www.uwb.edu/css/faculty',
@@ -366,6 +401,7 @@ VALUES
 
 ('NSF Research Experiences for Undergraduates (REU)',
  'research',
+ 'bothell',
  'National Science Foundation-funded summer research programs at universities nationwide. UW students are eligible to apply. REU participation is one of the strongest research credentials for computing undergraduates applying to graduate programs or research-adjacent industry roles.',
  ARRAY['research','machine learning','algorithms','systems programming','academic writing','public speaking'],
  'https://www.nsf.gov/crssprgm/reu/list.jsp',
@@ -376,6 +412,7 @@ VALUES
 
 ('UWB Discovery Core – Research and Creative Practice Component',
  'research',
+ 'bothell',
  'The Discovery Core curriculum at UWB includes a required research or community-engaged learning component. CSS students may satisfy this with faculty-supervised computing research projects, linking general education requirements to tangible resume content.',
  ARRAY['research','interdisciplinary thinking','inquiry','academic writing'],
  'https://www.uwb.edu/discoverycore',
@@ -388,6 +425,7 @@ VALUES
 
 ('UW Lavin Entrepreneurship Program',
  'fellowship',
+ 'bothell',
  'Competitive entrepreneurship program providing mentorship, workshops, and seed funding support for student startup founders. Relevant for CSS students targeting product management, startup founding, or tech entrepreneurship roles.',
  ARRAY['entrepreneurship','product development','leadership','business development','pitching','startup'],
  'https://foster.uw.edu/centers/lavin-entrepreneurship-center/',
@@ -398,6 +436,7 @@ VALUES
 
 ('Management Leadership for Tomorrow (MLT) Early Careers',
  'fellowship',
+ 'bothell',
  'Selective national fellowship supporting underrepresented students of color pursuing careers in business, technology, and social sectors. Fellows gain access to corporate recruiting pipelines, executive coaching, and a professional network spanning major tech companies.',
  ARRAY['leadership','professional development','networking','business acumen','career planning'],
  'https://mlt.org/early-career-programs/',
@@ -408,6 +447,7 @@ VALUES
 
 ('Rewriting the Code (RTC) Fellowship',
  'fellowship',
+ 'bothell',
  'National fellowship supporting women and gender-diverse students in computing. Benefits include mentorship, networking with tech companies, access to exclusive recruiting events, and a community of 25,000+ peers. Open to UW students.',
  ARRAY['professional development','networking','leadership','software engineering','community building'],
  'https://rewritingthecode.org',
@@ -418,6 +458,7 @@ VALUES
 
 ('Microsoft Explore Program',
  'fellowship',
+ 'bothell',
  'Microsoft''s early-stage internship for first- and second-year students from underrepresented groups. Participants rotate through software engineering, program management, and UX research over 12 weeks in Redmond — directly accessible for UW students by geography.',
  ARRAY['software development','product management','ux research','professional development','microsoft technologies'],
  'https://careers.microsoft.com/students/us/en/usexploremicrosoftprogram',
@@ -428,6 +469,7 @@ VALUES
 
 ('Amazon Future Engineer Scholarship and Internship',
  'fellowship',
+ 'bothell',
  'Scholarship and internship program from Amazon for students from underrepresented communities pursuing CS degrees. Recipients receive scholarship funds and a guaranteed internship offer. Both the scholarship and the internship are resume-ready credentials.',
  ARRAY['software engineering','cloud computing','aws','professional development'],
  'https://www.amazonfutureengineer.com/scholarships',
@@ -440,6 +482,7 @@ VALUES
 
 ('CodePath University Programs',
  'program',
+ 'bothell',
  'Free technical courses offered by CodePath in partnership with universities including UWB. Courses cover web development, mobile development, cybersecurity, and technical interview preparation. Designed to close the gap between standard coursework and industry-ready engineering skills.',
  ARRAY['web development','mobile development','cybersecurity','technical interviews','python','javascript','swift'],
  'https://www.codepath.org',
@@ -450,6 +493,7 @@ VALUES
 
 ('UW Career Center – Husky Career Advantage',
  'program',
+ 'bothell',
  'Structured professional development program from the UW Career Center available to all UW students including UWB. Participants complete milestones in resume building, networking, interview preparation, and career planning to earn a credential.',
  ARRAY['professional development','resume writing','networking','interview preparation','career planning'],
  'https://careers.uw.edu',
@@ -460,6 +504,7 @@ VALUES
 
 ('UWB Undergraduate Mentorship Program',
  'program',
+ 'bothell',
  'UWB program pairing undergraduates with alumni or industry mentors in their field. Regular one-on-one meetings support career exploration, job search strategy, and professional skill development.',
  ARRAY['professional development','networking','mentorship','career planning','communication'],
  'https://www.uwb.edu/careers',
@@ -470,6 +515,7 @@ VALUES
 
 ('UWB Global Studies – Study Abroad and International Programs',
  'program',
+ 'bothell',
  'UWB programs allowing students to pursue international academic or research experiences. International experience differentiates candidates in tech roles targeting global teams, international markets, or cross-cultural product development.',
  ARRAY['cultural competency','adaptability','global perspective','communication','independence'],
  'https://www.uwb.edu/global',
@@ -482,6 +528,7 @@ VALUES
 
 ('UWB Hackathon',
  'event',
+ 'bothell',
  'Annual hackathon hosted at UW Bothell where students form teams and build projects over 24–48 hours. Participation demonstrates initiative, rapid prototyping ability, and teamwork. The resulting project can be showcased in a portfolio and discussed in interviews.',
  ARRAY['software development','teamwork','rapid prototyping','problem solving','full-stack development'],
  'https://www.uwb.edu/css/events',
@@ -492,6 +539,7 @@ VALUES
 
 ('DiamondHacks (UW Seattle Hackathon)',
  'event',
+ 'bothell',
  'Major League Hacking-affiliated hackathon at UW Seattle open to all UW students, including UWB. Larger competition with sponsor prizes and networking opportunities with tech company recruiters.',
  ARRAY['software development','teamwork','rapid prototyping','networking','problem solving'],
  'https://mlh.io/seasons/2026/events',
@@ -502,6 +550,7 @@ VALUES
 
 ('UWB Career and Internship Fair',
  'event',
+ 'bothell',
  'Biannual career fair at UW Bothell connecting students with local and national employers. Attending with a targeted resume and pre-researched company list can yield direct recruiter contacts and interview pipeline access. Held each autumn and spring quarter.',
  ARRAY['networking','professional communication','resume presentation','career planning'],
  'https://www.uwb.edu/careers/career-fair',
@@ -512,6 +561,7 @@ VALUES
 
 ('CSS Student Showcase',
  'event',
+ 'bothell',
  'End-of-year event where CSS students present capstone and research projects to faculty, industry guests, and peers. Presenting at the showcase demonstrates completed project work, technical communication, and public presentation skills.',
  ARRAY['public speaking','software development','project completion','technical communication','demo skills'],
  'https://www.uwb.edu/css/events',
@@ -522,6 +572,7 @@ VALUES
 
 ('Major League Hacking (MLH) Member Events',
  'event',
+ 'bothell',
  'Series of student hackathons affiliated with Major League Hacking, held throughout the year at universities in the Pacific Northwest and online. UW students regularly participate. Hackathon projects strengthen portfolios, GitHub activity, and professional profiles.',
  ARRAY['software development','teamwork','problem solving','rapid prototyping','portfolio building'],
  'https://mlh.io',
@@ -532,6 +583,7 @@ VALUES
 
 ('Grace Hopper Celebration (GHC) – Student Scholar Track',
  'event',
+ 'bothell',
  'World''s largest gathering of women technologists. Student scholar applications are available for UW students, especially those in WiC. Attendance connects students with major tech company recruiters and role models. In-person and virtual tracks available.',
  ARRAY['networking','professional development','diversity and inclusion','career exploration'],
  'https://ghc.anitab.org',
@@ -542,6 +594,7 @@ VALUES
 
 ('UWB Research Day Symposium',
  'event',
+ 'bothell',
  'Annual UW Bothell event where students present research projects to faculty, industry guests, and peers. Presenting at Research Day demonstrates public speaking, research communication, and completed independent project experience.',
  ARRAY['research','public speaking','academic presentation','technical communication','poster design'],
  'https://www.uwb.edu/research/undergraduate-research',
@@ -552,6 +605,7 @@ VALUES
 
 ('Seattle Tech Meetups and Open Houses',
  'event',
+ 'bothell',
  'Regular industry meetups hosted by Seattle-area tech companies and professional groups. Attending demonstrates professional initiative and provides networking contacts outside the campus environment. Searchable on Meetup.com and Eventbrite.',
  ARRAY['networking','professional development','industry awareness','communication'],
  'https://www.meetup.com/cities/us/wa/seattle/tech/',

@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AppShell } from './components/app-shell';
 import { MarketingShell } from './components/marketing-shell';
 import { ProtectedRoute } from './components/protected-route';
@@ -79,6 +81,8 @@ function App() {
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <Analytics />
+        <SpeedInsights />
       </ProfileSettingsProvider>
     </ReviewProvider>
   );
