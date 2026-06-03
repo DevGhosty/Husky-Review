@@ -23,10 +23,16 @@ async function importTypeScriptModule(path) {
   return import(pathToFileURL(modulePath).href);
 }
 
-const { buildReviewAnalysis, extractResumeText } = await importTypeScriptModule('../api/review-analysis.ts');
+const { buildReviewAnalysis, extractResumeText, rankActivities } = await importTypeScriptModule('../api/review-analysis.ts');
 const { fetchJobPostingText, isPublicAddress, postingHtmlToText, resolveJobDescription } = await importTypeScriptModule('../api/job-posting.ts');
 const { checkAppKeyQuota, getAppKeyQuotaStatus } = await importTypeScriptModule('../api/review-quota.ts');
 const { getTokenEmail } = await importTypeScriptModule('../api/auth0-verify.ts');
+const {
+  completeProfileSettings,
+  defaultProfileSettings,
+  isProfileComplete,
+  loadProfileSettings,
+} = await importTypeScriptModule('../src/lib/profile-settings.ts');
 
 const baseInput = {
   reviewId: 'review-test',
@@ -42,6 +48,7 @@ const baseInput = {
       id: 'activity-data',
       name: 'UW Data Science Club',
       category: 'club',
+      campus: 'bothell',
       description: 'Students practice Python, SQL, analytics, communication, and data visualization.',
       skills: ['python', 'sql', 'analytics', 'communication'],
       source_url: 'https://www.washington.edu/student-life',
@@ -55,6 +62,7 @@ const baseInput = {
       id: 'activity-writing',
       name: 'Technical Writing Workshop',
       category: 'event',
+      campus: 'seattle',
       description: 'Workshop for documentation, communication, and resume bullet writing.',
       skills: ['documentation', 'communication', 'writing'],
       source_url: 'https://www.washington.edu/events',
@@ -68,6 +76,7 @@ const baseInput = {
       id: 'activity-inactive',
       name: 'Inactive Example',
       category: 'event',
+      campus: 'bothell',
       description: 'Python SQL',
       skills: ['python', 'sql'],
       source_url: 'https://www.washington.edu/events',
@@ -92,6 +101,102 @@ test('deterministic analysis withholds inactive catalog entries', async () => {
     analysis.recommendations.some((recommendation) => recommendation.id === 'activity-inactive'),
     false,
   );
+});
+
+test('profile settings parse campus fields and preserve completion semantics', () => {
+  const originalWindow = globalThis.window;
+  const originalLocalStorage = globalThis.localStorage;
+  const storage = new Map();
+  globalThis.window = {};
+  globalThis.localStorage = {
+    getItem: (key) => storage.get(key) ?? null,
+    setItem: (key, value) => storage.set(key, value),
+    removeItem: (key) => storage.delete(key),
+  };
+
+  try {
+    storage.set(
+      'husky-review-profile-settings',
+      JSON.stringify({
+        displayName: ' Alex Husky ',
+        major: ' Informatics ',
+        campus: 'tacoma',
+        includeOtherCampuses: true,
+        profileCompletedAt: '2026-06-03T10:00:00.000Z',
+        activityInterests: ['club', 'fake', 'course'],
+      }),
+    );
+
+    const parsed = loadProfileSettings();
+    assert.equal(parsed.displayName, ' Alex Husky ');
+    assert.equal(parsed.major, ' Informatics ');
+    assert.equal(parsed.campus, 'tacoma');
+    assert.equal(parsed.includeOtherCampuses, true);
+    assert.equal(parsed.profileCompletedAt, '2026-06-03T10:00:00.000Z');
+    assert.deepEqual(parsed.activityInterests, ['club', 'course']);
+    assert.equal(isProfileComplete(parsed), true);
+
+    storage.set(
+      'husky-review-profile-settings',
+      JSON.stringify({
+        displayName: 'Alex Husky',
+        major: 'Informatics',
+        campus: 'invalid',
+        includeOtherCampuses: true,
+        profileCompletedAt: '2026-06-03T10:00:00.000Z',
+      }),
+    );
+
+    const invalid = loadProfileSettings();
+    assert.equal(invalid.campus, '');
+    assert.equal(isProfileComplete(invalid), false);
+  } finally {
+    globalThis.window = originalWindow;
+    globalThis.localStorage = originalLocalStorage;
+  }
+});
+
+test('profile completion stamps complete profiles and clears incomplete profiles', () => {
+  const completed = completeProfileSettings({
+    ...defaultProfileSettings,
+    displayName: 'Alex Husky',
+    major: 'Informatics',
+    campus: 'seattle',
+  }, '2026-06-03T10:00:00.000Z');
+
+  assert.equal(completed.profileCompletedAt, '2026-06-03T10:00:00.000Z');
+  assert.equal(isProfileComplete(completed), true);
+
+  const incomplete = completeProfileSettings({
+    ...completed,
+    major: '',
+  });
+
+  assert.equal(incomplete.profileCompletedAt, null);
+  assert.equal(isProfileComplete(incomplete), false);
+});
+
+test('campus-aware ranking prefers the profile campus when cross-campus candidates are present', () => {
+  const ranked = rankActivities({
+    ...baseInput,
+    profileCampus: 'bothell',
+    activities: [
+      {
+        ...baseInput.activities[0],
+        id: 'activity-seattle',
+        name: 'Seattle Data Club',
+        campus: 'seattle',
+      },
+      {
+        ...baseInput.activities[0],
+        id: 'activity-bothell',
+        name: 'Bothell Data Club',
+        campus: 'bothell',
+      },
+    ],
+  });
+
+  assert.equal(ranked[0].activity.id, 'activity-bothell');
 });
 
 test('app-key Gemini failure falls back without claiming app-key usage', async () => {
@@ -471,16 +576,28 @@ test('job posting URL fetch rejects oversized responses before text extraction',
 
 test('Supabase migrations include baseline dependencies before review tables', async () => {
   const baseline = await readFile(new URL('../supabase/migrations/20260517000000_create_auth_resume_baseline.sql', import.meta.url), 'utf8');
+  const activities = await readFile(new URL('../supabase/migrations/20260518200000_create_activities.sql', import.meta.url), 'utf8');
   const reviews = await readFile(new URL('../supabase/migrations/20260527000000_create_reviews.sql', import.meta.url), 'utf8');
+  const campusSettings = await readFile(new URL('../supabase/migrations/20260603000000_add_profile_campus_settings.sql', import.meta.url), 'utf8');
 
   assert.match(baseline, /create table if not exists public\.resumes/i);
+  assert.match(baseline, /campus text[\s\S]*seattle[\s\S]*bothell[\s\S]*tacoma/i);
+  assert.match(baseline, /include_other_campuses boolean not null default false/i);
+  assert.match(baseline, /profile_completed_at timestamptz/i);
   assert.match(baseline, /create or replace function public\.set_updated_at/i);
+  assert.match(activities, /campus\s+text\s+not null default 'bothell'/i);
+  assert.match(activities, /activities_campus_name_key/i);
   assert.match(reviews, /references public\.resumes\(id\)/i);
+  assert.match(reviews, /campus text check/i);
   assert.match(reviews, /create table if not exists public\.review_ai_usage_limits/i);
   assert.match(reviews, /create table if not exists public\.review_roadmap_actions[\s\S]*primary key \(review_id, id\)/i);
   assert.match(reviews, /create or replace function public\.check_weekly_review_quota/i);
   assert.match(reviews, /create or replace function public\.consume_weekly_review_quota/i);
   assert.match(reviews, /grant execute on function public\.consume_weekly_review_quota\(text, integer\) to service_role/i);
+  assert.match(campusSettings, /add column if not exists campus text/i);
+  assert.match(campusSettings, /add column if not exists profile_completed_at timestamptz/i);
+  assert.match(campusSettings, /add column if not exists campus text not null default 'bothell'/i);
+  assert.match(campusSettings, /review_recommendations[\s\S]*add column if not exists campus text/i);
 });
 
 test('quota status is readable when app-key quota is exhausted', async () => {

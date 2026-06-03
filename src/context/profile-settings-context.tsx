@@ -8,10 +8,13 @@ import {
   type ProfileRecord,
 } from '../auth/supabase-client';
 import {
+  completeProfileSettings,
   clearProfileSettings,
   defaultProfileSettings,
+  isProfileComplete,
   loadProfileSettings,
   saveProfileSettings,
+  type Campus,
   type ProfileSettings,
   type TargetRole,
 } from '../lib/profile-settings';
@@ -19,8 +22,10 @@ import type { ActivityType } from '../types/analysis';
 
 interface ProfileSettingsContextValue {
   settings: ProfileSettings;
+  profileComplete: boolean;
   setDisplayName: (displayName: string) => void;
   setMajor: (major: string) => void;
+  setCampus: (campus: Campus | '') => void;
   setBooleanPref: (key: BooleanPrefKey, value: boolean) => void;
   setTargetRole: (targetRole: TargetRole) => void;
   toggleActivityInterest: (interest: ActivityType) => void;
@@ -34,6 +39,7 @@ type BooleanPrefKey =
   | 'prioritizeInTime'
   | 'showVerificationDates'
   | 'includeLongTerm'
+  | 'includeOtherCampuses'
   | 'deadlineReminders'
   | 'roadmapAlerts'
   | 'resourceUpdates'
@@ -52,6 +58,10 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
   const [syncStatus, setSyncStatus] = useState<ProfileSettingsContextValue['syncStatus']>('local');
   const [syncError, setSyncError] = useState<string | null>(null);
   const lastRemoteSettingsRef = useRef('');
+
+  function updateSettings(updater: (current: ProfileSettings) => ProfileSettings) {
+    setSettings((current) => completeProfileSettings(updater(current)));
+  }
 
   const supabase = useMemo(() => {
     if (!hasSupabaseConfig()) {
@@ -165,20 +175,24 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
   const value = useMemo<ProfileSettingsContextValue>(
     () => ({
       settings,
+      profileComplete: isProfileComplete(settings),
       setDisplayName: (displayName) => {
-        setSettings((current) => ({ ...current, displayName }));
+        updateSettings((current) => ({ ...current, displayName }));
       },
       setMajor: (major) => {
-        setSettings((current) => ({ ...current, major }));
+        updateSettings((current) => ({ ...current, major }));
+      },
+      setCampus: (campus) => {
+        updateSettings((current) => ({ ...current, campus }));
       },
       setBooleanPref: (key, value) => {
-        setSettings((current) => ({ ...current, [key]: value }));
+        updateSettings((current) => ({ ...current, [key]: value }));
       },
       setTargetRole: (targetRole) => {
-        setSettings((current) => ({ ...current, targetRole }));
+        updateSettings((current) => ({ ...current, targetRole }));
       },
       toggleActivityInterest: (interest) => {
-        setSettings((current) => {
+        updateSettings((current) => {
           const hasInterest = current.activityInterests.includes(interest);
           const activityInterests = hasInterest
             ? current.activityInterests.filter((item) => item !== interest)
@@ -187,7 +201,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         });
       },
       setGraduationYear: (graduationYear) => {
-        setSettings((current) => ({ ...current, graduationYear }));
+        updateSettings((current) => ({ ...current, graduationYear }));
       },
       resetSettings: () => {
         setSettings(clearProfileSettings());

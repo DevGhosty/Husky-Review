@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CONFIG } from './auth0-config';
-import { defaultProfileSettings, type ProfileSettings } from '../lib/profile-settings';
+import { defaultProfileSettings, isCampus, type Campus, type ProfileSettings } from '../lib/profile-settings';
 import type { ActivityType, ReviewAnalysis, ReviewQuotaStatus, SavedReviewSummary } from '../types/analysis';
 
 export function hasSupabaseConfig() {
@@ -52,16 +52,19 @@ export interface ProfileRecord {
   auth0_user_id: string;
   display_name: string;
   major: string;
+  campus: Campus | null;
   graduation_year: string;
   prioritize_in_time: boolean;
   show_verification_dates: boolean;
   include_long_term: boolean;
+  include_other_campuses: boolean;
   deadline_reminders: boolean;
   roadmap_alerts: boolean;
   resource_updates: boolean;
   email_digest: boolean;
   target_role: ProfileSettings['targetRole'];
   activity_interests: ActivityType[];
+  profile_completed_at: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -260,18 +263,27 @@ export function profileRecordToSettings(record: ProfileRecord): ProfileSettings 
     ...defaultProfileSettings,
     displayName: record.display_name || defaultProfileSettings.displayName,
     major: record.major || defaultProfileSettings.major,
+    campus: isCampus(record.campus) ? record.campus : defaultProfileSettings.campus,
     graduationYear: record.graduation_year || defaultProfileSettings.graduationYear,
-    prioritizeInTime: record.prioritize_in_time,
-    showVerificationDates: record.show_verification_dates,
-    includeLongTerm: record.include_long_term,
-    deadlineReminders: record.deadline_reminders,
-    roadmapAlerts: record.roadmap_alerts,
-    resourceUpdates: record.resource_updates,
-    emailDigest: record.email_digest,
+    prioritizeInTime: typeof record.prioritize_in_time === 'boolean' ? record.prioritize_in_time : defaultProfileSettings.prioritizeInTime,
+    showVerificationDates:
+      typeof record.show_verification_dates === 'boolean'
+        ? record.show_verification_dates
+        : defaultProfileSettings.showVerificationDates,
+    includeLongTerm: typeof record.include_long_term === 'boolean' ? record.include_long_term : defaultProfileSettings.includeLongTerm,
+    includeOtherCampuses:
+      typeof record.include_other_campuses === 'boolean'
+        ? record.include_other_campuses
+        : defaultProfileSettings.includeOtherCampuses,
+    deadlineReminders: typeof record.deadline_reminders === 'boolean' ? record.deadline_reminders : defaultProfileSettings.deadlineReminders,
+    roadmapAlerts: typeof record.roadmap_alerts === 'boolean' ? record.roadmap_alerts : defaultProfileSettings.roadmapAlerts,
+    resourceUpdates: typeof record.resource_updates === 'boolean' ? record.resource_updates : defaultProfileSettings.resourceUpdates,
+    emailDigest: typeof record.email_digest === 'boolean' ? record.email_digest : defaultProfileSettings.emailDigest,
     targetRole: record.target_role || defaultProfileSettings.targetRole,
     activityInterests: Array.isArray(record.activity_interests)
       ? record.activity_interests
       : defaultProfileSettings.activityInterests,
+    profileCompletedAt: record.profile_completed_at || null,
   };
 }
 
@@ -280,15 +292,18 @@ export function settingsToProfileRecord(auth0UserId: string, settings: ProfileSe
     auth0_user_id: auth0UserId,
     display_name: settings.displayName,
     major: settings.major,
+    campus: settings.campus || null,
     graduation_year: settings.graduationYear,
     prioritize_in_time: settings.prioritizeInTime,
     show_verification_dates: settings.showVerificationDates,
     include_long_term: settings.includeLongTerm,
+    include_other_campuses: settings.includeOtherCampuses,
     deadline_reminders: settings.deadlineReminders,
     roadmap_alerts: settings.roadmapAlerts,
     resource_updates: settings.resourceUpdates,
     email_digest: settings.emailDigest,
     target_role: settings.targetRole,
     activity_interests: settings.activityInterests,
+    profile_completed_at: settings.profileCompletedAt,
   };
 }

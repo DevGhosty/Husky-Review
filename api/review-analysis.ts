@@ -2,6 +2,7 @@ export interface ActivityRow {
   id: string;
   name: string;
   category: string;
+  campus: 'seattle' | 'bothell' | 'tacoma';
   description: string | null;
   skills: string[] | null;
   source_url: string;
@@ -21,6 +22,7 @@ export interface AnalysisInput {
   jobPostingUrl: string;
   deadline: string;
   activities: ActivityRow[];
+  profileCampus?: ActivityRow['campus'];
   geminiApiKey?: string;
   apiKeySource?: 'app-key' | 'user-key';
 }
@@ -168,6 +170,12 @@ function sourceLabel(sourceUrl: string) {
   }
 }
 
+function campusLabel(campus: ActivityRow['campus']) {
+  if (campus === 'seattle') return 'UW Seattle';
+  if (campus === 'tacoma') return 'UW Tacoma';
+  return 'UW Bothell';
+}
+
 function roadmapAction(activity: ActivityRow, group: string, matchedSkills: string[]) {
   const skillText = matchedSkills.slice(0, 2).join(' and ') || 'the target role';
   if (group === 'in-time') {
@@ -176,7 +184,7 @@ function roadmapAction(activity: ActivityRow, group: string, matchedSkills: stri
   return `Save this opportunity for the next recruiting cycle and plan how it can build ${skillText}.`;
 }
 
-function rankActivities(input: AnalysisInput) {
+export function rankActivities(input: AnalysisInput) {
   const jobTokens = normalizeTokens(input.jobDescription);
   const jobSkillSignals = extractSkills(input.jobDescription);
   const resumeSkillSignals = extractSkills(input.resumeText);
@@ -191,7 +199,8 @@ function rankActivities(input: AnalysisInput) {
       const skillOverlap = [...missingSkills, ...jobSkillSignals].filter((skill) =>
         activitySkills.some((activitySkill) => activitySkill.includes(skill) || skill.includes(activitySkill)),
       );
-      const score = overlap.length * 8 + skillOverlap.length * 18 + (activity.category === 'event' ? 8 : 0);
+      const homeCampusBoost = input.profileCampus && activity.campus === input.profileCampus ? 16 : 0;
+      const score = overlap.length * 8 + skillOverlap.length * 18 + (activity.category === 'event' ? 8 : 0) + homeCampusBoost;
       return { activity, overlap, skillOverlap, score };
     })
     .filter((item) => item.score > 0)
@@ -229,11 +238,12 @@ function buildHeuristicAnalysis(input: AnalysisInput) {
       group,
       name: item.activity.name,
       type: activityType(item.activity.category),
+      campus: item.activity.campus,
       whyItHelps:
         item.skillOverlap.length > 0
-          ? `Matches the posting signals for ${item.skillOverlap.slice(0, 3).join(', ')} with a verified UW opportunity.`
-          : `Provides verified UW experience that can strengthen the resume for this role.`,
-      tags: tags.length ? tags : ['Verified UW', 'Resume evidence'],
+          ? `Matches the posting signals for ${item.skillOverlap.slice(0, 3).join(', ')} with a verified ${campusLabel(item.activity.campus)} opportunity.`
+          : `Provides verified ${campusLabel(item.activity.campus)} experience that can strengthen the resume for this role.`,
+      tags: tags.length ? tags : [campusLabel(item.activity.campus), 'Resume evidence'],
       active: item.activity.active,
       lastVerified: item.activity.last_verified || '',
       confidence,
@@ -434,6 +444,7 @@ function normalizeAiAnalysis(value: any, input: AnalysisInput) {
             confidence: clamp(Number(recommendation.confidence) || base.confidence, 0, 100),
             roadmapWeek: clamp(Number(recommendation.roadmapWeek) || base.roadmapWeek, 1, 3),
             roadmapAction: boundedText(recommendation.roadmapAction, 500, base.roadmapAction),
+            campus: base.campus,
           };
         })
         .filter(Boolean)
@@ -473,6 +484,7 @@ async function buildGeminiAnalysis(input: AnalysisInput) {
     skills: (activity.skills || []).slice(0, 6),
     sourceLabel: sourceLabel(activity.source_url),
     lastVerified: activity.last_verified,
+    campus: campusLabel(activity.campus),
   }));
   const promptData = {
     outputSchema: {
@@ -490,6 +502,7 @@ async function buildGeminiAnalysis(input: AnalysisInput) {
           lastVerified: 'YYYY-MM-DD',
           confidence: '0-100',
           sourceLabel: 'string',
+          campus: 'UW Seattle|UW Bothell|UW Tacoma',
           roadmapWeek: 1,
           roadmapAction: 'string',
         },

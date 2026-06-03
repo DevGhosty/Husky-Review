@@ -40,6 +40,7 @@ create table if not exists public.review_recommendations (
   why_it_helps text not null,
   tags text[] not null default '{}',
   active boolean not null default true,
+  campus text check (campus is null or campus in ('seattle', 'bothell', 'tacoma')),
   last_verified date,
   confidence integer not null default 0,
   source_label text not null,

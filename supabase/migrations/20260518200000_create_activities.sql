@@ -1,10 +1,12 @@
 -- Stores manually curated and verified UW activities (clubs, courses, research,
 -- fellowships, programs, events). Populated by seed.sql and maintained by the team.
--- Unique on name so upserts are idempotent.
+-- Unique on campus + name so upserts are idempotent.
 
 create table if not exists public.activities (
   id                uuid        primary key default gen_random_uuid(),
-  name              text        not null unique,
+  campus            text        not null default 'bothell'
+    check (campus in ('seattle', 'bothell', 'tacoma')),
+  name              text        not null,
   category          text        not null
     check (category in ('club', 'course', 'research', 'fellowship', 'program', 'event')),
   description       text,
@@ -24,6 +26,8 @@ create table if not exists public.activities (
 
 create index if not exists activities_category_idx on public.activities (category);
 create index if not exists activities_active_idx   on public.activities (active);
+create index if not exists activities_campus_active_idx on public.activities (campus, active);
+create unique index if not exists activities_campus_name_key on public.activities (campus, name);
 
 alter table public.activities enable row level security;
 

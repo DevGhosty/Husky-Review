@@ -11,6 +11,65 @@ import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders, type Res
 import { buildReviewAnalysis, extractResumeText, type ActivityRow } from '../review-analysis.js';
 import { checkAppKeyQuota, consumeAppKeyQuota, deterministicQuotaStatus, getAppGeminiKey, userKeyQuotaStatus } from '../review-quota.js';
 
+type Campus = ActivityRow['campus'];
+
+interface ProfileRow {
+  display_name: string | null;
+  major: string | null;
+  campus: string | null;
+  include_other_campuses: boolean | null;
+  profile_completed_at: string | null;
+}
+
+const campusValues = new Set<Campus>(['seattle', 'bothell', 'tacoma']);
+
+function isCampus(value: unknown): value is Campus {
+  return typeof value === 'string' && campusValues.has(value as Campus);
+}
+
+function campusToCourseCode(campus: Campus) {
+  if (campus === 'bothell') return 'B';
+  if (campus === 'tacoma') return 'T';
+  return '';
+}
+
+function campusToOrgName(campus: Campus) {
+  if (campus === 'bothell') return 'Bothell';
+  if (campus === 'tacoma') return 'Tacoma';
+  return 'Seattle';
+}
+
+function campusNameToCampus(value: unknown): Campus | null {
+  if (isCampus(value)) return value;
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'b' || normalized === 'bothell') return 'bothell';
+  if (normalized === 't' || normalized === 'tacoma') return 'tacoma';
+  if (normalized === '' || normalized === 'seattle') return 'seattle';
+  return null;
+}
+
+function requireCompleteProfile(profile: ProfileRow | null): { campus: Campus; includeOtherCampuses: boolean } {
+  const campus = campusNameToCampus(profile?.campus);
+  const complete = Boolean(
+    profile?.profile_completed_at &&
+      profile.display_name?.trim() &&
+      profile.major?.trim() &&
+      campus,
+  );
+
+  if (!complete || !campus) {
+    const error = new Error('Complete your profile with name, major, and campus before running a review.');
+    (error as any).statusCode = 409;
+    throw error;
+  }
+
+  return {
+    campus,
+    includeOtherCampuses: Boolean(profile?.include_other_campuses),
+  };
+}
+
 function validateAnalyzeBody(body: any) {
   const resumeId = typeof body?.resumeId === 'string' ? body.resumeId.trim() : '';
   const jobDescription = typeof body?.jobDescription === 'string' ? body.jobDescription.trim() : '';
@@ -72,6 +131,7 @@ function toRecommendationRows(reviewId: string, selectedIds: string[], recommend
     why_it_helps: recommendation.whyItHelps,
     tags: recommendation.tags || [],
     active: recommendation.active !== false,
+    campus: recommendation.campus || null,
     last_verified: recommendation.lastVerified || null,
     confidence: recommendation.confidence || 0,
     source_label: recommendation.sourceLabel || 'UW catalog source',
@@ -79,6 +139,83 @@ function toRecommendationRows(reviewId: string, selectedIds: string[], recommend
     roadmap_action: recommendation.roadmapAction || '',
     selected: selectedIds.includes(recommendation.id),
   }));
+}
+
+function normalizeActivityRows(rows: any[]): ActivityRow[] {
+  return rows
+    .map((activity) => {
+      const campus = campusNameToCampus(activity.campus) || 'bothell';
+      return {
+        id: String(activity.id),
+        name: activity.name,
+        category: activity.category,
+        campus,
+        description: activity.description,
+        skills: activity.skills,
+        source_url: activity.source_url,
+        active: activity.active !== false,
+        last_verified: activity.last_verified,
+        time_commitment: activity.time_commitment,
+        duration: activity.duration,
+        registration_info: activity.registration_info,
+      };
+    })
+    .filter((activity) => activity.name && activity.source_url && activity.last_verified);
+}
+
+function normalizeCampusOrgRows(rows: any[]): ActivityRow[] {
+  return rows
+    .map((org) => {
+      const campus = campusNameToCampus(org.campus);
+      if (!campus) return null;
+      const verifiedAt = typeof org.scraped_at === 'string' ? org.scraped_at.slice(0, 10) : new Date().toISOString().slice(0, 10);
+      return {
+        id: `org:${org.id}`,
+        name: org.name,
+        category: 'club',
+        campus,
+        description: org.description,
+        skills: Array.isArray(org.categories) ? org.categories : [],
+        source_url: org.website || org.source_url,
+        active: true,
+        last_verified: verifiedAt,
+        time_commitment: null,
+        duration: 'ongoing',
+        registration_info: org.email ? `Contact ${org.email}` : 'Check the organization source for joining details',
+      };
+    })
+    .filter(Boolean) as ActivityRow[];
+}
+
+function normalizeCourseRows(rows: any[]): ActivityRow[] {
+  return rows
+    .map((course) => {
+      const campus = campusNameToCampus(course.campus);
+      if (!campus) return null;
+      const courseCode = `${course.department || ''} ${course.course_number || ''}`.trim();
+      const name = `${courseCode}${course.course_title ? `: ${course.course_title}` : ''}`.trim();
+      const verifiedAt = typeof course.scraped_at === 'string' ? course.scraped_at.slice(0, 10) : new Date().toISOString().slice(0, 10);
+      return {
+        id: `course:${course.id}`,
+        name,
+        category: 'course',
+        campus,
+        description: [
+          course.section ? `Section ${course.section}` : '',
+          course.credits ? `${course.credits} credits` : '',
+          course.instructor ? `Instructor: ${course.instructor}` : '',
+          course.status ? `Status: ${course.status}` : '',
+        ].filter(Boolean).join('. '),
+        skills: [course.department, course.course_title].filter(Boolean),
+        source_url: course.source_url || 'https://www.washington.edu/students/timeschd/',
+        active: course.status ? !/^closed$/i.test(course.status) : true,
+        last_verified: verifiedAt,
+        time_commitment: [course.meeting_days, course.meeting_time].filter(Boolean).join(' ') || null,
+        duration: course.quarter || null,
+        registration_info: course.sln ? `SLN ${course.sln}` : null,
+      };
+    })
+    .filter(Boolean) as ActivityRow[];
 }
 
 function toRoadmapRows(reviewId: string, roadmapWeeks: any[]) {
@@ -123,6 +260,18 @@ export default async function handler(req: any, res: any) {
     const supabase = getSupabaseAdmin();
     const appKey = getAppGeminiKey();
     const usingUserKey = Boolean(input.userApiKey);
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('display_name, major, campus, include_other_campuses, profile_completed_at')
+      .eq('auth0_user_id', auth.userId)
+      .maybeSingle<ProfileRow>();
+
+    if (profileError) {
+      return sendInternalError(res, 'Failed to fetch profile for analysis', profileError);
+    }
+
+    const profileScope = requireCompleteProfile(profile);
     let quota = usingUserKey ? userKeyQuotaStatus() : appKey ? null : deterministicQuotaStatus();
 
     if (!usingUserKey && appKey) {
@@ -157,16 +306,48 @@ export default async function handler(req: any, res: any) {
       jobPostingUrl: input.jobPostingUrl,
     });
 
-    const { data: activities, error: activitiesError } = await supabase
+    let activitiesQuery = supabase
       .from('activities')
-      .select('id, name, category, description, skills, source_url, active, last_verified, time_commitment, duration, registration_info')
+      .select('id, name, category, campus, description, skills, source_url, active, last_verified, time_commitment, duration, registration_info')
       .eq('active', true)
       .not('last_verified', 'is', null)
       .limit(80);
+    let orgsQuery = supabase
+      .from('campus_orgs')
+      .select('id, campus, name, description, categories, website, email, source_url, scraped_at')
+      .limit(50);
+    let coursesQuery = supabase
+      .from('course_sections')
+      .select('id, campus, quarter, department, course_number, course_title, sln, section, credits, meeting_days, meeting_time, instructor, status, source_url, scraped_at')
+      .limit(50);
+
+    if (!profileScope.includeOtherCampuses) {
+      activitiesQuery = activitiesQuery.eq('campus', profileScope.campus);
+      orgsQuery = orgsQuery.eq('campus', campusToOrgName(profileScope.campus));
+      coursesQuery = coursesQuery.eq('campus', campusToCourseCode(profileScope.campus));
+    }
+
+    const [
+      { data: activities, error: activitiesError },
+      { data: campusOrgs, error: campusOrgsError },
+      { data: courseSections, error: courseSectionsError },
+    ] = await Promise.all([activitiesQuery, orgsQuery, coursesQuery]);
 
     if (activitiesError) {
       return sendInternalError(res, 'Failed to fetch verified UW activities', activitiesError);
     }
+    if (campusOrgsError) {
+      return sendInternalError(res, 'Failed to fetch verified UW campus organizations', campusOrgsError);
+    }
+    if (courseSectionsError) {
+      return sendInternalError(res, 'Failed to fetch verified UW course sections', courseSectionsError);
+    }
+
+    const catalogActivities = [
+      ...normalizeActivityRows(activities || []),
+      ...normalizeCampusOrgRows(campusOrgs || []),
+      ...normalizeCourseRows(courseSections || []),
+    ];
 
     const reviewId = randomUUID();
     const analysis = await buildReviewAnalysis({
@@ -177,7 +358,8 @@ export default async function handler(req: any, res: any) {
       jobDescription: resolvedPosting.jobDescription,
       jobPostingUrl: resolvedPosting.jobPostingUrl,
       deadline: input.deadline,
-      activities: (activities || []) as ActivityRow[],
+      activities: catalogActivities,
+      profileCampus: profileScope.campus,
       geminiApiKey: input.userApiKey || appKey || undefined,
       apiKeySource: input.userApiKey ? 'user-key' : appKey ? 'app-key' : undefined,
     });

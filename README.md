@@ -2,7 +2,7 @@
 
 **Actionable UW Resume Review** is a web application concept for helping University of Washington students improve their resumes for specific job postings. Instead of giving generic resume advice, the project is designed to recommend real UW opportunities that students can act on, including verified clubs, courses, fellowships, events, and research roles.
 
-The repository contains the Husky-Review React app, Auth0-protected workspace routes, Supabase-backed resume/review persistence, verified UW catalog tables, and a server-side review analysis endpoint. When `GEMINI_API_KEY` is configured, `/api/reviews/analyze` uses Gemini for structured analysis with a 2-review weekly app-key limit per signed-in user. Students can paste their own Gemini key for extra reviews; that key is sent only for the request and is not stored. Without a server key, local development falls back to deterministic catalog matching.
+The repository contains the Husky-Review React app, Auth0-protected workspace routes, Supabase-backed resume/review persistence, verified UW catalog tables, and a server-side review analysis endpoint. First-time signed-in users complete a basic profile with name, major, and campus before running reviews, so recommendations default to their campus while allowing opt-in cross-campus results. When `GEMINI_API_KEY` is configured, `/api/reviews/analyze` uses Gemini for structured analysis with a 2-review weekly app-key limit per signed-in user. Students can paste their own Gemini key for extra reviews; that key is sent only for the request and is not stored. Without a server key, local development falls back to deterministic catalog matching.
 
 ## Problem
 
@@ -13,13 +13,14 @@ Husky-Review addresses that gap by grounding recommendations in a curated databa
 ## Intended Workflow
 
 1. A student uploads a resume.
-2. The student pastes a job description.
-3. The system analyzes the resume and job posting for skill and keyword gaps.
-4. The system retrieves relevant verified UW activities from the database.
-5. The student receives ranked recommendations grouped into:
+2. On first sign-in, the student completes a profile with name, major, and campus.
+3. The student pastes a job description.
+4. The system analyzes the resume and job posting for skill and keyword gaps.
+5. The system retrieves relevant verified UW activities from the database, scoped to the student's campus unless cross-campus recommendations are enabled.
+6. The student receives ranked recommendations grouped into:
    - **In-Time Activities**: actionable before the application deadline.
    - **Next-Time Activities**: longer-term opportunities for future applications.
-6. The result is presented as a week-by-week action roadmap.
+7. The result is presented as a week-by-week action roadmap.
 
 ## Planned Features
 
@@ -85,6 +86,8 @@ CRON_SECRET=
 ```
 
 Do not commit real API keys or production credentials.
+
+Run Supabase migrations before enabling review analysis in a deployed environment. The profile campus columns and `profile_completed_at` marker are required because the API rejects analysis requests from incomplete profiles.
 
 ## Proposal Milestones
 
