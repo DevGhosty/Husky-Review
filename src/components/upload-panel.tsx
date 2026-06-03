@@ -89,7 +89,7 @@ export function UploadPanel({
       <div className="grid gap-6 lg:grid-cols-[0.74fr_1.26fr]">
         <aside className="relative overflow-hidden rounded-[2rem] bg-husky-purple-dark p-7 text-white shadow-premium sm:p-8">
           <div className="absolute -right-20 -top-20 size-60 rounded-full bg-husky-gold/20 blur-3xl motion-safe:animate-breathe" aria-hidden="true" />
-          <Badge tone="gold" className="rounded-full px-4 py-2">Review workspace</Badge>
+          <Badge tone="goldOnDark" className="rounded-full px-4 py-2">Review workspace</Badge>
           <h2 className="mt-6 text-3xl font-black tracking-normal sm:text-4xl">Start with the resume and role you care about.</h2>
           <p className="mt-4 text-base leading-7 text-white/75">
             The review flow stores your resume, compares it with the role, and turns verified UW activities into an action plan.

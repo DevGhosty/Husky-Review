@@ -26,7 +26,7 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
     <Section id="analysis" className="mx-auto max-w-[86rem] px-5 py-12 sm:px-8 lg:px-12">
       <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <Badge tone={isSuccess ? 'green' : isLoading ? 'gold' : 'gray'} className="rounded-full px-4 py-2">
+          <Badge tone={isSuccess ? 'green' : isLoading ? 'amber' : 'gray'} className="rounded-full px-4 py-2">
             {isSuccess ? 'Analysis complete' : isLoading ? 'Loading analysis' : status === 'error' ? 'Analysis needs attention' : 'Empty state'}
           </Badge>
           <h2 className="type-section-title type-section-title--brand mt-4">Analysis preview</h2>
@@ -72,7 +72,7 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
             <span className="grid size-12 place-items-center rounded-2xl bg-white/[0.12] text-husky-gold-bright">
               <Gauge className="size-6" aria-hidden="true" />
             </span>
-            <Badge tone="gold" className="rounded-full">{isSuccess ? score?.label : 'Waiting for input'}</Badge>
+            <Badge tone="goldOnDark" className="rounded-full">{isSuccess ? score?.label : 'Waiting for input'}</Badge>
           </div>
           <div className="relative mt-7 grid place-items-center">
             <div className="grid size-44 place-items-center rounded-full bg-[conic-gradient(#D8C577_0_76%,rgba(255,255,255,0.12)_76%_100%)] p-2 shadow-progress-track">

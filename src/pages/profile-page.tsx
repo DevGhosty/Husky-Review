@@ -375,7 +375,7 @@ export function ProfilePage() {
                 {initials}
               </span>
               <div>
-                <Badge tone="gold" className="rounded-full px-4 py-2">
+                <Badge tone="goldOnDark" className="rounded-full px-4 py-2">
                   {profileComplete ? 'Student workspace' : 'Profile setup'}
                 </Badge>
                 <h1 className="type-page-title mt-3 max-w-2xl text-white">

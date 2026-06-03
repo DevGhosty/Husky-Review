@@ -104,7 +104,7 @@ export function LegalPage() {
         <Surface variant="dark" className="relative mb-8 overflow-hidden rounded-[2rem] p-6 sm:p-8">
           <div className="absolute -right-24 -top-20 size-72 rounded-full bg-husky-gold/25 blur-3xl" aria-hidden="true" />
           <div className="relative">
-            <Badge tone="gold" className="rounded-full border-white/15 bg-white/[0.08] px-4 py-2 text-white">
+            <Badge tone="goldOnDark" className="rounded-full px-4 py-2">
               <Scale className="size-4" aria-hidden="true" />
               Legal
             </Badge>

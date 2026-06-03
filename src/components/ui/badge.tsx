@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '../../lib/utils';
 
-type BadgeTone = 'purple' | 'gold' | 'green' | 'gray' | 'amber' | 'onDark';
+type BadgeTone = 'purple' | 'gold' | 'goldOnDark' | 'green' | 'gray' | 'amber' | 'onDark';
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: BadgeTone;
@@ -12,6 +12,8 @@ const tones: Record<BadgeTone, string> = {
     'border-husky-purple/[0.15] bg-husky-purple/[0.08] text-husky-purple dark:border-white/18 dark:bg-white/12 dark:text-white',
   gold:
     'badge-gold border-husky-gold/30 bg-husky-gold/[0.15] dark:border-amber-400/35 dark:bg-amber-400/14',
+  goldOnDark:
+    'border-husky-gold/35 bg-husky-gold/15 text-husky-gold-bright dark:border-amber-400/35 dark:bg-amber-400/14 dark:text-amber-100',
   green:
     'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-950/60 dark:text-emerald-200',
   gray:

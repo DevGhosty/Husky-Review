@@ -523,7 +523,7 @@ export function HeroSection() {
                         style={{ width: `${localProgress}%` }}
                       />
                     </div>
-                    <Badge tone={isComplete ? 'green' : isActive ? 'gold' : 'gray'} className="mx-auto mt-3 flex w-fit rounded-full">
+                    <Badge tone={isComplete ? 'green' : isActive ? 'amber' : 'gray'} className="mx-auto mt-3 flex w-fit rounded-full">
                       {isComplete ? <Check className="size-3.5" aria-hidden="true" /> : <Timer className="size-3.5" aria-hidden="true" />}
                       <FadingText text={isComplete ? card.detail : isActive ? 'Processing' : 'Queued'} className="font-black" />
                     </Badge>
