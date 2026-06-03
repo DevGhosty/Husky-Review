@@ -342,10 +342,11 @@ test('job posting URL is fetched and converted into bounded text', async () => {
 
 test('job posting HTML filtering handles spaced script close tags and single-pass entity decoding', () => {
   const text = postingHtmlToText(
-    '<script>alert("hidden")</script ><p>Data analyst role requiring Python, SQL, communication, and documentation.</p><p>&amp;lt;script&amp;gt;visible text only&amp;lt;/script&amp;gt;</p>',
+    '<script>alert("hidden")</script\t\n bar><p>Data analyst role requiring Python, SQL, communication, and documentation.</p><style>.hidden{display:none}</style><p>&amp;lt;script&amp;gt;visible text only&amp;lt;/script&amp;gt;</p>',
   );
 
   assert.equal(text.includes('alert("hidden")'), false);
+  assert.equal(text.includes('display:none'), false);
   assert.equal(text.includes('<script>'), false);
   assert.match(text, /Data analyst role/);
   assert.match(text, /&lt;script&gt;visible text only&lt;\/script&gt;/);
