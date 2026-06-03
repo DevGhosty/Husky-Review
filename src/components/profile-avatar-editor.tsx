@@ -99,7 +99,7 @@ export function ProfileAvatarEditor() {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-black text-foreground">Profile picture</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Upload a photo for the navigation menu and your workspace. Without a custom photo, your Google account image is used when available.
+          Upload a photo for your profile header, navigation menu, and workspace. Without a custom photo, your Google account image is used when available.
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
