@@ -132,13 +132,76 @@ function decodeEntities(value: string) {
     .replace(/&amp;/gi, '&');
 }
 
+function isTagNameBoundary(value: string) {
+  return value === '' || value === '>' || value === '/' || /\s/.test(value);
+}
+
+function findRawTextEnd(lowerHtml: string, tagName: string, startIndex: number) {
+  let searchIndex = startIndex;
+
+  while (searchIndex < lowerHtml.length) {
+    const closeStart = lowerHtml.indexOf(`</${tagName}`, searchIndex);
+    if (closeStart === -1) {
+      return -1;
+    }
+
+    const afterTagName = lowerHtml.charAt(closeStart + tagName.length + 2);
+    if (isTagNameBoundary(afterTagName)) {
+      const closeEnd = lowerHtml.indexOf('>', closeStart + tagName.length + 2);
+      return closeEnd === -1 ? lowerHtml.length : closeEnd + 1;
+    }
+
+    searchIndex = closeStart + 2;
+  }
+
+  return -1;
+}
+
+function stripRawTextElements(html: string, tagNames: string[]) {
+  const lowerHtml = html.toLowerCase();
+  let output = '';
+  let index = 0;
+
+  while (index < html.length) {
+    const openStart = lowerHtml.indexOf('<', index);
+    if (openStart === -1) {
+      output += html.slice(index);
+      break;
+    }
+
+    let matchedTag = '';
+    for (const tagName of tagNames) {
+      const afterTagName = lowerHtml.charAt(openStart + tagName.length + 1);
+      if (lowerHtml.startsWith(tagName, openStart + 1) && isTagNameBoundary(afterTagName)) {
+        matchedTag = tagName;
+        break;
+      }
+    }
+
+    if (!matchedTag) {
+      output += html.slice(index, openStart + 1);
+      index = openStart + 1;
+      continue;
+    }
+
+    output += html.slice(index, openStart);
+    const openEnd = lowerHtml.indexOf('>', openStart + matchedTag.length + 1);
+    if (openEnd === -1) {
+      output += ' ';
+      break;
+    }
+
+    const blockEnd = findRawTextEnd(lowerHtml, matchedTag, openEnd + 1);
+    output += ' ';
+    index = blockEnd === -1 ? html.length : blockEnd;
+  }
+
+  return output;
+}
+
 export function postingHtmlToText(value: string) {
   return decodeEntities(
-    value
-      .replace(/<script[\s\S]*?<\/script\s*>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style\s*>/gi, ' ')
-      .replace(/<noscript[\s\S]*?<\/noscript\s*>/gi, ' ')
-      .replace(/<svg[\s\S]*?<\/svg\s*>/gi, ' ')
+    stripRawTextElements(value, ['script', 'style', 'noscript', 'svg'])
       .replace(/<\/(p|div|section|article|li|h[1-6]|br|tr)>/gi, '\n')
       .replace(/<[^>]+>/g, ' '),
   )
