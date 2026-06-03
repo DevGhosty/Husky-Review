@@ -3,7 +3,7 @@
 This document is for the **Supabase project owner**. It describes what to configure in the Supabase dashboard so the Husky-Review app (Auth0 + Vercel) can store profile settings, private resume files, and **read your existing UW catalog** (classes, activities, clubs, courses, events, and related tables).
 
 **Production app:** https://husky-review.vercel.app  
-**Auth0 tenant (for Third-Party Auth):** `dev-gamqgs47xldlc3hi.us.auth0.com`  
+**Auth0 tenant:** `dev-gamqgs47xldlc3hi.us.auth0.com`  
 **Schema source of truth in repo:** `supabase/migrations` applied in timestamp order. `supabase/schema.sql` is a legacy profile/resume bootstrap reference.
 
 ---
@@ -12,8 +12,8 @@ This document is for the **Supabase project owner**. It describes what to config
 
 | Feature | Who authenticates | How Supabase is accessed |
 |---------|-------------------|---------------------------|
-| Profile settings (browser) | Auth0 ID token via **Third-Party Auth** | Anon key + RLS on `public.profiles` |
-| UW catalog (classes, activities, etc.) | Auth0 ID token (signed-in `@uw.edu`) | Anon key + RLS — **read-only** `SELECT` for `authenticated` |
+| Profile settings | Auth0 access token → **Vercel API** | **Service role** key (server only); API filters by Auth0 user id |
+| UW catalog (classes, activities, etc.) | Vercel API during analysis | **Service role** key (server only); analysis filters by profile campus |
 | Resume upload / list / delete | Auth0 access token → **Vercel API** | **Service role** key (server only); API filters by Auth0 user id |
 | Review history and AI quota | Auth0 access token through **Vercel API** | **Service role** key (server only); review rows are account-scoped |
 | Scheduled resume cleanup | Vercel cron job | **Service role** deletes rows + storage objects |
@@ -27,22 +27,27 @@ flowchart LR
     CatalogUI[Resources and recommendations]
   end
   subgraph auth0 [Auth0]
-    IdToken[ID token role authenticated]
+    AccessToken[Access token with email claim]
   end
   subgraph supabase [Supabase]
-    ProfilesRLS[profiles plus RLS]
-    CatalogRLS[catalog tables plus RLS]
+    ProfilesDB[profiles table]
+    CatalogDB[catalog tables]
     ResumesDB[resumes table]
     StorageBucket[resumes bucket private]
   end
   subgraph vercel [Vercel API]
+    ProfileAPI["/api/profile"]
     ResumeAPI["/api/resumes"]
+    AnalyzeAPI["/api/reviews/analyze"]
     CronPurge["/api/cron/purge-expired-resumes"]
   end
-  ProfileUI --> IdToken
-  CatalogUI --> IdToken
-  IdToken --> ProfilesRLS
-  IdToken --> CatalogRLS
+  ProfileUI --> AccessToken
+  CatalogUI --> AccessToken
+  AccessToken --> ProfileAPI
+  AccessToken --> AnalyzeAPI
+  ProfileAPI --> ProfilesDB
+  AnalyzeAPI --> ProfilesDB
+  AnalyzeAPI --> CatalogDB
   ResumeAPI --> ResumesDB
   ResumeAPI --> StorageBucket
   CronPurge --> ResumesDB
@@ -54,7 +59,7 @@ flowchart LR
 ## Checklist (please complete in order)
 
 - [ ] **1.** Confirm project exists; share API credentials with the app team (see below)
-- [ ] **2.** Enable **Auth0 Third-Party Auth**
+- [ ] **2.** Configure Auth0 access-token claims for Vercel API routes
 - [ ] **3.** Apply all SQL files in `supabase/migrations` in timestamp order
 - [ ] **4.** Confirm Storage bucket `resumes` is **private**
 - [ ] **5.** Confirm RLS is enabled on tables and storage policies
@@ -81,29 +86,17 @@ The Vercel project `devghostys-projects/husky-review` may already have `SUPABASE
 
 ---
 
-## 2. Auth0 Third-Party Auth (required for profiles)
+## 2. Auth0 API claims (required for profile saves and reviews)
 
-Profile settings in the app use the Auth0 **ID token** as the Supabase JWT. Supabase must trust Auth0 as a third-party identity provider.
+Profile settings, resume uploads, saved reviews, and review analysis go through Vercel API routes. Those routes verify Auth0 **access tokens**, then use the Supabase service role key server-side while filtering every account-scoped query by Auth0 subject.
 
-1. Open **Authentication** → **Third-Party Auth** (menu name may vary: **Auth Providers**, **JWT**, etc.)
-2. Add an **Auth0** integration
-3. Configure the Auth0 tenant domain: **`dev-gamqgs47xldlc3hi.us.auth0.com`**
-4. Enable the integration for this project
-
-### Auth0 requirement (configured by app team, not in Supabase)
-
-Auth0’s post-login Action must set this on the **ID token** (not only the access token):
+The Auth0 post-login Action must add the namespaced email claim to access tokens:
 
 ```js
-api.idToken.setCustomClaim('role', 'authenticated');
+api.accessToken.setCustomClaim(`${claimNamespace}/email`, email);
 ```
 
-Supabase RLS policies expect:
-
-- JWT role: `authenticated`
-- JWT `sub`: Auth0 user id (e.g. `google-oauth2|...` or `auth0|...`)
-
-If profile settings do not persist after login, coordinate with the Auth0 admin to confirm the Action is deployed.
+If profile settings do not persist after login, confirm `AUTH0_DOMAIN`, `AUTH0_AUDIENCE`, `AUTH0_CLAIM_NAMESPACE`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` are set in Vercel for the deployment environment, then redeploy.
 
 ---
 
@@ -228,7 +221,7 @@ Purging more frequently would require a Vercel Pro plan or a manual/API-triggere
 
 | Symptom | Likely cause in Supabase |
 |---------|--------------------------|
-| Profile changes lost on refresh | Third-Party Auth for Auth0 not enabled, or ID token missing `role: authenticated` |
+| Profile changes lost on refresh | `/api/profile` cannot verify the Auth0 access token, or `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` is missing on Vercel |
 | Resume API returns 500 / “configuration missing” | `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` missing on Vercel |
 | User sees empty saved resumes | No rows in `public.resumes`, or API/auth issue (check Table Editor) |
 | Old unused uploads never deleted | Missing `resumes_created_at_idx`, or Vercel cron/`CRON_SECRET` not configured (app team) |
@@ -242,7 +235,7 @@ Purging more frequently would require a Vercel Pro plan or a manual/API-triggere
 
 The Husky-Review migrations include the current `activities`, `course_sections`, and `campus_orgs` tables. If the production database has additional verified UW content, the app team needs your help to **document** what exists and **expose read-only access** for signed-in students.
 
-**Access model:** catalog is **read-only in the browser** for any signed-in `@uw.edu` user — same as profiles: **anon key + Auth0 ID token + RLS**. Students do not write catalog rows from the SPA; ingestion stays in the dashboard or your pipelines.
+**Access model:** catalog reads happen through `/api/reviews/analyze` using the Supabase service role key server-side. Students do not write catalog rows from the SPA; ingestion stays in the dashboard or your pipelines.
 
 Profile preferences in `public.profiles` include `activity_interests` (`club`, `course`, `event`, `fellowship`, `project`, `research`). Once connected, the app will filter catalog results using those interests.
 
@@ -366,7 +359,7 @@ The app team will verify reads from the SPA after your inventory is delivered.
 
 When finished, please confirm:
 
-1. Auth0 Third-Party Auth is **enabled** (tenant domain noted above)
+1. Auth0 access-token email claims are present for Vercel API routes
 2. `supabase/migrations` have been **run successfully in timestamp order**
 3. Bucket `resumes` is **private**
 4. Verification SQL output (section 5) looks correct

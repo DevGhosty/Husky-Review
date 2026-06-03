@@ -7,12 +7,11 @@
 - [ ] Auth0 callback URLs include `http://localhost:5173/app`, production `/app`, and Vercel preview pattern (e.g. `https://*.vercel.app/app`).
 - [ ] Auth0 logout URLs include `http://localhost:5173`, production origin, and `https://*.vercel.app` (exact match for `returnTo`; fixes “sign out does nothing”).
 - [ ] Auth0 web origins match logout origins (no path suffix).
-- [ ] Auth0 post-login Action adds ID-token `role: "authenticated"` for Supabase and namespaced `email` / `role` claims for Vercel API access tokens.
+- [ ] Auth0 post-login Action adds namespaced `email` / `role` claims for Vercel API access tokens.
 - [ ] Auth0 post-login Action denies non-Google connections and non-`@uw.edu` email addresses.
 - [ ] Auth0 application has Google OAuth enabled and every other login connection disabled.
 - [ ] Auth0 Universal Login displays only the Google sign-in option for the Husky-Review app.
 - [ ] Supabase project created.
-- [ ] Supabase Third-Party Auth integration for Auth0 enabled.
 - [ ] SQL files in [`supabase/migrations`](./supabase/migrations) have been applied in timestamp order.
 - [ ] Migration [`20260528000000_fix_reviews_delete.sql`](./supabase/migrations/20260528000000_fix_reviews_delete.sql) is applied (grants `DELETE` to `service_role` on resume/review tables; sets `reviews.resume_id` to `ON DELETE SET NULL`). Verify with [`scripts/verify-delete-permissions.sql`](./scripts/verify-delete-permissions.sql).
 - [ ] `resumes` storage bucket is private.
@@ -50,7 +49,7 @@
 - [ ] Click Continue with Google from the app and confirm it redirects to Auth0 Universal Login.
 - [ ] Sign in with a valid `@uw.edu` Google account.
 - [ ] Verify `/app` loads after redirect.
-- [ ] Change profile settings, refresh, and confirm they persist.
+- [ ] Change profile settings, refresh, and confirm the `/api/profile`-backed row persists.
 - [ ] Upload a resume from the dashboard and click Analyze.
 - [ ] Confirm the resume appears on `/app/saved-reviews`.
 - [ ] Run a review and confirm the saved review appears on `/app/saved-reviews`.

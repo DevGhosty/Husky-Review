@@ -1,12 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  createAuth0SupabaseClient,
-  hasSupabaseConfig,
+  fetchProfile as fetchProfileRequest,
   profileRecordToSettings,
+  saveProfileRecord,
   settingsToProfileRecord,
   type ProfileRecord,
 } from '../auth/supabase-client';
+import { getAccessTokenRequestOptions } from '../auth/auth0-config';
 import {
   clearProfileSettings,
   defaultProfileSettings,
@@ -69,7 +70,7 @@ function serializeForRemote(settings: ProfileSettings): string {
 }
 
 export function ProfileSettingsProvider({ children }: ProfileSettingsProviderProps) {
-  const { getIdTokenClaims, isAuthenticated, isLoading, user } = useAuth0();
+  const { getAccessTokenSilently, isAuthenticated, isLoading, user } = useAuth0();
   const userId = user?.sub;
   const [settings, setSettings] = useState<ProfileSettings>(defaultProfileSettings);
   const [savedBaseline, setSavedBaseline] = useState('');
@@ -101,17 +102,6 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     }
     return serializeForRemote(settingsRef.current) !== baseline;
   }, []);
-
-  const supabase = useMemo(() => {
-    if (!hasSupabaseConfig()) {
-      return null;
-    }
-
-    return createAuth0SupabaseClient(async () => {
-      const claims = await getIdTokenClaims();
-      return claims?.__raw ?? null;
-    });
-  }, [getIdTokenClaims]);
 
   useEffect(() => {
     if (isLoading) {
@@ -154,31 +144,29 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       return;
     }
 
-    const client = supabase;
-
-    if (!isAuthenticated || !userId || !client) {
+    if (!isAuthenticated || !userId) {
       return;
     }
 
     let cancelled = false;
 
-    async function loadRemoteProfile(activeClient: NonNullable<typeof client>, activeUserId: string) {
+    async function loadRemoteProfile(activeUserId: string) {
       setSyncStatus('loading');
       setSyncError(null);
 
-      const { data, error } = await activeClient
-        .from('profiles')
-        .select('*')
-        .eq('auth0_user_id', activeUserId)
-        .maybeSingle<ProfileRecord>();
-
-      if (cancelled) {
+      let data: ProfileRecord | null = null;
+      try {
+        const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+        data = await fetchProfileRequest(token);
+      } catch (error) {
+        if (!cancelled) {
+          setSyncStatus('error');
+          setSyncError((error as Error).message || 'Profile sync failed.');
+        }
         return;
       }
 
-      if (error) {
-        setSyncStatus('error');
-        setSyncError(error.message);
+      if (cancelled) {
         return;
       }
 
@@ -208,12 +196,12 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       setSyncStatus(serializeForRemote(settingsRef.current) === lastRemoteSettingsRef.current ? 'synced' : 'local');
     }
 
-    void loadRemoteProfile(client, userId);
+    void loadRemoteProfile(userId);
 
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isLoading, supabase, user, userId]);
+  }, [getAccessTokenSilently, isAuthenticated, isLoading, user, userId]);
 
   const isDirty = useMemo(() => isProfileDirty(), [isProfileDirty, savedBaseline, settings]);
 
@@ -237,33 +225,20 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
 
     const persisted = prepareProfileSettingsForPersistence(settingsRef.current, { stampCompletion: true });
 
-    const client = supabase;
-    if (!client) {
-      const message = 'Supabase profile sync is not configured. Save your profile after Supabase is connected.';
-      setSyncStatus('error');
-      setSyncError(message);
-      throw new Error(message);
-    }
-
     setSyncStatus('loading');
     setSyncError(null);
 
     try {
-      const { error } = await client
-        .from('profiles')
-        .upsert(settingsToProfileRecord(userId, persisted), { onConflict: 'auth0_user_id' });
+      const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+      const savedProfile = await saveProfileRecord(token, settingsToProfileRecord(userId, persisted));
+      const savedSettings = profileRecordToSettings(savedProfile);
+      const nextSettings = reconcileProfileSettings(persisted, savedSettings);
 
-      if (error) {
-        setSyncStatus('error');
-        setSyncError(error.message);
-        throw new Error(error.message);
-      }
-
-      syncBaseline(persisted);
-      saveProfileSettings(persisted, userId);
-      settingsRef.current = persisted;
-      setSettings(persisted);
-      lastRemoteSettingsRef.current = serializeForRemote(persisted);
+      syncBaseline(nextSettings);
+      saveProfileSettings(nextSettings, userId);
+      settingsRef.current = nextSettings;
+      setSettings(nextSettings);
+      lastRemoteSettingsRef.current = serializeForRemote(nextSettings);
       setSyncStatus('synced');
     } catch (error) {
       const message = (error as Error).message || 'Profile sync failed.';
@@ -271,7 +246,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       setSyncError(message);
       throw error;
     }
-  }, [supabase, syncBaseline, userId]);
+  }, [getAccessTokenSilently, syncBaseline, userId]);
 
   const value = useMemo<ProfileSettingsContextValue>(
     () => ({
