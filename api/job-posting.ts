@@ -4,6 +4,7 @@ import net from 'node:net';
 export const MIN_JOB_DESCRIPTION_CHARS = 80;
 export const MAX_JOB_DESCRIPTION_CHARS = 12000;
 export const MAX_POSTING_URL_CHARS = 2048;
+export const MAX_POSTING_RESPONSE_BYTES = 512 * 1024;
 
 type LookupAddress = { address: string; family?: number };
 type LookupFn = (hostname: string) => Promise<LookupAddress[] | LookupAddress>;
@@ -122,22 +123,22 @@ async function assertPublicPostingUrl(url: URL, lookupFn: LookupFn) {
 function decodeEntities(value: string) {
   return value
     .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
     .replace(/&#(\d+);/g, (_match, code) => String.fromCharCode(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_match, code) => String.fromCharCode(Number.parseInt(code, 16)));
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code) => String.fromCharCode(Number.parseInt(code, 16)))
+    .replace(/&amp;/gi, '&');
 }
 
 export function postingHtmlToText(value: string) {
   return decodeEntities(
     value
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
-      .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+      .replace(/<script[\s\S]*?<\/script\s*>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style\s*>/gi, ' ')
+      .replace(/<noscript[\s\S]*?<\/noscript\s*>/gi, ' ')
+      .replace(/<svg[\s\S]*?<\/svg\s*>/gi, ' ')
       .replace(/<\/(p|div|section|article|li|h[1-6]|br|tr)>/gi, '\n')
       .replace(/<[^>]+>/g, ' '),
   )
@@ -146,6 +147,49 @@ export function postingHtmlToText(value: string) {
     .replace(/\n{3,}/g, '\n\n')
     .trim()
     .slice(0, MAX_JOB_DESCRIPTION_CHARS);
+}
+
+async function readBoundedResponseText(response: Response) {
+  if (!response.body) {
+    const text = await response.text();
+    if (new TextEncoder().encode(text).byteLength > MAX_POSTING_RESPONSE_BYTES) {
+      throw inputError('Job posting URL returned too much data');
+    }
+    return text;
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      if (value) {
+        totalBytes += value.byteLength;
+        if (totalBytes > MAX_POSTING_RESPONSE_BYTES) {
+          await reader.cancel();
+          throw inputError('Job posting URL returned too much data');
+        }
+        chunks.push(value);
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const combined = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return new TextDecoder().decode(combined);
 }
 
 export async function fetchJobPostingText(
@@ -195,7 +239,7 @@ export async function fetchJobPostingText(
       throw inputError('Job posting URL did not return readable text');
     }
 
-    const text = postingHtmlToText(await response.text());
+    const text = postingHtmlToText(await readBoundedResponseText(response));
     if (text.length < MIN_JOB_DESCRIPTION_CHARS) {
       throw inputError('Could not read enough text from the job posting URL');
     }

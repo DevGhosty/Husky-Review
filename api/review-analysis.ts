@@ -519,10 +519,13 @@ async function buildGeminiAnalysis(input: AnalysisInput) {
   };
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
       body: JSON.stringify(geminiRequestBody),
     },
   );
@@ -576,7 +579,7 @@ export async function extractResumeText(buffer: Buffer, contentType: string | nu
 
   const raw = buffer.toString('utf8');
   const xmlText = Array.from(raw.matchAll(/<w:t[^>]*>(.*?)<\/w:t>/g))
-    .map((match) => match[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'))
+    .map((match) => match[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'))
     .join(' ');
   const visibleText = (xmlText || raw.replace(/[^\x20-\x7E]+/g, ' ')).replace(/\s+/g, ' ').trim();
   return visibleText.slice(0, 20000) || `${fileName} ${contentType || ''}`;
