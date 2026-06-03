@@ -32,6 +32,7 @@ interface ProfileSettingsContextValue {
   toggleActivityInterest: (interest: ActivityType) => void;
   setGraduationYear: (graduationYear: string) => void;
   resetSettings: () => void;
+  commitProfileSetup: () => void;
   syncStatus: 'local' | 'loading' | 'synced' | 'error';
   syncError: string | null;
 }
@@ -117,7 +118,12 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       return;
     }
 
+    const persisted = prepareProfileSettingsForPersistence(settings);
     saveProfileSettings(settings, userId);
+
+    if (persisted.profileCompletedAt && !settings.profileCompletedAt) {
+      setSettings(persisted);
+    }
   }, [isAuthenticated, settings, userId]);
 
   useEffect(() => {
@@ -214,6 +220,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         }
 
         lastRemoteSettingsRef.current = serializeForRemote(persisted);
+        setSettings(persisted);
         setSyncStatus('synced');
       }
 
@@ -258,6 +265,9 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         const cleared = clearProfileSettings(userId);
         lastRemoteSettingsRef.current = serializeForRemote(cleared);
         setSettings(cleared);
+      },
+      commitProfileSetup: () => {
+        setSettings((current) => prepareProfileSettingsForPersistence(current));
       },
       syncStatus,
       syncError,
