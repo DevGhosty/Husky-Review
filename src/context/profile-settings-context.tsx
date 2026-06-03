@@ -236,6 +236,10 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
 
     const timer = window.setTimeout(() => {
       async function saveRemoteProfile(activeClient: NonNullable<typeof client>, activeUserId: string) {
+        if (saveInFlightRef.current) {
+          return;
+        }
+
         setSyncStatus('loading');
         setSyncError(null);
 
@@ -251,6 +255,8 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         }
 
         lastRemoteSettingsRef.current = serializeForRemote(persisted);
+        settingsRef.current = persisted;
+        saveProfileSettings(persisted, activeUserId);
         setSettings(persisted);
         setSyncStatus('synced');
       }

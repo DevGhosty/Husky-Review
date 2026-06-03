@@ -175,6 +175,8 @@ export function ProfilePage() {
     syncStatus,
     syncError,
   } = useProfileSettings();
+  const [explicitSaveError, setExplicitSaveError] = useState<string | null>(null);
+  const [explicitSavePending, setExplicitSavePending] = useState(false);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const returnTo = safeReturnTo(searchParams.get('returnTo'));
@@ -187,7 +189,7 @@ export function ProfilePage() {
   const profileCompletion = Math.round((requiredProfileFields.filter(Boolean).length / requiredProfileFields.length) * 100);
   const profileReady = hasRequiredProfileFields(settings);
   const workspaceCompletion = Math.min(100, (fileName ? 38 : 0) + (status === 'success' ? 42 : 0) + Math.min(selectedIds.length, 4) * 5);
-  const isSaving = syncStatus === 'loading';
+  const isSaving = explicitSavePending;
   const showSetupBanner = isSetupMode;
   const showOverviewSaveBar = isSetupMode || !profileComplete || isDirty;
   const overviewSaveDisabled = isSetupMode || !profileComplete ? !profileReady || isSaving : !isDirty || isSaving;
@@ -252,13 +254,17 @@ export function ProfilePage() {
       return;
     }
 
+    setExplicitSaveError(null);
+    setExplicitSavePending(true);
     try {
       await saveProfile();
       if (isSetupMode) {
         navigate(returnTo, { replace: true });
       }
-    } catch {
-      // Keep the student on the profile page; syncError explains the save failure.
+    } catch (saveError) {
+      setExplicitSaveError((saveError as Error).message || 'Profile could not sync. Please try saving again.');
+    } finally {
+      setExplicitSavePending(false);
     }
   }
 
@@ -268,16 +274,16 @@ export function ProfilePage() {
       return;
     }
 
-    try {
-      await saveProfile();
-    } catch {
-      // Keep the visible draft in place; syncError explains the save failure.
-    }
+    await handleCompleteProfile();
   }
 
   const handleSaveProfile = useCallback(() => {
-    void saveProfile().catch(() => {
-      // syncError is rendered in the overview panel.
+    setExplicitSaveError(null);
+    setExplicitSavePending(true);
+    void saveProfile().catch((saveError) => {
+      setExplicitSaveError((saveError as Error).message || 'Profile could not sync. Please try saving again.');
+    }).finally(() => {
+      setExplicitSavePending(false);
     });
   }, [saveProfile]);
 
@@ -527,6 +533,9 @@ export function ProfilePage() {
                     {isSaving ? 'Saving…' : profileReady ? 'Save & continue' : 'Complete required fields'}
                   </Button>
                 </div>
+                {explicitSaveError ? (
+                  <p className="mt-3 text-sm font-semibold text-destructive">{explicitSaveError}</p>
+                ) : null}
               </div>
             ) : null}
 
