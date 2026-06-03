@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export const RESUME_BUCKET = 'resumes';
+export const AVATAR_BUCKET = 'avatars';
 
 export interface ResumeRow {
   id: string;
@@ -127,6 +128,38 @@ export function getRouteId(req: { query?: Record<string, string | string[] | und
   const url = req.url || '';
   const match = url.match(/\/api\/(?:resumes|reviews)\/([^/?#]+)/);
   return match?.[1];
+}
+
+export function safePathSegment(value: string) {
+  return value.replace(/[^a-zA-Z0-9._=-]/g, '_');
+}
+
+export async function createSignedAvatarUrl(supabase: SupabaseClient<any>, storagePath: string | null | undefined) {
+  if (!storagePath) {
+    return null;
+  }
+
+  const { data, error } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(storagePath, 60 * 60);
+  if (error) {
+    console.warn('Failed to sign avatar URL', { storagePath, error });
+    return null;
+  }
+
+  return data?.signedUrl || null;
+}
+
+export async function attachAvatarUrl(supabase: SupabaseClient<any>, profile: Record<string, unknown> | null) {
+  if (!profile) {
+    return null;
+  }
+
+  const storagePath =
+    typeof profile.avatar_storage_path === 'string' ? profile.avatar_storage_path : null;
+
+  return {
+    ...profile,
+    avatar_url: await createSignedAvatarUrl(supabase, storagePath),
+  };
 }
 
 export async function withSignedUrl(supabase: SupabaseClient<any>, row: ResumeRow) {

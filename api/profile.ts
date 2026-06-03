@@ -1,6 +1,6 @@
 import { requireAuth } from './auth0-verify.js';
 import { parseActivityInterests } from './catalog-filters.js';
-import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders } from './supabase-admin.js';
+import { attachAvatarUrl, getSupabaseAdmin, sendError, sendInternalError, setApiHeaders } from './supabase-admin.js';
 
 type TargetRole = 'internship' | 'co-op' | 'full-time';
 type ProfileCampus = 'seattle' | 'bothell' | 'tacoma';
@@ -109,7 +109,7 @@ export default async function handler(req: any, res: any) {
         return sendInternalError(res, 'Failed to fetch profile', error);
       }
 
-      return res.status(200).json({ profile: data || null });
+      return res.status(200).json({ profile: await attachAvatarUrl(supabase, data || null) });
     }
 
     const profile = normalizeProfilePayload(auth.userId, req.body || {});
@@ -123,7 +123,7 @@ export default async function handler(req: any, res: any) {
       return sendInternalError(res, 'Failed to save profile', error);
     }
 
-    return res.status(200).json({ profile: data });
+    return res.status(200).json({ profile: await attachAvatarUrl(supabase, data) });
   } catch (error) {
     return sendError(res, error);
   }

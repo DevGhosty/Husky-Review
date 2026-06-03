@@ -25,6 +25,7 @@ export interface ProfileSettings {
   targetRole: TargetRole;
   activityInterests: ActivityType[];
   profileCompletedAt: string | null;
+  avatarUrl: string | null;
 }
 
 export const defaultProfileSettings: ProfileSettings = {
@@ -43,6 +44,7 @@ export const defaultProfileSettings: ProfileSettings = {
   targetRole: 'internship',
   activityInterests: ['club', 'course', 'event'],
   profileCompletedAt: null,
+  avatarUrl: null,
 };
 
 const STORAGE_KEY_PREFIX = 'husky-review-profile-settings';
@@ -106,6 +108,7 @@ function parseStoredSettings(raw: Partial<ProfileSettings> & { focusAreas?: unkn
         ? raw.includeOtherCampuses
         : defaultProfileSettings.includeOtherCampuses,
     profileCompletedAt: parseProfileCompletedAt(raw.profileCompletedAt),
+    avatarUrl: typeof raw.avatarUrl === 'string' && raw.avatarUrl.trim() ? raw.avatarUrl.trim() : null,
   };
 }
 
@@ -148,6 +151,7 @@ export function reconcileProfileSettings(local: ProfileSettings, remote: Profile
     targetRole: remote.targetRole,
     activityInterests: remote.activityInterests.length > 0 ? remote.activityInterests : local.activityInterests,
     profileCompletedAt: remote.profileCompletedAt || local.profileCompletedAt,
+    avatarUrl: remote.avatarUrl ?? local.avatarUrl,
   };
 
   if (!hasRequiredProfileFields(merged) && hasRequiredProfileFields(local)) {
@@ -169,9 +173,13 @@ export function normalizeProfileSettingsDraft(settings: ProfileSettings): Profil
 }
 
 /** Persisted snapshot (localStorage + Supabase): trim text fields and stamp completion. */
+function settingsWithoutAvatar(settings: ProfileSettings): ProfileSettings {
+  return { ...settings, avatarUrl: null };
+}
+
 /** Stable serialization for dirty-state comparison and remote sync. */
 export function profileSettingsBaseline(settings: ProfileSettings): string {
-  return JSON.stringify(prepareProfileSettingsForPersistence(settings));
+  return JSON.stringify(prepareProfileSettingsForPersistence(settingsWithoutAvatar(settings)));
 }
 
 export function parseProfileSettingsBaseline(serialized: string): ProfileSettings {

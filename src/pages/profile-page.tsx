@@ -16,6 +16,7 @@ import { useProfileSettings } from '../context/profile-settings-context';
 import { sanitizeAppReturnTo } from '../auth/auth0-config';
 import { useReview } from '../context/review-context';
 import { MajorCombobox } from '../components/major-combobox';
+import { ProfileAvatarEditor } from '../components/profile-avatar-editor';
 import { ACTIVITY_INTEREST_OPTIONS } from '../data/uwb-catalog';
 import {
   campusLabel,
@@ -767,10 +768,11 @@ export function ProfilePage() {
           <SectionPanel
             id="appearance"
             title="Appearance"
-            description="Adjust how the workspace looks on your device."
+            description="Personalize your workspace photo and theme."
             icon={Palette}
           >
-            <div className="inset-row rounded-2xl p-4">
+            <ProfileAvatarEditor />
+            <div className="inset-row mt-4 rounded-2xl p-4">
               <p className="text-sm font-black text-foreground">Theme</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Use the sun/moon control in the top navigation bar to switch between light and dark mode on any page.
