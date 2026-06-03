@@ -146,24 +146,40 @@ export function parseProfileSettingsBaseline(serialized: string): ProfileSetting
   }
 }
 
+export type PrepareProfileOptions = {
+  stampCompletion?: boolean;
+  completedAt?: string;
+};
+
 export function prepareProfileSettingsForPersistence(
   settings: ProfileSettings,
-  completedAt = new Date().toISOString(),
+  options?: string | PrepareProfileOptions,
 ): ProfileSettings {
+  const normalized: PrepareProfileOptions =
+    typeof options === 'string'
+      ? { stampCompletion: true, completedAt: options }
+      : { stampCompletion: false, completedAt: new Date().toISOString(), ...options };
   const draft = normalizeProfileSettingsDraft(settings);
   const hasRequiredFields = hasRequiredProfileFields(draft);
+
+  let profileCompletedAt = draft.profileCompletedAt;
+  if (!hasRequiredFields) {
+    profileCompletedAt = null;
+  } else if (normalized.stampCompletion) {
+    profileCompletedAt = draft.profileCompletedAt || normalized.completedAt || new Date().toISOString();
+  }
 
   return {
     ...draft,
     displayName: draft.displayName.trim(),
     major: draft.major.trim(),
-    profileCompletedAt: hasRequiredFields ? draft.profileCompletedAt || completedAt : null,
+    profileCompletedAt,
   };
 }
 
 /** @deprecated Use prepareProfileSettingsForPersistence for saves; normalizeProfileSettingsDraft for live edits. */
 export function completeProfileSettings(settings: ProfileSettings, completedAt = new Date().toISOString()): ProfileSettings {
-  return prepareProfileSettingsForPersistence(settings, completedAt);
+  return prepareProfileSettingsForPersistence(settings, { stampCompletion: true, completedAt });
 }
 
 export function loadProfileSettings(auth0UserId?: string | null): ProfileSettings {
