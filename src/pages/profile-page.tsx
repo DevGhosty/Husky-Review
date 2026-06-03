@@ -187,8 +187,17 @@ export function ProfilePage() {
   const profileCompletion = Math.round((requiredProfileFields.filter(Boolean).length / requiredProfileFields.length) * 100);
   const profileReady = hasRequiredProfileFields(settings);
   const workspaceCompletion = Math.min(100, (fileName ? 38 : 0) + (status === 'success' ? 42 : 0) + Math.min(selectedIds.length, 4) * 5);
-  const showSetupBanner = isSetupMode && !profileComplete;
   const isSaving = syncStatus === 'loading';
+  const showSetupBanner = isSetupMode;
+  const showOverviewSaveBar = isSetupMode || !profileComplete || isDirty;
+  const overviewSaveDisabled = isSetupMode || !profileComplete ? !profileReady || isSaving : !isDirty || isSaving;
+  const overviewSaveLabel = isSaving
+    ? 'Saving…'
+    : isSetupMode
+      ? 'Save & continue'
+      : !profileComplete
+        ? 'Save profile'
+        : 'Save changes';
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -249,31 +258,46 @@ export function ProfilePage() {
     }
   }
 
+  async function handleOverviewSave() {
+    if (isSetupMode || !profileComplete) {
+      await handleCompleteProfile();
+      return;
+    }
+
+    await saveProfile();
+  }
+
   const handleSaveProfile = useCallback(() => {
     void saveProfile();
   }, [saveProfile]);
 
   function renderHeroAction() {
-    if (!profileComplete) {
+    if (isSetupMode) {
       return (
         <Button
           type="button"
-          variant="outline"
-          className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white"
+          className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90"
           disabled={!profileReady || isSaving}
           onClick={() => {
             void handleCompleteProfile();
           }}
         >
-          {isSaving ? 'Saving…' : isSetupMode ? 'Save & continue' : 'Complete profile'}
+          {isSaving ? 'Saving…' : 'Save & continue'}
         </Button>
       );
     }
 
-    if (isSetupMode) {
+    if (!profileComplete) {
       return (
-        <Button asChild variant="outline" className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white">
-          <Link to={returnTo}>Continue</Link>
+        <Button
+          type="button"
+          className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90"
+          disabled={!profileReady || isSaving}
+          onClick={() => {
+            void handleCompleteProfile();
+          }}
+        >
+          {isSaving ? 'Saving…' : 'Save profile'}
         </Button>
       );
     }
@@ -286,7 +310,7 @@ export function ProfilePage() {
         disabled={!isDirty || isSaving}
         onClick={handleSaveProfile}
       >
-        {isSaving ? 'Saving…' : 'Save'}
+        {isSaving ? 'Saving…' : 'Save changes'}
       </Button>
     );
   }
@@ -439,6 +463,35 @@ export function ProfilePage() {
               ) : null}
             </div>
 
+            {showOverviewSaveBar ? (
+              <div className="mt-6 rounded-[1.4rem] border border-primary/25 bg-primary/5 p-5 dark:bg-primary/10">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black text-foreground">
+                      {isSetupMode ? 'Save to finish setup' : profileComplete ? 'Unsaved changes' : 'Save your profile'}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {profileReady
+                        ? isSetupMode
+                          ? 'Save your basics once, then continue to the workspace.'
+                          : 'Save name, major, and campus so recommendations use the right UW context.'
+                        : 'Fill in display name, major, and campus to enable save.'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    className="h-11 min-w-[10rem] shrink-0"
+                    disabled={overviewSaveDisabled}
+                    onClick={() => {
+                      void handleOverviewSave();
+                    }}
+                  >
+                    {overviewSaveLabel}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
             {showSetupBanner ? (
               <div className="mt-5 rounded-[1.4rem] border border-husky-gold/35 bg-husky-gold/10 p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -448,19 +501,21 @@ export function ProfilePage() {
                       {profileReady ? 'Profile ready' : 'Profile required'}
                     </p>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      Complete these basics once, then Husky-Review can filter campus opportunities on every review.
+                      {profileReady
+                        ? 'Required fields are filled. Use Save & continue above or below to finish setup.'
+                        : 'Complete these basics once, then Husky-Review can filter campus opportunities on every review.'}
                     </p>
                   </div>
-                    <Button
-                      type="button"
-                      className="h-11"
-                      disabled={!profileReady || isSaving}
-                      onClick={() => {
-                        void handleCompleteProfile();
-                      }}
-                    >
-                      {isSaving ? 'Saving…' : profileReady ? 'Save & continue' : 'Complete required fields'}
-                    </Button>
+                  <Button
+                    type="button"
+                    className="h-11"
+                    disabled={!profileReady || isSaving}
+                    onClick={() => {
+                      void handleCompleteProfile();
+                    }}
+                  >
+                    {isSaving ? 'Saving…' : profileReady ? 'Save & continue' : 'Complete required fields'}
+                  </Button>
                 </div>
               </div>
             ) : null}

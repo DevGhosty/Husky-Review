@@ -151,12 +151,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       return;
     }
 
-    const persisted = prepareProfileSettingsForPersistence(settings);
     saveProfileSettings(settings, userId);
-
-    if (persisted.profileCompletedAt && !settings.profileCompletedAt) {
-      setSettings(persisted);
-    }
   }, [isAuthenticated, settings, userId]);
 
   useEffect(() => {
@@ -280,7 +275,9 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       return;
     }
 
-    const persisted = syncBaseline(settingsRef.current);
+    const persisted = syncBaseline(
+      prepareProfileSettingsForPersistence(settingsRef.current, { stampCompletion: true }),
+    );
     saveProfileSettings(persisted, userId);
     settingsRef.current = persisted;
     setSettings(persisted);
@@ -350,7 +347,9 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         setSettings(cleared);
       },
       commitProfileSetup: () => {
-        const persisted = syncBaseline(settingsRef.current);
+        const persisted = syncBaseline(
+          prepareProfileSettingsForPersistence(settingsRef.current, { stampCompletion: true }),
+        );
         if (userId) {
           saveProfileSettings(persisted, userId);
         }
