@@ -23,7 +23,15 @@ async function importTypeScriptModule(path) {
   return import(pathToFileURL(modulePath).href);
 }
 
-const { applyRecommendationPreferences, buildReviewAnalysis, extractResumeText, rankActivities } = await importTypeScriptModule('../api/review-analysis.ts');
+const {
+  applyRecommendationPreferences,
+  balanceRecommendationGroups,
+  buildReviewAnalysis,
+  daysUntilDeadline,
+  extractResumeText,
+  groupForActivity,
+  rankActivities,
+} = await importTypeScriptModule('../api/review-analysis.ts');
 const { filterActivitiesByInterests, matchesActivityInterests } = await importTypeScriptModule('../api/catalog-filters.ts');
 const { fetchJobPostingText, isPublicAddress, postingHtmlToText, resolveJobDescription } = await importTypeScriptModule('../api/job-posting.ts');
 const { checkAppKeyQuota, getAppKeyQuotaStatus } = await importTypeScriptModule('../api/review-quota.ts');
@@ -818,4 +826,53 @@ test('resume purge skips resumes linked to saved reviews', () => {
     purgeable.map((row) => row.id),
     ['orphan-old', 'orphan-new'],
   );
+});
+
+test('groupForActivity keeps top matches in-time for distant deadlines', () => {
+  const farDeadline = '2027-07-14';
+  const orgActivity = {
+    id: 'org-1',
+    name: 'Campus Org',
+    category: 'club',
+    campus: 'bothell',
+    description: 'Student organization',
+    skills: [],
+    source_url: 'https://www.uwb.edu/dsa/clubs-organizations',
+    active: true,
+    last_verified: '2026-05-12',
+    time_commitment: null,
+    duration: 'ongoing',
+    registration_info: 'Contact the organization',
+  };
+
+  assert.equal(groupForActivity(orgActivity, 0, farDeadline), 'in-time');
+  assert.equal(groupForActivity(orgActivity, 7, farDeadline), 'next-time');
+});
+
+test('balanceRecommendationGroups promotes in-time matches when grouping is too strict', () => {
+  const recommendations = [
+    { id: 'a', group: 'next-time', confidence: 90 },
+    { id: 'b', group: 'next-time', confidence: 85 },
+    { id: 'c', group: 'next-time', confidence: 80 },
+    { id: 'd', group: 'next-time', confidence: 75 },
+  ];
+
+  const balanced = balanceRecommendationGroups(recommendations, '2027-07-14');
+  assert.ok(balanced.filter((item) => item.group === 'in-time').length >= 2);
+});
+
+test('deterministic fallback explains missing server Gemini key', async () => {
+  const originalFetch = globalThis.fetch;
+  delete process.env.GEMINI_API_KEY;
+  globalThis.fetch = async () => {
+    throw new Error('fetch should not run without a key');
+  };
+
+  try {
+    const analysis = await buildReviewAnalysis(baseInput);
+    assert.equal(analysis.aiProvider, 'deterministic');
+    assert.equal(analysis.fallbackReason, 'no_api_key');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

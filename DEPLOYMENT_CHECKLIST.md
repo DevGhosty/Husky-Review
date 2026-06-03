@@ -28,7 +28,7 @@
 - [ ] `AUTH0_CLAIM_NAMESPACE` (same namespace used by the Auth0 Action; defaults to `https://husky-review.app/claims`)
 - [ ] `AUTH0_ALLOWED_ORIGINS` (comma-separated; API CORS allowlist)
 - [ ] `CRON_SECRET` (server-only; protects resume purge cron)
-- [ ] `GEMINI_API_KEY` (server-only; optional locally but required for Gemini-backed production analysis)
+- [ ] `GEMINI_API_KEY` (server-only; required on Vercel for Gemini-backed analysis — without it reviews use local catalog matching)
 - [ ] `VITE_SUPABASE_URL`
 - [ ] `VITE_SUPABASE_ANON_KEY`
 - [ ] `SUPABASE_URL`

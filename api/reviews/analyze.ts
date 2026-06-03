@@ -408,6 +408,7 @@ export default async function handler(req: any, res: any) {
         : analysis.aiProvider === 'app-key'
           ? quota
           : deterministicQuotaStatus(),
+      fallbackReason: 'fallbackReason' in analysis ? analysis.fallbackReason : null,
       createdAt: review?.created_at || analysis.createdAt,
       updatedAt: review?.updated_at || analysis.updatedAt,
     });
