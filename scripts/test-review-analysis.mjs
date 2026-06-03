@@ -42,6 +42,12 @@ const {
   saveProfileSettings,
 } = await importTypeScriptModule('../src/lib/profile-settings.ts');
 const { filterUwMajors } = await importTypeScriptModule('../src/data/uw-majors.ts');
+const {
+  DEFAULT_ORPHAN_RETENTION_HOURS,
+  orphanRetentionCutoffIso,
+  parseOrphanRetentionHours,
+  selectOrphanResumesForPurge,
+} = await importTypeScriptModule('../api/resume-retention.ts');
 
 const baseInput = {
   reviewId: 'review-test',
@@ -760,4 +766,31 @@ test('Auth0 verifier reads standard and namespaced email claims', () => {
     'namespaced@uw.edu',
   );
   assert.equal(getTokenEmail({ 'https://other.example/claims/email': 'missing@uw.edu' }), null);
+});
+
+test('resume retention defaults to seven days for orphan uploads', () => {
+  assert.equal(parseOrphanRetentionHours(undefined), DEFAULT_ORPHAN_RETENTION_HOURS);
+  assert.equal(parseOrphanRetentionHours(''), DEFAULT_ORPHAN_RETENTION_HOURS);
+  assert.equal(parseOrphanRetentionHours('72'), 72);
+  assert.equal(parseOrphanRetentionHours('0'), DEFAULT_ORPHAN_RETENTION_HOURS);
+
+  const now = Date.parse('2026-06-02T12:00:00.000Z');
+  assert.equal(
+    orphanRetentionCutoffIso(now, 168),
+    '2026-05-26T12:00:00.000Z',
+  );
+});
+
+test('resume purge skips resumes linked to saved reviews', () => {
+  const candidates = [
+    { id: 'orphan-old', storage_path: 'user/orphan.pdf' },
+    { id: 'linked-old', storage_path: 'user/linked.pdf' },
+    { id: 'orphan-new', storage_path: 'user/new.pdf' },
+  ];
+
+  const purgeable = selectOrphanResumesForPurge(candidates, ['linked-old']);
+  assert.deepEqual(
+    purgeable.map((row) => row.id),
+    ['orphan-old', 'orphan-new'],
+  );
 });

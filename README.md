@@ -51,7 +51,7 @@ Husky-Review addresses that gap by grounding recommendations in a curated databa
 - Enforce input length limits for resumes and job descriptions.
 - Apply rate limiting to inference endpoints.
 - Use Supabase row-level security policies for session access.
-- Remove uploaded resume/session data through the scheduled retention cleanup.
+- Remove unused resume uploads through scheduled cleanup; resumes tied to saved reviews stay until you delete them.
 - Document any protected-route credentials in this README only if such routes are added.
 
 ## Local Setup

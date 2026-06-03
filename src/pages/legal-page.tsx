@@ -39,7 +39,7 @@ const privacyList = [
   { label: 'Resume files', value: 'Private Supabase object paths with short-lived signed links', icon: FileWarning },
   { label: 'Job posting URL', value: 'Stored with the review record for reopening saved analysis', icon: ShieldCheck },
   { label: 'Generated analysis', value: 'Stored in account-scoped review records in Supabase', icon: Database },
-  { label: 'Deletion policy', value: 'Resumes are purged by scheduled cleanup after the retention window', icon: Trash2 },
+  { label: 'Deletion policy', value: 'Saved-review resumes stay until you delete them; unused uploads may purge after 7 days', icon: Trash2 },
   { label: 'External services', value: 'Auth0, Supabase, and optional server-side Gemini analysis are used for the product workflow', icon: ServerOff },
   { label: 'Account data', value: 'Server APIs verify Auth0 tokens before touching Supabase service-role operations', icon: CheckCircle2 },
 ];
@@ -59,7 +59,7 @@ const termsSections = [
   },
   {
     title: 'Data retention',
-    body: 'Uploaded resumes are removed on a scheduled retention window. Profile settings, saved reviews, and analysis outputs remain in your account until you delete them or your account is removed according to our privacy practices.',
+    body: 'Resumes linked to a saved review remain in your account until you delete them. Uploads that were never used in a review may be removed automatically after seven days. Profile settings, saved reviews, and analysis outputs remain until you delete them.',
   },
   {
     title: 'Changes',

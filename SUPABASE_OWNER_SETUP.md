@@ -209,13 +209,16 @@ where id = 'resumes';
 
 ---
 
-## 7. Resume retention (1 hour)
+## 7. Resume retention (orphan uploads only)
 
-The app deletes resume rows and storage files older than **one hour**. Deletion is triggered by a **Vercel cron** (not Supabase cron):
+The app **never** auto-deletes resumes that are linked to a saved review (`reviews.resume_id`). Those files stay in the private bucket until the student deletes them from Saved reviews.
+
+**Orphan uploads** (uploaded but never used in a review) may be removed after **seven days** by default. Deletion is triggered by a **Vercel cron** (not Supabase cron):
 
 - Endpoint: `/api/cron/purge-expired-resumes`
 - Schedule on current Vercel Hobby plan: **once daily** at 08:00 UTC (`0 8 * * *`)
-- Requires `resumes_created_at_idx` and valid `SUPABASE_SERVICE_ROLE_KEY` on Vercel
+- Requires `resumes_created_at_idx`, valid `SUPABASE_SERVICE_ROLE_KEY`, and `CRON_SECRET` on Vercel
+- Optional: `RESUME_ORPHAN_RETENTION_HOURS` (default `168`)
 
 Purging more frequently would require a Vercel Pro plan or a manual/API-triggered purge.
 
@@ -228,7 +231,8 @@ Purging more frequently would require a Vercel Pro plan or a manual/API-triggere
 | Profile changes lost on refresh | Third-Party Auth for Auth0 not enabled, or ID token missing `role: authenticated` |
 | Resume API returns 500 / “configuration missing” | `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` missing on Vercel |
 | User sees empty saved resumes | No rows in `public.resumes`, or API/auth issue (check Table Editor) |
-| Old resumes never deleted | Missing `resumes_created_at_idx`, or Vercel cron/`CRON_SECRET` not configured (app team) |
+| Old unused uploads never deleted | Missing `resumes_created_at_idx`, or Vercel cron/`CRON_SECRET` not configured (app team) |
+| Saved review lost its resume filename | Resume was purged before orphan-retention fix; re-upload or delete the review |
 | Signed-in user sees no campus activities | Catalog RLS missing, wrong grants, or discovery inventory not shared with app team |
 | Catalog visible without signing in | `SELECT` granted to `anon` — restrict to `authenticated` only |
 

@@ -319,7 +319,7 @@ export function UploadPanel({
 
             <p className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 p-3 text-xs font-semibold leading-5 text-muted-foreground">
               <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-              Uploaded resumes are private and removed by scheduled cleanup after the retention window.
+              Uploaded resumes stay in your account when they are tied to a saved review. Unused uploads may be removed after seven days.
             </p>
           </div>
         </div>

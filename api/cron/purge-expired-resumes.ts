@@ -1,6 +1,9 @@
+import {
+  orphanRetentionCutoffIso,
+  parseOrphanRetentionHours,
+  selectOrphanResumesForPurge,
+} from '../resume-retention.js';
 import { getSupabaseAdmin, RESUME_BUCKET, sendError, sendInternalError } from '../supabase-admin.js';
-
-const RETENTION_MS = 60 * 60 * 1000;
 
 function assertCronAuth(authHeader?: string) {
   const secret = process.env.CRON_SECRET?.trim();
@@ -26,7 +29,8 @@ export default async function handler(req: any, res: any) {
   try {
     assertCronAuth(req.headers?.authorization);
 
-    const cutoff = new Date(Date.now() - RETENTION_MS).toISOString();
+    const retentionHours = parseOrphanRetentionHours(process.env.RESUME_ORPHAN_RETENTION_HOURS);
+    const cutoff = orphanRetentionCutoffIso(Date.now(), retentionHours);
     const supabase = getSupabaseAdmin();
 
     const { data: expired, error: fetchError } = await supabase
@@ -38,9 +42,28 @@ export default async function handler(req: any, res: any) {
       return sendInternalError(res, 'Failed to list expired resumes', fetchError);
     }
 
-    const rows = expired || [];
+    const { data: linkedReviews, error: linkedError } = await supabase
+      .from('reviews')
+      .select('resume_id')
+      .not('resume_id', 'is', null);
+
+    if (linkedError) {
+      return sendInternalError(res, 'Failed to list linked review resumes', linkedError);
+    }
+
+    const linkedResumeIds = (linkedReviews || [])
+      .map((row) => row.resume_id)
+      .filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+    const rows = selectOrphanResumesForPurge(expired || [], linkedResumeIds);
     if (!rows.length) {
-      return res.status(200).json({ purged: 0, storageRemoved: 0 });
+      return res.status(200).json({
+        purged: 0,
+        storageRemoved: 0,
+        skippedLinked: (expired || []).length,
+        cutoff,
+        retentionHours,
+      });
     }
 
     const storagePaths = rows.map((row) => row.storage_path).filter(Boolean);
@@ -61,7 +84,9 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json({
       purged: ids.length,
       storageRemoved: storagePaths.length,
+      skippedLinked: (expired || []).length - rows.length,
       cutoff,
+      retentionHours,
     });
   } catch (error) {
     return sendError(res, error);

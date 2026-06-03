@@ -85,5 +85,6 @@
 - [ ] `service_role` has `DELETE` on `resumes`, `reviews`, `review_recommendations`, and `review_roadmap_actions` (see [`scripts/verify-delete-permissions.sql`](./scripts/verify-delete-permissions.sql)).
 - [ ] `reviews_resume_id_fkey` uses `ON DELETE SET NULL` so resume deletes do not cascade-delete saved reviews.
 - [ ] `CRON_SECRET` is set in Vercel; cron `/api/cron/purge-expired-resumes` runs daily on Hobby (`0 8 * * *` UTC) or more often on Pro.
+- [ ] Cron purge skips resumes linked to saved reviews; only orphan uploads older than `RESUME_ORPHAN_RETENTION_HOURS` (default 168) are removed.
 - [ ] Private resume objects are stored under `<auth0-sub>/<timestamp>-<filename>`.
 - [ ] Signed URLs are short-lived.
