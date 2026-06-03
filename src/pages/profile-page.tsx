@@ -646,7 +646,7 @@ export function ProfilePage() {
               />
               <SettingSwitchRow
                 label="Weekly email digest"
-                description="Requires Google sign-in before email reminders can be enabled."
+                description="Coming soon."
                 checked={settings.emailDigest}
                 onCheckedChange={(checked) => setBooleanPref('emailDigest', checked)}
                 disabled
