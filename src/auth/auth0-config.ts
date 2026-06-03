@@ -87,6 +87,36 @@ export function formatAuth0CallbackError(error: string | null, errorDescription:
   return `Sign-in failed (${error}).`;
 }
 
+const AUTH_CALLBACK_PARAMS = ['code', 'state', 'error', 'error_description'] as const;
+
+/** Strip Auth0 callback params and keep only in-app paths. */
+export function sanitizeAppReturnTo(path: string): string {
+  try {
+    const url = new URL(path, 'https://husky-review.local');
+    for (const key of AUTH_CALLBACK_PARAMS) {
+      url.searchParams.delete(key);
+    }
+    url.searchParams.delete('setup');
+    url.searchParams.delete('returnTo');
+    const search = url.searchParams.toString();
+    const normalized = `${url.pathname}${search ? `?${search}` : ''}${url.hash}`;
+    return normalized.startsWith('/app') ? normalized : '/app';
+  } catch {
+    return path.startsWith('/app') ? path : '/app';
+  }
+}
+
+export function buildAppReturnTo(pathname: string, search: string, hash: string): string {
+  const params = new URLSearchParams(search);
+  for (const key of AUTH_CALLBACK_PARAMS) {
+    params.delete(key);
+  }
+  params.delete('setup');
+  params.delete('returnTo');
+  const cleanSearch = params.toString();
+  return sanitizeAppReturnTo(`${pathname}${cleanSearch ? `?${cleanSearch}` : ''}${hash}`);
+}
+
 export function stashAuthNotice(message: string) {
   if (typeof window === 'undefined') {
     return;

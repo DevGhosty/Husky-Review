@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "dev:vercel": "vercel dev",
-    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit && tsc -p api/tsconfig.json --noEmit",
+    "build": "npm run typecheck && vite build",
+    "test:unit": "node scripts/test-review-analysis.mjs",
+    "test": "npm run typecheck && npm run test:unit",
     "test:auth": "node scripts/verify-auth-boundary.mjs",
     "audit": "npm audit --audit-level=high",
     "auth0:setup": "node scripts/setup-auth0-tenant.mjs",
@@ -32,6 +35,7 @@
     "clsx": "^2.1.1",
     "jose": "^5.9.6",
     "lucide-react": "^0.468.0",
+    "pdf-parse": "^2.4.5",
     "radix-ui": "^1.4.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -39,18 +43,26 @@
     "tailwind-merge": "^2.6.1"
   },
   "overrides": {
-    "tar": "^7.5.11"
+    "@tootallnate/once": "^3.0.1",
+    "minimatch": "^10.2.5",
+    "path-to-regexp": "^8.4.2",
+    "smol-toml": "^1.6.1",
+    "srvx": "^0.11.16",
+    "tar": "^7.5.11",
+    "undici": "^8.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@vercel/node": "^5.8.9",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
-    "vercel": "^54.1.0",
+    "vercel": "^54.7.1",
     "vite": "^8.0.12"
   }
 }

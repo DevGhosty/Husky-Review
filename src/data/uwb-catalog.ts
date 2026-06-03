@@ -10,7 +10,7 @@ export const ACTIVITY_INTEREST_OPTIONS: ActivityInterestOption[] = [
   {
     id: 'course',
     label: 'Courses',
-    description: 'Degree and elective classes from the UWB catalog',
+    description: 'Degree and elective classes from the UW catalog',
   },
   {
     id: 'club',
@@ -39,20 +39,7 @@ export const ACTIVITY_INTEREST_OPTIONS: ActivityInterestOption[] = [
   },
 ];
 
-export const UWB_MAJORS = [
-  'Business Administration',
-  'Computer Science',
-  'Nursing',
-  'Mechanical Engineering',
-  'Electrical Engineering',
-  'Biology',
-  'Health Studies',
-  'Psychology',
-  'Education',
-  'Media & Communication Studies',
-  'Global Studies',
-  'Other',
-] as const;
+export { UW_MAJORS, filterUwMajors } from './uw-majors';
 
 const activityInterestLabels = Object.fromEntries(
   ACTIVITY_INTEREST_OPTIONS.map((option) => [option.id, option.label]),

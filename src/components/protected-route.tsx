@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { AlertCircle, Chrome, Loader2, ShieldCheck } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   AUTH0_CONFIG,
   formatAuth0CallbackError,
@@ -9,11 +9,13 @@ import {
   getAuth0CallbackSearchParams,
   getAuth0LoginOptions,
   getAuth0LogoutOptions,
+  buildAppReturnTo,
   isAllowedEmail,
   isAuth0Configured,
   stashAuthNotice,
   validateLogoutReturnTo,
 } from '../auth/auth0-config';
+import { useProfileSettings } from '../context/profile-settings-context';
 import { Button } from './ui/button';
 
 interface ProtectedRouteProps {
@@ -24,13 +26,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading, error: auth0Error, loginWithRedirect, logout, user } = useAuth0();
+  const { profileComplete, syncStatus } = useProfileSettings();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [sessionCheckTimedOut, setSessionCheckTimedOut] = useState(false);
 
   const SESSION_CHECK_TIMEOUT_MS = 12_000;
 
-  const returnTo = location.pathname + location.hash;
+  const returnTo = buildAppReturnTo(location.pathname, location.search, location.hash);
   const callbackParams = getAuth0CallbackSearchParams(location.search);
   const callbackError = formatAuth0CallbackError(callbackParams.error, callbackParams.errorDescription);
   const isCompletingCallback =
@@ -200,6 +203,32 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         </section>
       </main>
     );
+  }
+
+  if (syncStatus === 'loading') {
+    return (
+      <main className="grid min-h-[calc(100vh-8rem)] place-items-center px-5 py-16">
+        <div className="text-center">
+          <Loader2 className="mx-auto size-10 animate-spin text-primary" aria-hidden="true" />
+          <p className="mt-4 text-sm font-semibold text-muted-foreground">Loading your profile...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!profileComplete && location.pathname !== '/app/profile') {
+    if (callbackParams.hasAuthCallback) {
+      return (
+        <main className="grid min-h-[calc(100vh-8rem)] place-items-center px-5 py-16">
+          <div className="text-center">
+            <Loader2 className="mx-auto size-10 animate-spin text-primary" aria-hidden="true" />
+            <p className="mt-4 text-sm font-semibold text-muted-foreground">Completing Google sign-in...</p>
+          </div>
+        </main>
+      );
+    }
+
+    return <Navigate to={`/app/profile?setup=1&returnTo=${encodeURIComponent(returnTo)}`} replace />;
   }
 
   return <>{children}</>;

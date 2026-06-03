@@ -62,8 +62,8 @@ export function MarketingShell({ children }: MarketingShellProps) {
               <Link to="/#how-it-works" className={hashLinkClass}>
                 How it works
               </Link>
-              <Link to="/#trust" className={hashLinkClass}>
-                Privacy
+              <Link to="/legal#privacy" className={hashLinkClass}>
+                Legal
               </Link>
             </div>
             <div className="flex items-center gap-2">
@@ -95,8 +95,7 @@ export function MarketingShell({ children }: MarketingShellProps) {
         <footer className="border-t border-border bg-card/85 px-5 py-10 backdrop-blur-sm sm:px-8 lg:px-12">
           <div className="mx-auto grid max-w-[86rem] gap-4 text-sm font-semibold leading-6 text-muted-foreground md:grid-cols-[1fr_auto] md:items-center">
             <p>
-              Husky-Review stores account profile settings and uploaded resumes after sign-in. Analysis results remain mocked until the
-              review pipeline is connected.
+              Husky-Review stores account profile settings, uploaded resumes, and review results after sign-in.
             </p>
             <div className="flex flex-wrap gap-4">
               <button
@@ -106,8 +105,8 @@ export function MarketingShell({ children }: MarketingShellProps) {
               >
                 Sign in
               </button>
-              <Link className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" to="/app/privacy">
-                Privacy center
+              <Link className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" to="/legal">
+                Legal
               </Link>
             </div>
           </div>

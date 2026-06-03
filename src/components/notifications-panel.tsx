@@ -26,7 +26,7 @@ function useNotifications(): AppNotification[] {
         {
           id: 'analysis-running',
           title: 'Review in progress',
-          body: 'Husky-Review is comparing your resume against the job posting and ranking UWB activities.',
+          body: 'Husky-Review is comparing your resume against the job posting and ranking UW activities.',
           time: 'Just now',
           icon: Loader2,
         },
@@ -40,7 +40,7 @@ function useNotifications(): AppNotification[] {
           title: 'Analysis complete',
           body: fileName
             ? `${fileName} has been reviewed against your posting.`
-            : 'Your sample review finished. Recommendations are ready to browse.',
+            : 'Your review finished. Recommendations are ready to browse.',
           time: '2 min ago',
           href: '/app/resources',
           icon: Sparkles,
@@ -131,7 +131,7 @@ export function NotificationsPanel() {
             </span>
             <p className="mt-4 text-sm font-semibold text-foreground">No notifications yet</p>
             <p className="mt-1 max-w-[14rem] text-xs leading-5 text-muted-foreground">
-              Run a review or load the sample workflow to see updates here.
+              Run a review to see workspace updates here.
             </p>
           </div>
         )}

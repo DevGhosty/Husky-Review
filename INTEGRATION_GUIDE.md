@@ -1,6 +1,6 @@
 # Auth0 + Supabase Integration Guide for Husky-Review
 
-This app keeps Auth0 as the identity provider and uses Supabase for account-scoped profile settings, private resume metadata, and private resume file storage.
+This app keeps Auth0 as the identity provider and uses Supabase for account-scoped profile settings, private resume metadata, private resume file storage, review history, app-key AI quota tracking, and verified UW catalog data.
 
 ## 1. Auth0 Setup
 
@@ -18,6 +18,8 @@ This app keeps Auth0 as the identity provider and uses Supabase for account-scop
 
 ```js
 exports.onExecutePostLogin = async (event, api) => {
+  const claimNamespace = (event.secrets.CLAIM_NAMESPACE || 'https://husky-review.app/claims').replace(/\/+$/, '')
+
   if (event.connection.strategy !== 'google-oauth2') {
     api.access.deny('google_required', 'Use Google sign-in to access Husky-Review.')
     return
@@ -30,10 +32,14 @@ exports.onExecutePostLogin = async (event, api) => {
   }
 
   api.idToken.setCustomClaim('role', 'authenticated')
+  api.idToken.setCustomClaim(`${claimNamespace}/email`, email)
+  api.idToken.setCustomClaim(`${claimNamespace}/role`, 'authenticated')
+  api.accessToken.setCustomClaim(`${claimNamespace}/email`, email)
+  api.accessToken.setCustomClaim(`${claimNamespace}/role`, 'authenticated')
 }
 ```
 
-Supabase requires the literal `role` claim on the ID token. Auth0 strips non-namespaced custom claims from access tokens, so do not rely on adding this claim to the Auth0 access token.
+Supabase requires the literal `role` claim on the ID token. Vercel APIs accept either a standard `email` claim or the namespaced `${claimNamespace}/email` access-token claim; set `AUTH0_CLAIM_NAMESPACE` to the same namespace if you change it.
 
 Attach the Action to the **Login** flow. The Action is the server-side enforcement point for Google-only and `@uw.edu` access; the client also blocks non-`@uw.edu` emails in [`protected-route.tsx`](./src/components/protected-route.tsx).
 
@@ -41,11 +47,14 @@ Attach the Action to the **Login** flow. The Action is the server-side enforceme
 
 1. Create a Supabase project.
 2. In Authentication settings, add a Third-Party Auth integration for Auth0.
-3. Run [`supabase/schema.sql`](./supabase/schema.sql) in the SQL editor.
+3. Apply the SQL files in [`supabase/migrations`](./supabase/migrations) in timestamp order. `supabase/schema.sql` is retained as a legacy profile/resume bootstrap reference, but the migrations are the deployable source of truth.
 4. Confirm the `resumes` storage bucket exists and is private.
 5. Confirm RLS is enabled on:
    - `public.profiles`
    - `public.resumes`
+   - `public.reviews`
+   - `public.review_recommendations`
+   - `public.review_roadmap_actions`
    - `storage.objects`
 
 The RLS policies compare owner columns and storage folder names to `auth.jwt()->>'sub'`, because Auth0 user IDs are strings like `auth0|...`, not Supabase Auth UUIDs.
@@ -66,15 +75,19 @@ VITE_AUTH0_CALLBACK_URL=http://localhost:5173/app
 
 AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_AUDIENCE=https://your-api-identifier
+AUTH0_CLAIM_NAMESPACE=https://husky-review.app/claims
 
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_publishable_or_anon_key
 
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+GEMINI_API_KEY=your_server_side_gemini_key
 ```
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` in browser code.
+`GEMINI_API_KEY` is server-only. Signed-in users get 2 app-key Gemini reviews per 7-day window; they can paste their own Gemini key in the app for additional reviews, and that key is not stored.
 
 ## 4. App Flow
 
@@ -83,6 +96,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` in browser code.
 3. Resume uploads go through Vercel API routes with Auth0 access tokens.
 4. API routes verify Auth0 tokens with `jose` and Auth0 JWKS.
 5. API routes use the server-only Supabase service role key, filter by Auth0 `sub`, store files under `resumes/<auth0-sub>/...`, and return short-lived signed URLs.
+6. `/api/reviews/analyze` fetches the uploaded resume, retrieves active verified UW activities, packs a trimmed AI context, enforces the weekly app-key quota, and persists the review result.
 
 ## 5. Verification
 
@@ -106,7 +120,9 @@ Manual checks:
 - Clicking Continue with Google redirects to Auth0 Universal Login with only the Google connection available.
 - A signed-in user reaches `/app`.
 - Uploading a resume and clicking Analyze creates a resume record and storage object.
+- Running analysis creates a review record with recommendations and roadmap actions.
 - `/app/saved-reviews` lists uploaded resumes with signed Open links.
+- `/app/saved-reviews` lists saved reviews and can reopen them into `/app/roadmap`.
 - Deleting a resume removes the database row and storage object.
 - Profile settings survive refresh after Supabase Third-Party Auth is configured.
 - Sign out from the profile menu clears the session and returns to the site origin; visiting `/app` shows the sign-in gate again.

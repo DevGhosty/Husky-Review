@@ -31,6 +31,34 @@ if (process.env.AUTH_TEST_TOKEN) {
   }
 
   console.log(`valid uw token list: ${response.status}`);
+
+  if (process.env.AUTH_TEST_RESUME_ID) {
+    await expectStatus(
+      'valid uw token delete resume',
+      `/api/resumes/${process.env.AUTH_TEST_RESUME_ID}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${process.env.AUTH_TEST_TOKEN}` },
+      },
+      204,
+    );
+  } else {
+    console.log('valid uw token delete resume: skipped because AUTH_TEST_RESUME_ID is not set');
+  }
+
+  if (process.env.AUTH_TEST_REVIEW_ID) {
+    await expectStatus(
+      'valid uw token delete review',
+      `/api/reviews/${process.env.AUTH_TEST_REVIEW_ID}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${process.env.AUTH_TEST_TOKEN}` },
+      },
+      204,
+    );
+  } else {
+    console.log('valid uw token delete review: skipped because AUTH_TEST_REVIEW_ID is not set');
+  }
 } else {
   console.log('valid uw token list: skipped because AUTH_TEST_TOKEN is not set');
 }

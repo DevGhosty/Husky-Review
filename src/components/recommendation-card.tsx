@@ -8,6 +8,7 @@ import { Card, CardContent } from './ui/card';
 interface RecommendationCardProps {
   recommendation: Recommendation;
   selected: boolean;
+  showVerificationDates?: boolean;
   onToggle: (id: string) => void;
   staggerIndex?: number;
 }
@@ -21,7 +22,19 @@ const typeLabels: Record<Recommendation['type'], string> = {
   research: 'Research',
 };
 
-export function RecommendationCard({ recommendation, selected, onToggle, staggerIndex }: RecommendationCardProps) {
+const campusLabels: Record<Recommendation['campus'], string> = {
+  seattle: 'UW Seattle',
+  bothell: 'UW Bothell',
+  tacoma: 'UW Tacoma',
+};
+
+export function RecommendationCard({
+  recommendation,
+  selected,
+  showVerificationDates = true,
+  onToggle,
+  staggerIndex,
+}: RecommendationCardProps) {
   return (
     <Card
       className={cn(
@@ -40,6 +53,7 @@ export function RecommendationCard({ recommendation, selected, onToggle, stagger
                 {recommendation.group === 'in-time' ? 'In-Time' : 'Next-Time'}
               </Badge>
               <Badge tone="gray">{typeLabels[recommendation.type]}</Badge>
+              <Badge tone="gray">{campusLabels[recommendation.campus]}</Badge>
             </div>
             <h3 className="mt-4 text-xl font-semibold leading-tight tracking-normal text-foreground">{recommendation.name}</h3>
           </div>
@@ -59,7 +73,12 @@ export function RecommendationCard({ recommendation, selected, onToggle, stagger
           ))}
         </div>
 
-        <div className="mt-5 grid gap-3 rounded-2xl border border-border bg-muted/45 p-4 text-sm sm:grid-cols-2 dark:bg-muted/20">
+        <div
+          className={cn(
+            'mt-5 grid gap-3 rounded-2xl border border-border bg-muted/45 p-4 text-sm dark:bg-muted/20',
+            showVerificationDates ? 'sm:grid-cols-2' : 'sm:grid-cols-1',
+          )}
+        >
           <div>
             <p className="font-semibold text-foreground">Active status</p>
             <p className="mt-1 flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-300">
@@ -67,13 +86,15 @@ export function RecommendationCard({ recommendation, selected, onToggle, stagger
               {recommendation.active ? 'Active' : 'Inactive'}
             </p>
           </div>
-          <div>
-            <p className="font-semibold text-foreground">Last verified</p>
-            <p className="mt-1 flex items-center gap-1.5 font-semibold text-muted-foreground">
-              <Clock3 className="size-4 text-primary" aria-hidden="true" />
-              {recommendation.lastVerified}
-            </p>
-          </div>
+          {showVerificationDates && (
+            <div>
+              <p className="font-semibold text-foreground">Last verified</p>
+              <p className="mt-1 flex items-center gap-1.5 font-semibold text-muted-foreground">
+                <Clock3 className="size-4 text-primary" aria-hidden="true" />
+                {recommendation.lastVerified}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

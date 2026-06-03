@@ -19,15 +19,21 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Surface } from '../components/layout/surface';
-import { uploadResume } from '../auth/supabase-client';
+import { analyzeReview as analyzeReviewRequest, uploadResume } from '../auth/supabase-client';
+import { useProfileSettings } from '../context/profile-settings-context';
 import { useReview } from '../context/review-context';
+import { useResumes } from '../hooks/useResumes';
+import { useReviewQuota } from '../hooks/useReviewQuota';
+import { hasRequiredProfileFields } from '../lib/profile-settings';
 import { hasJobPostingInput, jobPostingInputProgress } from '../lib/utils';
+import type { ReviewQuotaStatus } from '../types/analysis';
 
 const activityItems = [
-  { label: 'Resume workspace', value: 'Ready', detail: 'Sample upload path available', icon: FileText },
-  { label: 'Privacy status', value: 'Session', detail: 'Resumes auto-delete within one hour', icon: LockKeyhole },
-  { label: 'Next deadline', value: 'May 31', detail: 'Mock application planning date', icon: CalendarDays },
+  { label: 'Resume workspace', value: 'Ready', detail: 'Private upload path available', icon: FileText },
+  { label: 'Privacy status', value: 'Private', detail: 'Resumes are removed by scheduled cleanup', icon: LockKeyhole },
 ];
+
+const PROFILE_SYNC_ANALYSIS_ERROR = 'Profile could not sync. Please save your profile again before running a review.';
 
 export function DashboardPage() {
   const workflowRef = useRef<HTMLDivElement>(null);
@@ -36,22 +42,33 @@ export function DashboardPage() {
   const { getAccessTokenSilently } = useAuth0();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userApiKey, setUserApiKey] = useState('');
+  const [quotaRefreshKey, setQuotaRefreshKey] = useState(0);
+  const [sessionQuota, setSessionQuota] = useState<ReviewQuotaStatus | null>(null);
+  const { settings, profileComplete, saveProfile } = useProfileSettings();
+  const { resumes, loading: resumesLoading } = useResumes();
+  const { quota, loading: quotaLoading, error: quotaError } = useReviewQuota(quotaRefreshKey);
   const {
     status,
     loadingStepIndex,
     resumeFile,
+    resumeId,
     fileName,
     jobDescription,
     jobPostingUrl,
     deadline,
     selectedIds,
+    analysis,
+    error,
     setResumeFile,
-    setFileName,
+    setResumeId,
+    selectSavedResume,
     setJobDescription,
     setJobPostingUrl,
     setDeadline,
-    runMockAnalysis,
-    showSampleReview,
+    startAnalysis,
+    completeAnalysis,
+    failAnalysis,
   } = useReview();
 
   const postingProgress = jobPostingInputProgress(jobDescription, jobPostingUrl);
@@ -66,32 +83,67 @@ export function DashboardPage() {
     }
   }, [location.hash]);
 
+  useEffect(() => {
+    if (quota) {
+      setSessionQuota(quota);
+    }
+  }, [quota]);
+
   function scrollToWorkflow() {
     workflowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function viewSampleRoadmap() {
-    showSampleReview();
-    navigate('/app/roadmap');
-  }
+  const activeQuota = analysis?.quota ?? sessionQuota ?? quota;
 
   async function analyzeReview() {
     setSubmitError(null);
+    setIsSubmitting(true);
 
     try {
+      if (!profileComplete && !hasRequiredProfileFields(settings)) {
+        throw new Error('Complete your profile with name, major, and campus before running a review.');
+      }
+
+      try {
+        await saveProfile();
+      } catch {
+        throw new Error(PROFILE_SYNC_ANALYSIS_ERROR);
+      }
+
+      let activeResumeId = resumeId;
+      startAnalysis();
+
       if (resumeFile) {
-        setIsSubmitting(true);
         const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
-        await uploadResume(token, resumeFile, {
+        const uploadedResume = await uploadResume(token, resumeFile, {
           jobPostingUrl,
           deadline,
           last_updated: new Date().toISOString(),
         });
+        activeResumeId = uploadedResume.id;
+        setResumeId(uploadedResume.id);
       }
 
-      runMockAnalysis();
+      if (!activeResumeId) {
+        throw new Error('Upload a resume file before running a review.');
+      }
+
+      const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+      const analysis = await analyzeReviewRequest(token, {
+        resumeId: activeResumeId,
+        jobDescription,
+        jobPostingUrl,
+        deadline,
+        userApiKey: userApiKey.trim() || undefined,
+      });
+      completeAnalysis(analysis);
+      if (analysis.quota) {
+        setSessionQuota(analysis.quota);
+      }
+      setQuotaRefreshKey((current) => current + 1);
     } catch (error) {
       setSubmitError((error as Error).message);
+      failAnalysis((error as Error).message);
     } finally {
       setIsSubmitting(false);
     }
@@ -110,7 +162,7 @@ export function DashboardPage() {
                     Career command center
                   </Badge>
                   <Badge tone={status === 'success' ? 'green' : 'gray'} className="rounded-full px-4 py-2">
-                    {status === 'success' ? 'Sample review loaded' : 'Preview workspace'}
+                    {status === 'success' ? 'Review ready' : 'Review workspace'}
                   </Badge>
                 </div>
                 <h1 className="type-page-title type-page-title--brand mt-5 max-w-3xl">
@@ -122,7 +174,15 @@ export function DashboardPage() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
-                {activityItems.map((item) => {
+                {[
+                  ...activityItems,
+                  {
+                    label: 'Next deadline',
+                    value: deadline ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(`${deadline}T12:00:00`)) : 'Not set',
+                    detail: 'Current application planning date',
+                    icon: CalendarDays,
+                  },
+                ].map((item) => {
                   const Icon = item.icon;
                   return (
                     <article
@@ -145,9 +205,17 @@ export function DashboardPage() {
                   <Sparkles className="size-4" aria-hidden="true" />
                   Start new review
                 </Button>
-                <Button variant="secondary" className="h-12" onClick={viewSampleRoadmap}>
-                  Load sample roadmap
+                <Button asChild variant="secondary" className="h-12">
+                  <Link to="/app/saved-reviews">
+                    Saved reviews
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                  </Link>
+                </Button>
+                <Button asChild variant="secondary" className="h-12">
+                  <Link to="/app/roadmap">
+                    Open roadmap
                   <ArrowRight className="size-4" aria-hidden="true" />
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -166,7 +234,7 @@ export function DashboardPage() {
               </div>
               <Progress value={readiness} className="mt-5 h-2.5 bg-white/10 [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-gold [&_[data-slot=progress-indicator]]:to-white" />
               <p className="mt-4 text-sm font-medium leading-6 text-white/70">
-                Readiness reacts to the mocked resume, job posting, and analysis state. It is local UI state only.
+                Readiness reacts to the current resume, job posting, and analysis state.
               </p>
             </Surface>
 
@@ -202,18 +270,27 @@ export function DashboardPage() {
           jobDescription={jobDescription}
           jobPostingUrl={jobPostingUrl}
           deadline={deadline}
+          userApiKey={userApiKey}
+          savedResumes={resumes}
+          selectedResumeId={resumeId}
+          resumesLoading={resumesLoading}
+          quota={activeQuota}
+          quotaLoading={quotaLoading && !activeQuota}
+          quotaError={quotaError}
           isSubmitting={isSubmitting}
           submitError={submitError}
+          hasAnalyzableResume={Boolean(resumeFile || resumeId)}
           onResumeFileChange={setResumeFile}
-          onFileNameChange={setFileName}
+          onSavedResumeSelect={selectSavedResume}
           onJobDescriptionChange={setJobDescription}
           onJobPostingUrlChange={setJobPostingUrl}
           onDeadlineChange={setDeadline}
+          onUserApiKeyChange={setUserApiKey}
           onAnalyze={analyzeReview}
         />
       </div>
 
-      <AnalysisPreview status={status} loadingStepIndex={loadingStepIndex} />
+      <AnalysisPreview status={status} loadingStepIndex={loadingStepIndex} analysis={analysis} error={error} />
 
       <section className="section-enter mx-auto max-w-[86rem] px-5 pb-16 sm:px-8 lg:px-12">
         <Surface variant="premium" className="grid gap-5 rounded-[2rem] p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
@@ -221,7 +298,7 @@ export function DashboardPage() {
             <p className="type-eyebrow">Workspace pages</p>
             <h2 className="type-section-title type-section-title--brand mt-2">Continue through the tool navigation.</h2>
             <p className="type-body mt-3 max-w-2xl sm:text-[0.9375rem] sm:leading-relaxed">
-              The app shell separates roadmap planning, resources, saved reviews, privacy, and profile settings while keeping the same mocked review state.
+              The app shell separates roadmap planning, resources, saved reviews, and profile settings around the current review.
             </p>
           </div>
           <div className="grid min-w-0 w-full gap-3 sm:grid-cols-3">
@@ -237,10 +314,12 @@ export function DashboardPage() {
                 Roadmap
               </Link>
             </Button>
-            <Button className="h-12" onClick={viewSampleRoadmap}>
+            <Button asChild className="h-12">
+              <Link to="/app/saved-reviews">
               <Sparkles className="size-4" aria-hidden="true" />
-              Load sample
+              Saved reviews
               <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
             </Button>
           </div>
         </Surface>

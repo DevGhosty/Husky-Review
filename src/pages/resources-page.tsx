@@ -1,20 +1,22 @@
 import { Link } from 'react-router-dom';
-import { DatabaseZap, Filter, ShieldCheck, Sparkles } from 'lucide-react';
+import { DatabaseZap, Filter, ShieldCheck } from 'lucide-react';
 import { RecommendationDashboard } from '../components/recommendation-dashboard';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Surface } from '../components/layout/surface';
-import { recommendations } from '../data/mockData';
 import { useReview } from '../context/review-context';
-
-const resourceStats = [
-  { label: 'Verified mock entries', value: recommendations.length.toString(), icon: ShieldCheck },
-  { label: 'In-Time options', value: recommendations.filter((item) => item.group === 'in-time').length.toString(), icon: Filter },
-  { label: 'Source metadata', value: 'On', icon: DatabaseZap },
-];
+import { useProfileSettings } from '../context/profile-settings-context';
+import { filterRecommendationsForDisplay } from '../lib/recommendation-display';
 
 export function ResourcesPage() {
-  const { status, deadline, selectedIds, toggleRecommendation, showSampleReview } = useReview();
+  const { status, deadline, selectedIds, analysis, toggleRecommendation } = useReview();
+  const { settings } = useProfileSettings();
+  const recommendations = filterRecommendationsForDisplay(analysis?.recommendations || [], settings);
+  const resourceStats = [
+    { label: 'Verified matches', value: recommendations.length.toString(), icon: ShieldCheck },
+    { label: 'In-Time options', value: recommendations.filter((item) => item.group === 'in-time').length.toString(), icon: Filter },
+    { label: 'Source metadata', value: recommendations.length ? 'On' : 'Pending', icon: DatabaseZap },
+  ];
 
   return (
     <main>
@@ -29,12 +31,11 @@ export function ResourcesPage() {
               Campus-connected activities without filler recommendations.
             </h1>
             <p className="relative mt-5 max-w-2xl type-lead">
-              Browse the mocked UWB activity recommendations with active status, last-verified dates, source labels, and roadmap selection controls.
+              Browse UW activity recommendations with active status, last-verified dates, source labels, and roadmap selection controls.
             </p>
             <div className="relative mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button className="h-12" onClick={showSampleReview}>
-                <Sparkles className="size-4" aria-hidden="true" />
-                Load sample recommendations
+              <Button asChild className="h-12">
+                <Link to="/app#workflow">Start review</Link>
               </Button>
               <Button asChild variant="secondary" className="h-12">
                 <Link to="/app/roadmap">Open roadmap</Link>
@@ -63,6 +64,8 @@ export function ResourcesPage() {
         status={status}
         deadline={deadline}
         selectedIds={selectedIds}
+        recommendations={recommendations}
+        showVerificationDates={settings.showVerificationDates}
         onToggleRecommendation={toggleRecommendation}
       />
     </main>

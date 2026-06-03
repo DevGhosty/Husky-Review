@@ -1,5 +1,5 @@
 import type { DragEvent } from 'react';
-import { CalendarDays, CheckCircle2, FileCheck2, FileUp, Link2, LockKeyhole, Loader2, WandSparkles } from 'lucide-react';
+import { CalendarDays, CheckCircle2, FileCheck2, FileUp, KeyRound, Link2, LockKeyhole, Loader2, WandSparkles } from 'lucide-react';
 import { Section } from './layout/section';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -7,8 +7,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Progress } from './ui/progress';
 import { Textarea } from './ui/textarea';
-import { sampleJobDescription, sampleJobPostingUrl } from '../data/mockData';
-import type { ReviewStatus } from '../types/analysis';
+import type { ReviewQuotaStatus, ReviewStatus } from '../types/analysis';
+import type { ResumeRecord } from '../auth/supabase-client';
 import { cn, hasJobPostingInput, isValidJobPostingUrl, jobPostingInputProgress } from '../lib/utils';
 
 interface UploadPanelProps {
@@ -17,17 +17,26 @@ interface UploadPanelProps {
   jobDescription: string;
   jobPostingUrl: string;
   deadline: string;
+  userApiKey: string;
+  savedResumes?: ResumeRecord[];
+  selectedResumeId?: string;
+  resumesLoading?: boolean;
+  quota?: ReviewQuotaStatus | null;
+  quotaLoading?: boolean;
+  quotaError?: string | null;
   isSubmitting?: boolean;
   submitError?: string | null;
+  hasAnalyzableResume?: boolean;
   onResumeFileChange: (file: File | null) => void;
-  onFileNameChange: (fileName: string) => void;
+  onSavedResumeSelect: (resumeId: string, fileName: string) => void;
   onJobDescriptionChange: (description: string) => void;
   onJobPostingUrlChange: (url: string) => void;
   onDeadlineChange: (deadline: string) => void;
+  onUserApiKeyChange: (apiKey: string) => void;
   onAnalyze: () => void;
 }
 
-const readinessSteps = ['Resume parsing', 'Job requirement comparison', 'Verified UWB retrieval', 'Roadmap generation'];
+const readinessSteps = ['Resume parsing', 'Job requirement comparison', 'Verified UW retrieval', 'Roadmap generation'];
 
 export function UploadPanel({
   status,
@@ -35,18 +44,32 @@ export function UploadPanel({
   jobDescription,
   jobPostingUrl,
   deadline,
+  userApiKey,
+  savedResumes = [],
+  selectedResumeId = '',
+  resumesLoading = false,
+  quota,
+  quotaLoading = false,
+  quotaError,
   isSubmitting = false,
   submitError,
+  hasAnalyzableResume = Boolean(fileName),
   onResumeFileChange,
-  onFileNameChange,
+  onSavedResumeSelect,
   onJobDescriptionChange,
   onJobPostingUrlChange,
   onDeadlineChange,
+  onUserApiKeyChange,
   onAnalyze,
 }: UploadPanelProps) {
   const isLoading = status === 'loading' || isSubmitting;
   const hasPosting = hasJobPostingInput(jobDescription, jobPostingUrl);
-  const canAnalyze = fileName.length > 0 && hasPosting && !isLoading;
+  const usingOwnKey = userApiKey.trim().length > 0;
+  const appQuotaExhausted = quota?.source === 'app-key' && quota.remaining === 0 && !usingOwnKey;
+  const canAnalyze = hasAnalyzableResume && hasPosting && !appQuotaExhausted && !isLoading;
+  const quotaReset = quota?.resetAt
+    ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(quota.resetAt))
+    : null;
   const postingProgress = jobPostingInputProgress(jobDescription, jobPostingUrl);
   const readiness = Math.min(
     100,
@@ -66,10 +89,10 @@ export function UploadPanel({
       <div className="grid gap-6 lg:grid-cols-[0.74fr_1.26fr]">
         <aside className="relative overflow-hidden rounded-[2rem] bg-husky-purple-dark p-7 text-white shadow-premium sm:p-8">
           <div className="absolute -right-20 -top-20 size-60 rounded-full bg-husky-gold/20 blur-3xl motion-safe:animate-breathe" aria-hidden="true" />
-          <Badge tone="gold" className="rounded-full px-4 py-2">Review workspace</Badge>
+          <Badge tone="goldOnDark" className="rounded-full px-4 py-2">Review workspace</Badge>
           <h2 className="mt-6 text-3xl font-black tracking-normal sm:text-4xl">Start with the resume and role you care about.</h2>
           <p className="mt-4 text-base leading-7 text-white/75">
-            The mocked frontend keeps the flow local while showing how a targeted review can become a verified UWB action plan.
+            The review flow stores your resume, compares it with the role, and turns verified UW activities into an action plan.
           </p>
           <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.08] p-5">
             <div className="flex items-center justify-between text-sm font-semibold text-white/[0.72]">
@@ -97,7 +120,7 @@ export function UploadPanel({
               <h3 className="mt-1 text-2xl font-black tracking-normal text-foreground">Start a New Review</h3>
             </div>
             <Badge tone={canAnalyze ? 'green' : 'gray'} className="w-fit rounded-full px-4 py-2">
-              {canAnalyze ? 'Ready to analyze' : 'Needs resume and posting'}
+              {canAnalyze ? 'Ready to analyze' : appQuotaExhausted ? 'Add your key' : 'Needs resume and posting'}
             </Badge>
           </div>
 
@@ -127,11 +150,36 @@ export function UploadPanel({
                   {fileName ? <FileCheck2 className="size-7" aria-hidden="true" /> : <FileUp className="size-7" aria-hidden="true" />}
                 </span>
                 <span className="mt-4 text-base font-black text-foreground">{fileName || 'Drop your resume here'}</span>
-                <span className="mt-1 text-sm font-medium text-muted-foreground">PDF, DOC, or DOCX. Stored when you analyze.</span>
+                <span className="mt-1 text-sm font-medium text-muted-foreground">PDF, DOC, or DOCX up to 3 MB. Stored when you analyze.</span>
               </Label>
-              <Button variant="secondary" className="mt-3 h-11 w-full" onClick={() => onFileNameChange('sample-uwb-resume.pdf')}>
-                Use sample resume
-              </Button>
+              {savedResumes.length > 0 || resumesLoading ? (
+                <div className="mt-4 rounded-2xl border border-border bg-muted/35 p-4 dark:bg-muted/20">
+                  <Label htmlFor="saved-resume" className="text-sm font-black text-foreground">
+                    Use a saved resume
+                  </Label>
+                  <select
+                    id="saved-resume"
+                    value={selectedResumeId}
+                    disabled={resumesLoading}
+                    onChange={(event) => {
+                      const selected = savedResumes.find((resume) => resume.id === event.target.value);
+                      if (selected) {
+                        onSavedResumeSelect(selected.id, selected.filename);
+                      } else {
+                        onSavedResumeSelect('', '');
+                      }
+                    }}
+                    className="mt-3 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                  >
+                    <option value="">{resumesLoading ? 'Loading saved resumes...' : 'Select saved resume'}</option>
+                    {savedResumes.map((resume) => (
+                      <option key={resume.id} value={resume.id}>
+                        {resume.filename}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
             </div>
 
             <div>
@@ -141,19 +189,9 @@ export function UploadPanel({
                     Job posting
                   </Label>
                   <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-                    Paste a posting link or add the full description below—either works.
+                    Paste a posting link or add the full description below; either works.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="font-ui w-fit rounded-lg px-2 py-1 text-xs font-bold text-primary transition hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:hover:bg-primary/20"
-                  onClick={() => {
-                    onJobPostingUrlChange(sampleJobPostingUrl);
-                    onJobDescriptionChange(sampleJobDescription);
-                  }}
-                >
-                  Use sample posting
-                </button>
               </div>
 
               <div className="relative">
@@ -215,7 +253,13 @@ export function UploadPanel({
                 </div>
               </div>
               <Button
-                className="h-12 min-w-44 shadow-premium disabled:opacity-100 disabled:border disabled:border-border disabled:bg-muted disabled:text-muted-foreground"
+                variant="primary"
+                className={cn(
+                  'h-12 min-w-44',
+                  canAnalyze || isLoading
+                    ? 'shadow-glow disabled:opacity-100'
+                    : 'shadow-none disabled:opacity-100 disabled:border disabled:border-husky-purple/25 disabled:bg-secondary disabled:text-secondary-foreground disabled:hover:translate-y-0',
+                )}
                 disabled={!canAnalyze}
                 onClick={onAnalyze}
                 aria-busy={isLoading}
@@ -234,6 +278,45 @@ export function UploadPanel({
               </Button>
             </div>
 
+            <div className="rounded-2xl border border-border bg-muted/35 p-4 dark:bg-muted/20">
+              <div className="flex items-start gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <KeyRound className="size-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Label htmlFor="gemini-api-key" className="text-sm font-black text-foreground">
+                    Gemini API key for extra reviews
+                  </Label>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
+                    {quotaLoading
+                      ? 'Checking your weekly app-key review quota...'
+                      : quota?.source === 'app-key'
+                        ? quota.remaining === 0
+                          ? `You have used your ${quota.limit} app-key reviews${quotaReset ? ` until ${quotaReset}` : ' for this weekly window'}. Paste your own key to keep reviewing.`
+                          : `${quota.remaining ?? 0} of ${quota.limit} app-key reviews left${quotaReset ? ` until ${quotaReset}` : ''}. Paste your own key to avoid using app quota.`
+                        : quota?.source === 'deterministic'
+                          ? 'Server AI is not configured; reviews use deterministic catalog matching unless you provide your own key.'
+                          : 'Paste your own key to run this review outside the app-key quota. It is sent only for this request and is not saved.'}
+                  </p>
+                  {quotaError ? <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">{quotaError}</p> : null}
+                  <Input
+                    id="gemini-api-key"
+                    type="password"
+                    autoComplete="off"
+                    value={userApiKey}
+                    onChange={(event) => onUserApiKeyChange(event.target.value)}
+                    placeholder="AIza..."
+                    className="mt-3 h-11 rounded-xl border-border bg-background px-3 text-sm font-semibold text-foreground focus-visible:border-ring focus-visible:ring-ring/30"
+                  />
+                  {usingOwnKey ? (
+                    <Badge tone="green" className="mt-3 w-fit">
+                      This review will use your key
+                    </Badge>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
             {submitError ? (
               <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold leading-5 text-red-700 dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200">
                 {submitError}
@@ -242,7 +325,7 @@ export function UploadPanel({
 
             <p className="flex items-start gap-2 rounded-xl border border-border bg-muted/50 p-3 text-xs font-semibold leading-5 text-muted-foreground">
               <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-              Uploaded resumes are automatically deleted within one hour.
+              Uploaded resumes stay in your account when they are tied to a saved review. Unused uploads may be removed after seven days.
             </p>
           </div>
         </div>

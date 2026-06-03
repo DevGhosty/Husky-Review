@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export const RESUME_BUCKET = 'resumes';
 
@@ -31,7 +31,12 @@ function getAllowedOrigins(): string[] {
   return Array.from(new Set([...DEFAULT_ALLOWED_ORIGINS, ...configured]));
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _adminClient: SupabaseClient<any> | null = null;
+
 export function getSupabaseAdmin() {
+  if (_adminClient) return _adminClient;
+
   const supabaseUrl = process.env.SUPABASE_URL?.trim();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
@@ -41,9 +46,10 @@ export function getSupabaseAdmin() {
     throw error;
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
+  _adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
+  return _adminClient;
 }
 
 export function setApiHeaders(res: any, methods: string, requestOrigin?: string) {
@@ -75,7 +81,55 @@ export function sendInternalError(res: any, context: string, cause: unknown) {
   return res.status(500).json({ message: 'Internal server error' });
 }
 
-export async function withSignedUrl(supabase: ReturnType<typeof getSupabaseAdmin>, row: ResumeRow) {
+function getPostgresErrorCode(cause: unknown): string | undefined {
+  if (!cause || typeof cause !== 'object' || !('code' in cause)) {
+    return undefined;
+  }
+
+  const code = (cause as { code?: unknown }).code;
+  return typeof code === 'string' ? code : undefined;
+}
+
+function shouldExposeDeletePermissionHint() {
+  return process.env.VERCEL_ENV !== 'production';
+}
+
+export function sendSupabaseMutationError(res: any, context: string, cause: unknown) {
+  console.error(context, cause);
+
+  const code = getPostgresErrorCode(cause);
+  const detail =
+    cause && typeof cause === 'object' && 'message' in cause && typeof (cause as { message?: unknown }).message === 'string'
+      ? (cause as { message: string }).message
+      : undefined;
+
+  if (code === '42501') {
+    return res.status(500).json({
+      message: shouldExposeDeletePermissionHint()
+        ? 'Database delete permissions missing — apply migration 20260528000000_fix_reviews_delete.sql'
+        : 'Internal server error',
+    });
+  }
+
+  if (shouldExposeDeletePermissionHint() && detail) {
+    return res.status(500).json({ message: `Delete failed: ${detail}` });
+  }
+
+  return res.status(500).json({ message: 'Internal server error' });
+}
+
+export function getRouteId(req: { query?: Record<string, string | string[] | undefined>; url?: string }) {
+  const fromQuery = typeof req.query?.id === 'string' ? req.query.id : req.query?.id?.[0];
+  if (fromQuery) {
+    return fromQuery;
+  }
+
+  const url = req.url || '';
+  const match = url.match(/\/api\/(?:resumes|reviews)\/([^/?#]+)/);
+  return match?.[1];
+}
+
+export async function withSignedUrl(supabase: SupabaseClient<any>, row: ResumeRow) {
   const { data } = await supabase.storage.from(RESUME_BUCKET).createSignedUrl(row.storage_path, 60 * 10);
 
   return {

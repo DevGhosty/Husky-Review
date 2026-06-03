@@ -1,28 +1,31 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Link, useBlocker, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
+  CheckCircle2,
   GraduationCap,
   LockKeyhole,
-  Moon,
+  MapPin,
   Palette,
-  ShieldCheck,
   Sparkles,
-  Sun,
   Target,
   Trash2,
   UserRound,
 } from 'lucide-react';
 import { useProfileSettings } from '../context/profile-settings-context';
+import { sanitizeAppReturnTo } from '../auth/auth0-config';
 import { useReview } from '../context/review-context';
-import { ACTIVITY_INTEREST_OPTIONS, UWB_MAJORS } from '../data/uwb-catalog';
+import { MajorCombobox } from '../components/major-combobox';
+import { ACTIVITY_INTEREST_OPTIONS } from '../data/uwb-catalog';
 import {
+  campusLabel,
+  campusOptions,
+  hasRequiredProfileFields,
   profileSectionHref,
   profileSections,
   type ProfileSectionId,
   type TargetRole,
 } from '../lib/profile-settings';
-import { isDarkMode, setTheme } from '../lib/theme';
 import { cn } from '../lib/utils';
 import { Surface } from '../components/layout/surface';
 import { Badge } from '../components/ui/badge';
@@ -38,7 +41,6 @@ const sectionIcons = {
   notifications: Bell,
   'career-goals': Target,
   appearance: Palette,
-  privacy: ShieldCheck,
 } as const;
 
 const targetRoleOptions: { id: TargetRole; label: string }[] = [
@@ -50,17 +52,20 @@ const targetRoleOptions: { id: TargetRole; label: string }[] = [
 const graduationYears = ['2025', '2026', '2027', '2028', '2029'];
 
 const selectClassName =
-  'h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30';
+  'h-11 w-full rounded-xl border border-input bg-card px-3 text-sm font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-card dark:text-foreground [color-scheme:light] dark:[color-scheme:dark]';
 
-const privacySummaryItems = [
-  'Uploaded resume files are stored in private Supabase storage paths scoped to your Auth0 account.',
-  'Profile preferences sync to Supabase when the project and Auth0 third-party auth are configured.',
-  'Generated analysis and roadmap selections remain mocked until the review pipeline is connected.',
+const trustSummaryItems = [
+  'Resumes and analysis stay scoped to your signed-in account.',
+  'Profile preferences sync to Supabase when configured.',
 ];
 
 function getActiveSection(hash: string): ProfileSectionId {
-  const normalized = hash.replace('#', '') as ProfileSectionId;
-  return profileSections.some((section) => section.id === normalized) ? normalized : 'overview';
+  const normalized = hash.replace('#', '');
+  if (normalized === 'privacy') {
+    return 'overview';
+  }
+  const sectionId = normalized as ProfileSectionId;
+  return profileSections.some((section) => section.id === sectionId) ? sectionId : 'overview';
 }
 
 function useProfileSectionNav() {
@@ -78,6 +83,21 @@ function useProfileSectionNav() {
   }, [location.pathname, location.hash]);
 
   return activeSection;
+}
+
+function safeReturnTo(value: string | null) {
+  if (!value) {
+    return '/app';
+  }
+
+  let returnTo = '/app';
+  try {
+    returnTo = sanitizeAppReturnTo(decodeURIComponent(value));
+  } catch {
+    returnTo = sanitizeAppReturnTo(value);
+  }
+
+  return returnTo.startsWith('/app/profile') ? '/app' : returnTo;
 }
 
 function SettingSwitchRow({
@@ -136,41 +156,211 @@ function SectionPanel({
 }
 
 export function ProfilePage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const activeSection = useProfileSectionNav();
-  const { status, fileName, selectedIds, showSampleReview } = useReview();
+  const { status, fileName, selectedIds } = useReview();
   const {
     settings,
+    profileComplete,
+    isDirty,
     setDisplayName,
     setMajor,
+    setCampus,
     setBooleanPref,
     setTargetRole,
     toggleActivityInterest,
     setGraduationYear,
     resetSettings,
+    saveProfile,
+    revertToSavedBaseline,
+    isProfileDirty,
     syncStatus,
     syncError,
   } = useProfileSettings();
-  const [dark, setDark] = useState(() => isDarkMode());
+  const [explicitSaveError, setExplicitSaveError] = useState<string | null>(null);
+  const [explicitSavePending, setExplicitSavePending] = useState(false);
+  const [pendingSetupReturnTo, setPendingSetupReturnTo] = useState<string | null>(null);
+  const allowSavedProfileNavigationRef = useRef(false);
 
-  const completion = Math.min(100, (fileName ? 38 : 0) + (status === 'success' ? 42 : 0) + Math.min(selectedIds.length, 4) * 5);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const returnTo = safeReturnTo(searchParams.get('returnTo'));
+  const requiredProfileFields = [
+    Boolean(settings.displayName.trim()),
+    Boolean(settings.major.trim()),
+    Boolean(settings.campus),
+  ];
+  const profileCompletion = Math.round((requiredProfileFields.filter(Boolean).length / requiredProfileFields.length) * 100);
+  const profileReady = hasRequiredProfileFields(settings);
+  const isSetupMode = searchParams.get('setup') === '1' && !profileComplete;
+  const workspaceCompletion = Math.min(100, (fileName ? 38 : 0) + (status === 'success' ? 42 : 0) + Math.min(selectedIds.length, 4) * 5);
+  const isSaving = explicitSavePending;
+  const showSetupBanner = isSetupMode;
+  const showOverviewSaveBar = isSetupMode || !profileComplete || isDirty;
+  const overviewSaveDisabled = isSetupMode || !profileComplete ? !profileReady || isSaving : !isDirty || isSaving;
+  const overviewSaveLabel = isSaving
+    ? 'Saving…'
+    : isSetupMode
+      ? 'Save & continue'
+      : !profileComplete
+        ? 'Save profile'
+        : 'Save changes';
 
-  const initials = settings.displayName
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      !allowSavedProfileNavigationRef.current &&
+      isProfileDirty() &&
+      currentLocation.pathname === '/app/profile' &&
+      nextLocation.pathname !== '/app/profile',
+  );
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') {
+      return;
+    }
+
+    if (allowSavedProfileNavigationRef.current) {
+      blocker.proceed();
+      return;
+    }
+
+    const leave = window.confirm(
+      'You have unsaved profile changes. Leave without saving? Your edits will be discarded.',
+    );
+    if (leave) {
+      revertToSavedBaseline();
+      blocker.proceed();
+    } else {
+      blocker.reset();
+    }
+  }, [blocker.state, revertToSavedBaseline]);
+
+  useEffect(() => {
+    if (!pendingSetupReturnTo || !profileComplete) {
+      return;
+    }
+
+    allowSavedProfileNavigationRef.current = true;
+    navigate(pendingSetupReturnTo, { replace: true });
+    setPendingSetupReturnTo(null);
+
+    window.setTimeout(() => {
+      allowSavedProfileNavigationRef.current = false;
+    }, 0);
+  }, [navigate, pendingSetupReturnTo, profileComplete]);
+
+  useEffect(() => {
+    if (searchParams.get('setup') !== '1' || !profileComplete) {
+      return;
+    }
+
+    navigate('/app/profile', { replace: true });
+  }, [navigate, profileComplete, searchParams]);
+
+  useEffect(() => {
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      if (!isProfileDirty()) {
+        return;
+      }
+      event.preventDefault();
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isProfileDirty]);
+
+  const initials = (settings.displayName || 'UW')
     .split(' ')
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
 
-  const toggleTheme = useCallback(() => {
-    const next = !isDarkMode();
-    setTheme(next ? 'dark' : 'light');
-    setDark(next);
-  }, []);
-
   function handleClearSettings() {
     if (window.confirm('Reset all profile settings to defaults? This only clears local browser preferences.')) {
       resetSettings();
     }
+  }
+
+  async function handleCompleteProfile() {
+    if (!profileReady) {
+      return;
+    }
+
+    setExplicitSaveError(null);
+    setExplicitSavePending(true);
+    try {
+      await saveProfile();
+      if (isSetupMode) {
+        setPendingSetupReturnTo(returnTo);
+      }
+    } catch (saveError) {
+      setExplicitSaveError((saveError as Error).message || 'Profile could not sync. Please try saving again.');
+    } finally {
+      setExplicitSavePending(false);
+    }
+  }
+
+  async function handleOverviewSave() {
+    if (isSetupMode || !profileComplete) {
+      await handleCompleteProfile();
+      return;
+    }
+
+    await handleCompleteProfile();
+  }
+
+  const handleSaveProfile = useCallback(() => {
+    setExplicitSaveError(null);
+    setExplicitSavePending(true);
+    void saveProfile().catch((saveError) => {
+      setExplicitSaveError((saveError as Error).message || 'Profile could not sync. Please try saving again.');
+    }).finally(() => {
+      setExplicitSavePending(false);
+    });
+  }, [saveProfile]);
+
+  function renderHeroAction() {
+    if (isSetupMode) {
+      return (
+        <Button
+          type="button"
+          className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90"
+          disabled={!profileReady || isSaving}
+          onClick={() => {
+            void handleCompleteProfile();
+          }}
+        >
+          {isSaving ? 'Saving…' : 'Save & continue'}
+        </Button>
+      );
+    }
+
+    if (!profileComplete) {
+      return (
+        <Button
+          type="button"
+          className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90"
+          disabled={!profileReady || isSaving}
+          onClick={() => {
+            void handleCompleteProfile();
+          }}
+        >
+          {isSaving ? 'Saving…' : 'Save profile'}
+        </Button>
+      );
+    }
+
+    return (
+      <Button
+        type="button"
+        className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90 disabled:opacity-55"
+        disabled={!isDirty || isSaving}
+        onClick={handleSaveProfile}
+      >
+        {isSaving ? 'Saving…' : 'Save changes'}
+      </Button>
+    );
   }
 
   return (
@@ -184,23 +374,23 @@ export function ProfilePage() {
                 {initials}
               </span>
               <div>
-                <Badge tone="gold" className="rounded-full px-4 py-2">
-                  Student preview
+                <Badge tone="goldOnDark" className="rounded-full px-4 py-2">
+                  {profileComplete ? 'Student workspace' : 'Profile setup'}
                 </Badge>
-                <h1 className="type-page-title mt-3 max-w-2xl text-white">{settings.displayName}</h1>
+                <h1 className="type-page-title mt-3 max-w-2xl text-white">
+                  {settings.displayName.trim() || 'Build your UW profile'}
+                </h1>
                 <p className="mt-2 text-sm font-medium text-white/65">
-                  {settings.major} · Class of {settings.graduationYear}
+                  {settings.major.trim() || 'Major not set'} - {campusLabel(settings.campus)}
                 </p>
+                {isDirty ? (
+                  <p className="mt-2 text-xs font-semibold text-husky-gold">
+                    {profileComplete ? 'Unsaved changes' : 'Save your profile to continue'}
+                  </p>
+                ) : null}
               </div>
             </div>
-            <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-[20rem]">
-              <Button asChild variant="outline" className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white">
-                <Link to="/app#workflow">Start review</Link>
-              </Button>
-              <Button className="h-12 bg-white text-husky-purple hover:bg-husky-gold/90" onClick={showSampleReview}>
-                Load sample profile
-              </Button>
-            </div>
+            <div className="grid w-full gap-3 lg:w-auto lg:min-w-[12rem]">{renderHeroAction()}</div>
           </div>
         </Surface>
 
@@ -255,8 +445,8 @@ export function ProfilePage() {
         <div className="grid gap-6">
           <SectionPanel
             id="overview"
-            title="Overview"
-            description="Basic student context and workspace readiness for the mocked review flow."
+            title={isSetupMode ? 'Complete your profile' : 'Overview'}
+            description="Name, major, and campus are required so recommendations start with the right UW opportunities."
             icon={UserRound}
           >
             <div className="grid gap-5 lg:grid-cols-3">
@@ -266,24 +456,35 @@ export function ProfilePage() {
                   id="display-name"
                   value={settings.displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder="Your name"
                   className="h-11 rounded-xl px-3"
                 />
               </div>
+              <MajorCombobox
+                id="major"
+                value={settings.major}
+                onChange={setMajor}
+                placeholder="Search majors — Computer Science, Informatics, Nursing..."
+              />
               <div className="space-y-2">
-                <Label htmlFor="major">Major</Label>
+                <Label htmlFor="campus">Campus</Label>
                 <select
-                  id="major"
-                  value={settings.major}
-                  onChange={(event) => setMajor(event.target.value)}
+                  id="campus"
+                  value={settings.campus}
+                  onChange={(event) => setCampus(event.target.value as typeof settings.campus)}
                   className={selectClassName}
                 >
-                  {UWB_MAJORS.map((major) => (
-                    <option key={major} value={major}>
-                      {major}
+                  <option value="">Select campus</option>
+                  {campusOptions.map((campus) => (
+                    <option key={campus.id} value={campus.id}>
+                      {campus.label}
                     </option>
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="graduation-year">Graduation year</Label>
                 <select
@@ -299,32 +500,138 @@ export function ProfilePage() {
                   ))}
                 </select>
               </div>
+              {profileComplete ? (
+                <p className="text-sm leading-6 text-muted-foreground lg:col-span-2 lg:self-center">
+                  Campus scope for recommendations is configured in{' '}
+                  <Link to={profileSectionHref('preferences')} className="font-semibold text-primary hover:underline">
+                    Review preferences
+                  </Link>
+                  .
+                </p>
+              ) : null}
             </div>
 
+            {showOverviewSaveBar ? (
+              <div className="mt-6 rounded-[1.4rem] border border-primary/25 bg-primary/5 p-5 dark:bg-primary/10">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black text-foreground">
+                      {isSetupMode ? 'Save to finish setup' : profileComplete ? 'Unsaved changes' : 'Save your profile'}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {profileReady
+                        ? isSetupMode
+                          ? 'Save your basics once, then continue to the workspace.'
+                          : 'Save name, major, and campus so recommendations use the right UW context.'
+                        : 'Fill in display name, major, and campus to enable save.'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    className="h-11 min-w-[10rem] shrink-0"
+                    disabled={overviewSaveDisabled}
+                    onClick={() => {
+                      void handleOverviewSave();
+                    }}
+                  >
+                    {overviewSaveLabel}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            {showSetupBanner ? (
+              <div className="mt-5 rounded-[1.4rem] border border-husky-gold/35 bg-husky-gold/10 p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="flex items-center gap-2 text-sm font-black text-foreground">
+                      {profileReady ? <CheckCircle2 className="size-5 text-emerald-600" aria-hidden="true" /> : <MapPin className="size-5 text-primary" aria-hidden="true" />}
+                      {profileReady ? 'Profile ready' : 'Profile required'}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {profileReady
+                        ? 'Required fields are filled. Use Save & continue above or below to finish setup.'
+                        : 'Complete these basics once, then Husky-Review can filter campus opportunities on every review.'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    className="h-11"
+                    disabled={!profileReady || isSaving}
+                    onClick={() => {
+                      void handleCompleteProfile();
+                    }}
+                  >
+                    {isSaving ? 'Saving…' : profileReady ? 'Save & continue' : 'Complete required fields'}
+                  </Button>
+                </div>
+                {explicitSaveError ? (
+                  <p className="mt-3 text-sm font-semibold text-destructive">{explicitSaveError}</p>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="mt-5 flex flex-wrap gap-2">
-              <Badge tone="purple">{settings.major}</Badge>
-              <Badge tone="gray">UWB student preview</Badge>
-              <Badge tone={syncStatus === 'synced' ? 'green' : syncStatus === 'error' ? 'gold' : 'gray'}>
-                {syncStatus === 'synced' ? 'Profile synced' : syncStatus === 'loading' ? 'Syncing profile' : 'Local fallback'}
-              </Badge>
-              <Badge tone={status === 'success' ? 'green' : 'gray'}>
-                {status === 'success' ? 'Sample review loaded' : 'No active review'}
-              </Badge>
+              {profileComplete ? (
+                <>
+                  <Badge tone="green">Profile complete</Badge>
+                  <Badge tone="purple">{settings.major.trim() || 'Major not set'}</Badge>
+                  <Badge tone="gray">{campusLabel(settings.campus)}</Badge>
+                  <Badge tone={syncStatus === 'synced' ? 'green' : syncStatus === 'error' ? 'gold' : 'gray'}>
+                    {syncStatus === 'synced' ? 'Profile synced' : syncStatus === 'loading' ? 'Syncing profile' : 'Local fallback'}
+                  </Badge>
+                </>
+              ) : (
+                <>
+                  <Badge tone="gold">{`${profileCompletion}% profile`}</Badge>
+                  <Badge tone="purple">{settings.major.trim() || 'Major not set'}</Badge>
+                  <Badge tone="gray">{campusLabel(settings.campus)}</Badge>
+                  <Badge tone={syncStatus === 'synced' ? 'green' : syncStatus === 'error' ? 'gold' : 'gray'}>
+                    {syncStatus === 'synced' ? 'Profile synced' : syncStatus === 'loading' ? 'Syncing profile' : 'Local fallback'}
+                  </Badge>
+                  <Badge tone={status === 'success' ? 'green' : 'gray'}>
+                    {status === 'success' ? 'Review loaded' : 'No active review'}
+                  </Badge>
+                </>
+              )}
             </div>
             {syncError ? <p className="mt-3 text-sm font-semibold text-amber-700 dark:text-amber-300">{syncError}</p> : null}
 
-            <div className="mt-6 rounded-[1.4rem] border border-border bg-muted/30 p-5 dark:bg-muted/20">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-sm font-semibold text-foreground">Readiness workspace</p>
-                <p className="text-2xl font-black text-primary">{completion}%</p>
+            {!profileComplete ? (
+              <div className="mt-6 rounded-[1.4rem] border border-border bg-muted/30 p-5 dark:bg-muted/20">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm font-semibold text-foreground">Readiness workspace</p>
+                  <p className="text-2xl font-black text-primary">{workspaceCompletion}%</p>
+                </div>
+                <Progress
+                  value={workspaceCompletion}
+                  className="mt-3 h-2.5 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold"
+                />
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  Completion reflects current review state, selected recommendations, and whether a resume has been loaded.
+                </p>
               </div>
-              <Progress
-                value={completion}
-                className="mt-3 h-2.5 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold"
-              />
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Completion reflects current mocked review state, selected recommendations, and whether a sample resume has been loaded.
-              </p>
+            ) : null}
+
+            <div className="mt-6 rounded-[1.4rem] border border-border bg-muted/30 p-5 dark:bg-muted/20">
+              <p className="text-sm font-black text-foreground">Data & trust</p>
+              <ul className="mt-3 space-y-2">
+                {trustSummaryItems.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+                    <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <Button asChild variant="secondary" className="h-11">
+                  <Link to="/app/legal#privacy">View legal & privacy</Link>
+                </Button>
+                <Button type="button" variant="destructive" className="h-11 gap-2" onClick={handleClearSettings}>
+                  <Trash2 className="size-4" aria-hidden />
+                  Clear local settings
+                </Button>
+              </div>
             </div>
           </SectionPanel>
 
@@ -335,6 +642,13 @@ export function ProfilePage() {
             icon={Sparkles}
           >
             <div className="grid gap-3">
+              <SettingSwitchRow
+                label="Recommend from other campuses"
+                description="Expand beyond your home campus when an opportunity is a strong fit."
+                checked={settings.includeOtherCampuses}
+                onCheckedChange={(checked) => setBooleanPref('includeOtherCampuses', checked)}
+                disabled={!settings.campus}
+              />
               <SettingSwitchRow
                 label="Prioritize In-Time activities"
                 description="Surface deadline-friendly actions before longer-term resume builders."
@@ -377,13 +691,13 @@ export function ProfilePage() {
               />
               <SettingSwitchRow
                 label="New verified resources"
-                description="Highlight when UWB activity records are refreshed."
+                description="Highlight when UW activity records are refreshed."
                 checked={settings.resourceUpdates}
                 onCheckedChange={(checked) => setBooleanPref('resourceUpdates', checked)}
               />
               <SettingSwitchRow
                 label="Weekly email digest"
-                description="Requires Google sign-in before email reminders can be enabled."
+                description="Coming soon."
                 checked={settings.emailDigest}
                 onCheckedChange={(checked) => setBooleanPref('emailDigest', checked)}
                 disabled
@@ -419,7 +733,7 @@ export function ProfilePage() {
               <div>
                 <p className="text-sm font-black text-foreground">Activity interests</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Select the kinds of UW Bothell classes, clubs, and activities you want prioritized when we match your resume to campus opportunities.
+                  Select the kinds of UW classes, clubs, and activities you want prioritized when we match your resume to campus opportunities.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {ACTIVITY_INTEREST_OPTIONS.map((option) => {
@@ -444,7 +758,7 @@ export function ProfilePage() {
               <div className="inset-row flex items-start gap-3 rounded-2xl p-4">
                 <GraduationCap className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <p className="text-sm leading-6 text-muted-foreground">
-                  These map to the activity types Husky-Review pulls from the UWB catalog—courses, clubs, events, research, fellowships, and projects. Preferences are stored locally and can later inform ranking once authenticated student profiles are connected.
+                  These map to the activity types Husky-Review pulls from the UW catalog: courses, clubs, events, research, fellowships, and projects. Saved interests filter catalog retrieval and recommendations during review analysis.
                 </p>
               </div>
             </div>
@@ -456,43 +770,11 @@ export function ProfilePage() {
             description="Adjust how the workspace looks on your device."
             icon={Palette}
           >
-            <div className="inset-row flex items-center justify-between gap-4 rounded-2xl p-4">
-              <div>
-                <p className="text-sm font-black text-foreground">Theme</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Switch between light and dark mode. This uses the same setting as the header toggle.
-                </p>
-              </div>
-              <Button type="button" variant="secondary" className="h-11 gap-2" onClick={toggleTheme} aria-pressed={dark}>
-                {dark ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
-                {dark ? 'Light mode' : 'Dark mode'}
-              </Button>
-            </div>
-          </SectionPanel>
-
-          <SectionPanel
-            id="privacy"
-            title="Privacy & data"
-            description="Understand what this prototype stores and how to reset your local profile settings."
-            icon={ShieldCheck}
-          >
-            <div className="grid gap-3">
-              {privacySummaryItems.map((item) => (
-                <div key={item} className="inset-row flex items-start gap-3 rounded-2xl p-4">
-                  <LockKeyhole className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
-                  <p className="text-sm font-semibold leading-6 text-muted-foreground">{item}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button asChild variant="secondary" className="h-12">
-                <Link to="/app/privacy">Open full privacy page</Link>
-              </Button>
-              <Button type="button" variant="destructive" className="h-12 gap-2" onClick={handleClearSettings}>
-                <Trash2 className="size-4" aria-hidden />
-                Clear local settings
-              </Button>
+            <div className="inset-row rounded-2xl p-4">
+              <p className="text-sm font-black text-foreground">Theme</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Use the sun/moon control in the top navigation bar to switch between light and dark mode on any page.
+              </p>
             </div>
           </SectionPanel>
         </div>

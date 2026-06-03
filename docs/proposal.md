@@ -1,14 +1,14 @@
-# Actionable UWB Resume Review Proposal
+# Actionable UW Resume Review Proposal
 
-This document is a Markdown reference version of the annotated proposal PDF for **Husky-Review**, whose product concept is **Actionable UWB Resume Review**. It is preserved as proposal and review material, not as a claim that every described feature is already implemented.
+This document is a Markdown reference version of the annotated proposal PDF for **Husky-Review**, whose product concept is **Actionable UW Resume Review**. It is preserved as proposal and review material, not as a claim that every described feature is already implemented.
 
 ## Final Proposal Summary
 
-Actionable UWB Resume Review is a web application designed to help University of Washington Bothell students strengthen their resumes for specific job postings. The project focuses on a recurring issue in the recruiting cycle: generic AI resume tools can recommend clubs, courses, certifications, or activities that do not exist at UWB or are no longer active.
+Actionable UW Resume Review is a web application designed to help University of Washington students strengthen their resumes for specific job postings. The project focuses on a recurring issue in the recruiting cycle: generic AI resume tools can recommend clubs, courses, certifications, or activities that do not exist at UWB or are no longer active.
 
 To validate demand before building, the team surveyed 14 members of the UWB CSS Discord. This was a deliberate early-adopter sample of job-seeking computer science students, not a claim about the entire student body. In that sample, 11 of 14 students reported receiving recommendations from generic AI resume tools that were not actionable because they pointed to nonexistent or inactive opportunities.
 
-The proposed solution grounds every recommendation in a curated database of real, verified UWB activities, including:
+The proposed solution grounds every recommendation in a curated database of real, verified UW activities, including:
 
 - Clubs
 - Courses
@@ -20,7 +20,7 @@ Each database entry is intended to include an active status field and a last-ver
 
 ## Verification Plan
 
-Database entries will be verified during population by cross-referencing each activity against official UWB sources, such as:
+Database entries will be verified during population by cross-referencing each activity against official UW sources, such as:
 
 - Registrar listings
 - DSA club directory
@@ -35,13 +35,13 @@ If more than 10% of entries cannot be verified against a live official source, t
 
 ## Product Workflow
 
-Students upload a resume and paste a job description. The system identifies skill and keyword gaps, then returns only current, verified UWB opportunities ranked by relevance and urgency.
+Students upload a resume and paste a job description. The system identifies skill and keyword gaps, then returns only current, verified UW opportunities ranked by relevance and urgency.
 
 The AI pipeline works in stages:
 
 1. An LLM parses the resume and job posting into a structured gap analysis.
 2. Those gaps are converted into embeddings.
-3. The embeddings are compared against pre-embedded UWB activity descriptions using cosine similarity retrieval.
+3. The embeddings are compared against pre-embedded UW activity descriptions using cosine similarity retrieval.
 4. The LLM ranks the retrieved matches.
 5. Recommendations are classified as:
    - **In-Time Activities:** actionable before the application deadline.
@@ -53,7 +53,7 @@ The AI pipeline works in stages:
 - **Frontend:** React, Vite, Tailwind CSS
 - **Backend:** Node.js, Express
 - **Storage and sessions:** Supabase
-- **Language analysis and embeddings:** Anthropic Claude API
+- **Language analysis and embeddings:** Google Gemini API
 - **Deployment:** Vercel
 - **Project website:** GitHub Pages
 
@@ -96,9 +96,9 @@ This is intended to prevent a single point of failure from stalling the project.
 
 Week 1 front-loads database population:
 
-- Add 50+ verified UWB activities to Supabase.
+- Add 50+ verified UW activities to Supabase.
 - Include active status and last-verified date for each entry.
-- Verify entries against live official UWB sources.
+- Verify entries against live official UW sources.
 - Split verification by category between both members.
 - Complete environment setup.
 - Build a basic upload flow returning raw gap text.
@@ -126,7 +126,7 @@ Week 3 focuses on:
 - Frontend roadmap view.
 - GitHub Pages project site.
 - Re-verification of the full database.
-- Usability testing with five UWB students outside the original Discord sample.
+- Usability testing with five UW students outside the original Discord sample.
 
 Usability participants complete two tasks:
 
@@ -143,7 +143,7 @@ Week 4 covers:
 - Security review checklist.
 - Structured feedback survey.
 
-The survey is administered to at least 10 UWB students recruited from outside the CSS Discord group. It uses three fixed questions:
+The survey is administered to at least 10 UW students recruited from outside the CSS Discord group. It uses three fixed questions:
 
 - Overall recommendation quality on a 1-5 scale.
 - Whether every suggested activity was real and currently active, yes or no.
@@ -153,13 +153,13 @@ The target mean is 4/5 across the two scaled items. Recruitment begins in Week 3
 
 If fewer than 10 responses are collected by May 30, the proposal notes a fallback threshold of seven respondents, with transparent reporting of the actual sample size.
 
-## Claude Review Summary
+## Gemini Review Summary
 
-Claude's response graded the proposal **5 / 5** and described it as an exceptional student proposal with the previous weaknesses resolved cleanly.
+Gemini's response graded the proposal **5 / 5** and described it as an exceptional student proposal with the previous weaknesses resolved cleanly.
 
 ### Strengths
 
-Claude highlighted three major strengths:
+Gemini highlighted three major strengths:
 
 - Every milestone has a complete risk loop, including Week 4 recruitment and fallback planning.
 - The test set methodology is strong for a class project because resumes are volunteered, anonymized, independently labeled, and operationally evaluated.
@@ -167,9 +167,9 @@ Claude highlighted three major strengths:
 
 ### Minor Weaknesses
 
-Claude also noted three minor weaknesses:
+Gemini also noted three minor weaknesses:
 
-- The proposal does not address API cost exposure for Claude API usage, including spending limits or alerts.
+- The proposal does not address API cost exposure for Gemini API usage, including spending limits or alerts.
 - The Week 3 usability test uses direct observation but does not specify who observes or how observer consistency is handled.
 - Long-term database maintenance after May 31 is outside scope but not explicitly acknowledged.
 

@@ -1,4 +1,4 @@
-import { requireAuth } from '../auth0-verify';
+import { requireAuth } from '../auth0-verify.js';
 import {
   getSupabaseAdmin,
   RESUME_BUCKET,
@@ -7,17 +7,17 @@ import {
   setApiHeaders,
   withSignedUrl,
   type ResumeRow,
-} from '../supabase-admin';
+} from '../supabase-admin.js';
 
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '10mb',
+      sizeLimit: '4mb',
     },
   },
 };
 
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 const MAX_METADATA_BYTES = 8 * 1024;
 const MAX_METADATA_KEYS = 20;
 const UPLOAD_LIMIT_PER_HOUR = 20;
@@ -28,10 +28,8 @@ const ALLOWED_CONTENT_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 
-const uploadCounts = new Map<string, { count: number; windowStart: number }>();
-
 function safePathSegment(value: string) {
-  return value.replace(/[^a-zA-Z0-9._=|:-]/g, '_');
+  return value.replace(/[^a-zA-Z0-9._=-]/g, '_');
 }
 
 function safeFilename(value: string) {
@@ -39,23 +37,49 @@ function safeFilename(value: string) {
   return cleaned || 'resume';
 }
 
-function assertUploadRateLimit(userId: string) {
+async function assertUploadRateLimit(supabase: ReturnType<typeof getSupabaseAdmin>, userId: string) {
   const now = Date.now();
-  const hourMs = 60 * 60 * 1000;
-  const entry = uploadCounts.get(userId);
+  const windowMs = 60 * 60 * 1000;
+  const { data, error } = await supabase
+    .from('review_upload_limits')
+    .select('window_start, upload_count')
+    .eq('auth0_user_id', userId)
+    .maybeSingle();
 
-  if (!entry || now - entry.windowStart >= hourMs) {
-    uploadCounts.set(userId, { count: 1, windowStart: now });
-    return;
+  if (error) {
+    return sendRateLimitConfigError(error);
   }
 
-  if (entry.count >= UPLOAD_LIMIT_PER_HOUR) {
+  const windowStart = data?.window_start ? new Date(data.window_start).getTime() : 0;
+  const currentCount = data?.upload_count || 0;
+  const resetWindow = !windowStart || now - windowStart >= windowMs;
+
+  if (!resetWindow && currentCount >= UPLOAD_LIMIT_PER_HOUR) {
     const error = new Error('Upload limit reached. Try again later.');
     (error as any).statusCode = 429;
     throw error;
   }
 
-  entry.count += 1;
+  const { error: upsertError } = await supabase.from('review_upload_limits').upsert(
+    {
+      auth0_user_id: userId,
+      window_start: resetWindow ? new Date(now).toISOString() : new Date(windowStart).toISOString(),
+      upload_count: resetWindow ? 1 : currentCount + 1,
+      updated_at: new Date(now).toISOString(),
+    },
+    { onConflict: 'auth0_user_id' },
+  );
+
+  if (upsertError) {
+    return sendRateLimitConfigError(upsertError);
+  }
+}
+
+function sendRateLimitConfigError(cause: unknown): never {
+  console.error('Upload rate limit check failed', cause);
+  const error = new Error('Upload rate limiting is not configured');
+  (error as any).statusCode = 500;
+  throw error;
 }
 
 function normalizeContentType(contentType: unknown, filename: string) {
@@ -94,6 +118,25 @@ function sanitizeMetadata(metadata: unknown): Record<string, unknown> {
   return sanitized;
 }
 
+function hasAllowedSignature(buffer: Buffer, contentType: string) {
+  const header4 = buffer.subarray(0, 4);
+  const header8 = buffer.subarray(0, 8);
+
+  if (contentType === 'application/pdf') {
+    return header4.toString() === '%PDF';
+  }
+
+  if (contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    return header4[0] === 0x50 && header4[1] === 0x4b && header4[2] === 0x03 && header4[3] === 0x04;
+  }
+
+  if (contentType === 'application/msword') {
+    return header8.equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));
+  }
+
+  return false;
+}
+
 export default async function handler(req: any, res: any) {
   const requestOrigin = req.headers?.origin;
   setApiHeaders(res, 'POST', requestOrigin);
@@ -108,7 +151,8 @@ export default async function handler(req: any, res: any) {
 
   try {
     const auth = await requireAuth(req.headers.authorization);
-    assertUploadRateLimit(auth.userId);
+    const supabase = getSupabaseAdmin();
+    await assertUploadRateLimit(supabase, auth.userId);
 
     const { file, filename, contentType, metadata } = req.body || {};
 
@@ -127,14 +171,17 @@ export default async function handler(req: any, res: any) {
     }
 
     if (buffer.byteLength > MAX_UPLOAD_BYTES) {
-      return res.status(400).json({ message: 'File exceeds the 10 MB upload limit' });
+      return res.status(400).json({ message: 'File exceeds the 3 MB upload limit' });
+    }
+
+    if (!hasAllowedSignature(buffer, finalContentType)) {
+      return res.status(400).json({ message: 'File contents do not match the declared resume type' });
     }
 
     const safeName = safeFilename(filename);
     const storagePath = `${safePathSegment(auth.userId)}/${Date.now()}-${safeName}`;
     const resumeMetadata = sanitizeMetadata(metadata);
 
-    const supabase = getSupabaseAdmin();
     const { error: uploadError } = await supabase.storage.from(RESUME_BUCKET).upload(storagePath, buffer, {
       contentType: finalContentType,
       upsert: false,

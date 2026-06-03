@@ -10,7 +10,7 @@ import { ProfileSettingsProvider } from './context/profile-settings-context';
 import { DashboardPage } from './pages/dashboard-page';
 import { MarketingPage } from './pages/marketing-page';
 import { ProfilePage } from './pages/profile-page';
-import { PrivacyPage } from './pages/privacy-page';
+import { LegalPage } from './pages/legal-page';
 import { ResourcesPage } from './pages/resources-page';
 import { RoadmapPage } from './pages/roadmap-page';
 import { SavedReviewsPage } from './pages/saved-reviews-page';
@@ -37,11 +37,12 @@ function App() {
               </MarketingShell>
             }
           />
+          <Route path="/privacy" element={<Navigate to="/legal#privacy" replace />} />
           <Route
-            path="/privacy"
+            path="/legal"
             element={
               <MarketingShell>
-                <PrivacyPage />
+                <LegalPage />
               </MarketingShell>
             }
           />
@@ -75,14 +76,14 @@ function App() {
             path="/app/profile"
             element={appRoute(<ProfilePage />)}
           />
-          <Route
-            path="/app/privacy"
-            element={appRoute(<PrivacyPage />)}
-          />
+          <Route path="/app/privacy" element={<Navigate to="/app/legal#privacy" replace />} />
+          <Route path="/app/legal" element={appRoute(<LegalPage />)} />
 
           {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <Analytics />
+        <SpeedInsights />
       </ProfileSettingsProvider>
     </ReviewProvider>
   );
