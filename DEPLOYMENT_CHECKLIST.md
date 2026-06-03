@@ -14,6 +14,7 @@
 - [ ] Supabase project created.
 - [ ] Supabase Third-Party Auth integration for Auth0 enabled.
 - [ ] SQL files in [`supabase/migrations`](./supabase/migrations) have been applied in timestamp order.
+- [ ] Migration [`20260528000000_fix_reviews_delete.sql`](./supabase/migrations/20260528000000_fix_reviews_delete.sql) is applied (grants `DELETE` to `service_role` on resume/review tables; sets `reviews.resume_id` to `ON DELETE SET NULL`). Verify with [`scripts/verify-delete-permissions.sql`](./scripts/verify-delete-permissions.sql).
 - [ ] `resumes` storage bucket is private.
 - [ ] RLS is enabled for `profiles`, `resumes`, and storage policies.
 
@@ -44,6 +45,7 @@
 - [ ] Run `npm run dev`.
 - [ ] Run `npm run dev:vercel` when testing API routes locally.
 - [ ] Run `npm run test:auth` against `vercel dev` or a deployed URL with `API_BASE_URL`.
+- [ ] Optional: set `AUTH_TEST_TOKEN`, `AUTH_TEST_RESUME_ID`, and/or `AUTH_TEST_REVIEW_ID` when running `npm run test:auth` to smoke-test DELETE routes (uses disposable test rows only).
 - [ ] Visit `http://localhost:5173`.
 - [ ] Click Continue with Google from the app and confirm it redirects to Auth0 Universal Login.
 - [ ] Sign in with a valid `@uw.edu` Google account.
@@ -54,7 +56,8 @@
 - [ ] Run a review and confirm the saved review appears on `/app/saved-reviews`.
 - [ ] Open the saved review and confirm `/app/roadmap` uses persisted recommendations.
 - [ ] Open the resume signed URL.
-- [ ] Delete the resume and confirm it disappears.
+- [ ] Delete a saved review from `/app/saved-reviews` and confirm it disappears.
+- [ ] Delete the resume and confirm it disappears (linked saved reviews remain, with no resume filename).
 
 ## Production Verification
 
@@ -79,6 +82,8 @@
 - [ ] `resumes_created_at_idx` exists (supports retention cleanup).
 - [ ] `reviews_auth0_user_id_created_at_idx` exists.
 - [ ] `review_ai_usage_limits` exists and `consume_weekly_review_quota` / `check_weekly_review_quota` are executable only by `service_role`.
+- [ ] `service_role` has `DELETE` on `resumes`, `reviews`, `review_recommendations`, and `review_roadmap_actions` (see [`scripts/verify-delete-permissions.sql`](./scripts/verify-delete-permissions.sql)).
+- [ ] `reviews_resume_id_fkey` uses `ON DELETE SET NULL` so resume deletes do not cascade-delete saved reviews.
 - [ ] `CRON_SECRET` is set in Vercel; cron `/api/cron/purge-expired-resumes` runs daily on Hobby (`0 8 * * *` UTC) or more often on Pro.
 - [ ] Private resume objects are stored under `<auth0-sub>/<timestamp>-<filename>`.
 - [ ] Signed URLs are short-lived.

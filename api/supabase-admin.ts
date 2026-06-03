@@ -81,6 +81,31 @@ export function sendInternalError(res: any, context: string, cause: unknown) {
   return res.status(500).json({ message: 'Internal server error' });
 }
 
+function getPostgresErrorCode(cause: unknown): string | undefined {
+  if (!cause || typeof cause !== 'object' || !('code' in cause)) {
+    return undefined;
+  }
+
+  const code = (cause as { code?: unknown }).code;
+  return typeof code === 'string' ? code : undefined;
+}
+
+function shouldExposeDeletePermissionHint() {
+  return process.env.VERCEL_ENV !== 'production';
+}
+
+export function sendSupabaseMutationError(res: any, context: string, cause: unknown) {
+  console.error(context, cause);
+
+  if (getPostgresErrorCode(cause) === '42501' && shouldExposeDeletePermissionHint()) {
+    return res.status(500).json({
+      message: 'Database delete permissions missing — apply migration 20260528000000_fix_reviews_delete.sql',
+    });
+  }
+
+  return res.status(500).json({ message: 'Internal server error' });
+}
+
 export async function withSignedUrl(supabase: SupabaseClient<any>, row: ResumeRow) {
   const { data } = await supabase.storage.from(RESUME_BUCKET).createSignedUrl(row.storage_path, 60 * 10);
 

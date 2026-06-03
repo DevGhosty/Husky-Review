@@ -1,5 +1,5 @@
 import { requireAuth } from '../auth0-verify.js';
-import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders } from '../supabase-admin.js';
+import { getSupabaseAdmin, sendError, sendInternalError, sendSupabaseMutationError, setApiHeaders } from '../supabase-admin.js';
 
 function getReviewId(req: any) {
   return typeof req.query.id === 'string' ? req.query.id : req.query.id?.[0];
@@ -66,7 +66,7 @@ export default async function handler(req: any, res: any) {
     if (req.method === 'DELETE') {
       const { error } = await supabase.from('reviews').delete().eq('id', id).eq('auth0_user_id', auth.userId);
       if (error) {
-        return sendInternalError(res, 'Failed to delete review', error);
+        return sendSupabaseMutationError(res, 'Failed to delete review', error);
       }
       return res.status(204).end();
     }

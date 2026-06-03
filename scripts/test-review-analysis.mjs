@@ -657,6 +657,7 @@ test('Supabase migrations include baseline dependencies before review tables', a
   const baseline = await readFile(new URL('../supabase/migrations/20260517000000_create_auth_resume_baseline.sql', import.meta.url), 'utf8');
   const activities = await readFile(new URL('../supabase/migrations/20260518200000_create_activities.sql', import.meta.url), 'utf8');
   const reviews = await readFile(new URL('../supabase/migrations/20260527000000_create_reviews.sql', import.meta.url), 'utf8');
+  const fixReviewsDelete = await readFile(new URL('../supabase/migrations/20260528000000_fix_reviews_delete.sql', import.meta.url), 'utf8');
   const campusSettings = await readFile(new URL('../supabase/migrations/20260603000000_add_profile_campus_settings.sql', import.meta.url), 'utf8');
 
   assert.match(baseline, /create table if not exists public\.resumes/i);
@@ -673,6 +674,11 @@ test('Supabase migrations include baseline dependencies before review tables', a
   assert.match(reviews, /create or replace function public\.check_weekly_review_quota/i);
   assert.match(reviews, /create or replace function public\.consume_weekly_review_quota/i);
   assert.match(reviews, /grant execute on function public\.consume_weekly_review_quota\(text, integer\) to service_role/i);
+  assert.match(fixReviewsDelete, /grant select, insert, update, delete on public\.resumes to service_role/i);
+  assert.match(fixReviewsDelete, /grant select, insert, update, delete on public\.reviews to service_role/i);
+  assert.match(fixReviewsDelete, /grant select, insert, update, delete on public\.review_recommendations to service_role/i);
+  assert.match(fixReviewsDelete, /grant select, insert, delete on public\.review_roadmap_actions to service_role/i);
+  assert.match(fixReviewsDelete, /on delete set null/i);
   assert.match(campusSettings, /add column if not exists campus text/i);
   assert.match(campusSettings, /add column if not exists profile_completed_at timestamptz/i);
   assert.match(campusSettings, /add column if not exists campus text not null default 'bothell'/i);

@@ -11,7 +11,7 @@ import { useReviews } from '../hooks/useReviews';
 
 export function SavedReviewsPage() {
   const navigate = useNavigate();
-  const { analysis, loadReviewById, selectSavedResume } = useReview();
+  const { analysis, loadReviewById, resetReview, selectSavedResume } = useReview();
   const { reviews, loading: reviewsLoading, error: reviewsError, deleteReview } = useReviews();
   const { resumes, loading: resumesLoading, error: resumesError, deleteResume } = useResumes();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -36,6 +36,9 @@ export function SavedReviewsPage() {
     setDeleteReviewErrors((prev) => ({ ...prev, [id]: '' }));
     try {
       await deleteReview(id);
+      if (analysis?.id === id) {
+        resetReview();
+      }
     } catch (err) {
       setDeleteReviewErrors((prev) => ({ ...prev, [id]: (err as Error).message || 'Delete failed' }));
     } finally {

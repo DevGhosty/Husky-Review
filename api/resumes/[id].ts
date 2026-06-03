@@ -1,5 +1,14 @@
 import { requireAuth } from '../auth0-verify.js';
-import { getSupabaseAdmin, RESUME_BUCKET, sendError, sendInternalError, setApiHeaders, withSignedUrl, type ResumeRow } from '../supabase-admin.js';
+import {
+  getSupabaseAdmin,
+  RESUME_BUCKET,
+  sendError,
+  sendInternalError,
+  sendSupabaseMutationError,
+  setApiHeaders,
+  withSignedUrl,
+  type ResumeRow,
+} from '../supabase-admin.js';
 
 export default async function handler(req: any, res: any) {
   setApiHeaders(res, 'GET,DELETE', req.headers?.origin);
@@ -43,10 +52,21 @@ export default async function handler(req: any, res: any) {
     const { error: dbError } = await supabase.from('resumes').delete().eq('id', id).eq('auth0_user_id', auth.userId);
 
     if (dbError) {
-      return sendInternalError(res, 'Failed to delete resume', dbError);
+      return sendSupabaseMutationError(res, 'Failed to delete resume', dbError);
     }
 
-    await supabase.storage.from(RESUME_BUCKET).remove([(resume as ResumeRow).storage_path]);
+    const { error: storageError } = await supabase.storage
+      .from(RESUME_BUCKET)
+      .remove([(resume as ResumeRow).storage_path]);
+
+    if (storageError) {
+      console.error('Failed to remove resume storage object after DB delete', {
+        resumeId: id,
+        storagePath: (resume as ResumeRow).storage_path,
+        storageError,
+      });
+    }
+
     return res.status(204).end();
   } catch (error) {
     return sendError(res, error);
