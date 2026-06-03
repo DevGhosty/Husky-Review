@@ -4,6 +4,7 @@ import net from 'node:net';
 export const MIN_JOB_DESCRIPTION_CHARS = 80;
 export const MAX_JOB_DESCRIPTION_CHARS = 12000;
 export const MAX_POSTING_URL_CHARS = 2048;
+export const MAX_POSTING_RESPONSE_BYTES = 512 * 1024;
 
 type LookupAddress = { address: string; family?: number };
 type LookupFn = (hostname: string) => Promise<LookupAddress[] | LookupAddress>;
@@ -148,6 +149,49 @@ export function postingHtmlToText(value: string) {
     .slice(0, MAX_JOB_DESCRIPTION_CHARS);
 }
 
+async function readBoundedResponseText(response: Response) {
+  if (!response.body) {
+    const text = await response.text();
+    if (new TextEncoder().encode(text).byteLength > MAX_POSTING_RESPONSE_BYTES) {
+      throw inputError('Job posting URL returned too much data');
+    }
+    return text;
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      if (value) {
+        totalBytes += value.byteLength;
+        if (totalBytes > MAX_POSTING_RESPONSE_BYTES) {
+          await reader.cancel();
+          throw inputError('Job posting URL returned too much data');
+        }
+        chunks.push(value);
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const combined = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return new TextDecoder().decode(combined);
+}
+
 export async function fetchJobPostingText(
   postingUrl: string,
   options: { fetchFn?: FetchFn; lookupFn?: LookupFn } = {},
@@ -195,7 +239,7 @@ export async function fetchJobPostingText(
       throw inputError('Job posting URL did not return readable text');
     }
 
-    const text = postingHtmlToText(await response.text());
+    const text = postingHtmlToText(await readBoundedResponseText(response));
     if (text.length < MIN_JOB_DESCRIPTION_CHARS) {
       throw inputError('Could not read enough text from the job posting URL');
     }
