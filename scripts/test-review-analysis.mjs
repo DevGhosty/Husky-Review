@@ -38,6 +38,7 @@ const {
   prepareProfileSettingsForPersistence,
   profileSettingsBaseline,
   profileStorageKey,
+  reconcileProfileSettings,
   saveProfileSettings,
 } = await importTypeScriptModule('../src/lib/profile-settings.ts');
 const { filterUwMajors } = await importTypeScriptModule('../src/data/uw-majors.ts');
@@ -231,6 +232,27 @@ test('profile completion stamps complete profiles and clears incomplete profiles
 
   assert.equal(incomplete.profileCompletedAt, null);
   assert.equal(isProfileComplete(incomplete), false);
+});
+
+test('profile reconcile keeps local completion when remote profile lacks profile_completed_at', () => {
+  const local = completeProfileSettings({
+    ...defaultProfileSettings,
+    displayName: 'Alex Husky',
+    major: 'Informatics',
+    campus: 'seattle',
+  }, '2026-06-03T10:00:00.000Z');
+
+  const remote = {
+    ...defaultProfileSettings,
+    displayName: 'Alex Husky',
+    major: 'Informatics',
+    campus: 'seattle',
+    profileCompletedAt: null,
+  };
+
+  const merged = reconcileProfileSettings(local, remote);
+  assert.equal(merged.profileCompletedAt, '2026-06-03T10:00:00.000Z');
+  assert.equal(isProfileComplete(merged), true);
 });
 
 test('campus-aware ranking prefers the profile campus when cross-campus candidates are present', () => {

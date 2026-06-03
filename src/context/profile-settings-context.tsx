@@ -16,6 +16,7 @@ import {
   parseProfileSettingsBaseline,
   prepareProfileSettingsForPersistence,
   profileSettingsBaseline,
+  reconcileProfileSettings,
   saveProfileSettings,
   type Campus,
   type ProfileSettings,
@@ -190,22 +191,25 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
 
       if (data) {
         const remoteSettings = profileRecordToSettings(data);
-        syncBaseline(remoteSettings);
-        setSettings(remoteSettings);
+        const localSettings = settingsRef.current;
+        const merged = reconcileProfileSettings(localSettings, remoteSettings);
+        lastRemoteSettingsRef.current = serializeForRemote(remoteSettings);
+        syncBaseline(merged);
+        settingsRef.current = merged;
+        setSettings(merged);
       } else {
-        syncBaseline(defaultProfileSettings);
-        setSettings((current) => {
-          if (current.displayName.trim()) {
-            return current;
-          }
-
+        const localSettings = settingsRef.current;
+        let merged = reconcileProfileSettings(localSettings, null);
+        if (!merged.displayName.trim()) {
           const suggestedName = authDisplayName(user);
-          if (!suggestedName) {
-            return current;
+          if (suggestedName) {
+            merged = normalizeProfileSettingsDraft({ ...merged, displayName: suggestedName });
           }
-
-          return normalizeProfileSettingsDraft({ ...current, displayName: suggestedName });
-        });
+        }
+        lastRemoteSettingsRef.current = '';
+        syncBaseline(merged);
+        settingsRef.current = merged;
+        setSettings(merged);
       }
 
       setRemoteReady(true);
@@ -284,7 +288,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     saveInFlightRef.current = true;
 
     const client = supabase;
-    if (!client || !remoteReady) {
+    if (!client) {
       setSyncStatus('synced');
       saveInFlightRef.current = false;
       return;
@@ -305,8 +309,10 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       return;
     }
 
+    lastRemoteSettingsRef.current = serializeForRemote(persisted);
+    setRemoteReady(true);
     setSyncStatus('synced');
-  }, [remoteReady, supabase, syncBaseline, userId]);
+  }, [supabase, syncBaseline, userId]);
 
   const value = useMemo<ProfileSettingsContextValue>(
     () => ({

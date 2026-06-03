@@ -124,6 +124,42 @@ export function isProfileComplete(settings: ProfileSettings): boolean {
   return hasRequiredProfileFields(settings) && Boolean(settings.profileCompletedAt);
 }
 
+/** Merge local and remote profile snapshots without dropping a saved completion marker. */
+export function reconcileProfileSettings(local: ProfileSettings, remote: ProfileSettings | null): ProfileSettings {
+  if (!remote) {
+    return normalizeProfileSettingsDraft(local);
+  }
+
+  const merged: ProfileSettings = {
+    ...local,
+    ...remote,
+    displayName: remote.displayName.trim() || local.displayName,
+    major: remote.major.trim() || local.major,
+    campus: isCampus(remote.campus) ? remote.campus : local.campus,
+    graduationYear: remote.graduationYear || local.graduationYear,
+    prioritizeInTime: remote.prioritizeInTime,
+    showVerificationDates: remote.showVerificationDates,
+    includeLongTerm: remote.includeLongTerm,
+    includeOtherCampuses: remote.includeOtherCampuses,
+    deadlineReminders: remote.deadlineReminders,
+    roadmapAlerts: remote.roadmapAlerts,
+    resourceUpdates: remote.resourceUpdates,
+    emailDigest: remote.emailDigest,
+    targetRole: remote.targetRole,
+    activityInterests: remote.activityInterests.length > 0 ? remote.activityInterests : local.activityInterests,
+    profileCompletedAt: remote.profileCompletedAt || local.profileCompletedAt,
+  };
+
+  if (!hasRequiredProfileFields(merged) && hasRequiredProfileFields(local)) {
+    merged.displayName = local.displayName;
+    merged.major = local.major;
+    merged.campus = local.campus;
+    merged.profileCompletedAt = local.profileCompletedAt;
+  }
+
+  return normalizeProfileSettingsDraft(merged);
+}
+
 /** Live edits: preserve spaces while typing; only normalize campus. */
 export function normalizeProfileSettingsDraft(settings: ProfileSettings): ProfileSettings {
   return {
