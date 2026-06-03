@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
   CheckCircle2,
@@ -156,6 +156,7 @@ function SectionPanel({
 
 export function ProfilePage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const activeSection = useProfileSectionNav();
   const { status, fileName, selectedIds } = useReview();
   const {
@@ -169,6 +170,7 @@ export function ProfilePage() {
     toggleActivityInterest,
     setGraduationYear,
     resetSettings,
+    commitProfileSetup,
     syncStatus,
     syncError,
   } = useProfileSettings();
@@ -205,6 +207,13 @@ export function ProfilePage() {
     }
   }
 
+  function handleCompleteProfile() {
+    commitProfileSetup();
+    if (isSetupMode) {
+      navigate(returnTo);
+    }
+  }
+
   return (
     <main>
       <section className="mx-auto max-w-[86rem] px-5 py-10 sm:px-8 lg:px-12">
@@ -233,7 +242,13 @@ export function ProfilePage() {
                   <Link to={isSetupMode ? returnTo : '/app#workflow'}>{isSetupMode ? 'Continue' : 'Start review'}</Link>
                 </Button>
               ) : (
-                <Button type="button" variant="outline" className="h-12 border-white/20 text-white opacity-75" disabled>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white"
+                  disabled={!profileReady}
+                  onClick={handleCompleteProfile}
+                >
                   Complete profile
                 </Button>
               )}
@@ -375,8 +390,8 @@ export function ProfilePage() {
                       <Link to={returnTo}>Continue to workspace</Link>
                     </Button>
                   ) : (
-                    <Button type="button" className="h-11" disabled>
-                      Complete required fields
+                    <Button type="button" className="h-11" disabled={!profileReady} onClick={handleCompleteProfile}>
+                      {profileReady ? 'Complete profile' : 'Complete required fields'}
                     </Button>
                   )}
                 </div>
