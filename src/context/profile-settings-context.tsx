@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   createAuth0SupabaseClient,
   hasSupabaseConfig,
@@ -13,7 +13,9 @@ import {
   isProfileComplete,
   loadProfileSettings,
   normalizeProfileSettingsDraft,
+  parseProfileSettingsBaseline,
   prepareProfileSettingsForPersistence,
+  profileSettingsBaseline,
   saveProfileSettings,
   type Campus,
   type ProfileSettings,
@@ -24,6 +26,7 @@ import type { ActivityType } from '../types/analysis';
 interface ProfileSettingsContextValue {
   settings: ProfileSettings;
   profileComplete: boolean;
+  isDirty: boolean;
   setDisplayName: (displayName: string) => void;
   setMajor: (major: string) => void;
   setCampus: (campus: Campus | '') => void;
@@ -33,6 +36,8 @@ interface ProfileSettingsContextValue {
   setGraduationYear: (graduationYear: string) => void;
   resetSettings: () => void;
   commitProfileSetup: () => void;
+  saveProfile: () => Promise<void>;
+  revertToSavedBaseline: () => void;
   syncStatus: 'local' | 'loading' | 'synced' | 'error';
   syncError: string | null;
 }
@@ -59,22 +64,32 @@ function authDisplayName(user: { name?: string | null; nickname?: string | null 
 }
 
 function serializeForRemote(settings: ProfileSettings): string {
-  return JSON.stringify(prepareProfileSettingsForPersistence(settings));
+  return profileSettingsBaseline(settings);
 }
 
 export function ProfileSettingsProvider({ children }: ProfileSettingsProviderProps) {
   const { getIdTokenClaims, isAuthenticated, isLoading, user } = useAuth0();
   const userId = user?.sub;
   const [settings, setSettings] = useState<ProfileSettings>(defaultProfileSettings);
+  const [savedBaseline, setSavedBaseline] = useState('');
   const [remoteReady, setRemoteReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState<ProfileSettingsContextValue['syncStatus']>('local');
   const [syncError, setSyncError] = useState<string | null>(null);
   const lastRemoteSettingsRef = useRef('');
   const activeUserIdRef = useRef<string | undefined>(undefined);
+  const saveInFlightRef = useRef(false);
 
   function updateSettings(updater: (current: ProfileSettings) => ProfileSettings) {
     setSettings((current) => normalizeProfileSettingsDraft(updater(current)));
   }
+
+  const acknowledgeBaseline = useCallback((next: ProfileSettings) => {
+    const persisted = prepareProfileSettingsForPersistence(next);
+    const baseline = serializeForRemote(persisted);
+    setSavedBaseline(baseline);
+    lastRemoteSettingsRef.current = baseline;
+    return persisted;
+  }, []);
 
   const supabase = useMemo(() => {
     if (!hasSupabaseConfig()) {
@@ -98,6 +113,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       setSyncStatus('local');
       setSyncError(null);
       lastRemoteSettingsRef.current = '';
+      setSavedBaseline('');
       setSettings(defaultProfileSettings);
       return;
     }
@@ -110,7 +126,9 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     setRemoteReady(false);
     setSyncError(null);
     lastRemoteSettingsRef.current = '';
-    setSettings(loadProfileSettings(userId));
+    const loaded = loadProfileSettings(userId);
+    setSettings(loaded);
+    setSavedBaseline(serializeForRemote(loaded));
   }, [isAuthenticated, isLoading, userId]);
 
   useEffect(() => {
@@ -163,9 +181,11 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       if (data) {
         const remoteSettings = profileRecordToSettings(data);
         lastRemoteSettingsRef.current = serializeForRemote(remoteSettings);
+        setSavedBaseline(lastRemoteSettingsRef.current);
         setSettings(remoteSettings);
       } else {
         lastRemoteSettingsRef.current = serializeForRemote(defaultProfileSettings);
+        setSavedBaseline(lastRemoteSettingsRef.current);
         setSettings((current) => {
           if (current.displayName.trim()) {
             return current;
@@ -194,7 +214,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
   useEffect(() => {
     const client = supabase;
 
-    if (!isAuthenticated || !userId || !client || !remoteReady) {
+    if (!isAuthenticated || !userId || !client || !remoteReady || saveInFlightRef.current) {
       return;
     }
 
@@ -230,10 +250,60 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     return () => window.clearTimeout(timer);
   }, [isAuthenticated, remoteReady, settings, supabase, userId]);
 
+  const isDirty = useMemo(() => {
+    if (!savedBaseline) {
+      return false;
+    }
+    return serializeForRemote(settings) !== savedBaseline;
+  }, [savedBaseline, settings]);
+
+  const revertToSavedBaseline = useCallback(() => {
+    if (!savedBaseline) {
+      return;
+    }
+    setSettings(parseProfileSettingsBaseline(savedBaseline));
+  }, [savedBaseline]);
+
+  const saveProfile = useCallback(async () => {
+    if (!userId) {
+      return;
+    }
+
+    const persisted = acknowledgeBaseline(settings);
+    saveProfileSettings(persisted, userId);
+    setSettings(persisted);
+    saveInFlightRef.current = true;
+
+    const client = supabase;
+    if (!client || !remoteReady) {
+      setSyncStatus('synced');
+      saveInFlightRef.current = false;
+      return;
+    }
+
+    setSyncStatus('loading');
+    setSyncError(null);
+
+    const { error } = await client
+      .from('profiles')
+      .upsert(settingsToProfileRecord(userId, persisted), { onConflict: 'auth0_user_id' });
+
+    saveInFlightRef.current = false;
+
+    if (error) {
+      setSyncStatus('error');
+      setSyncError(error.message);
+      return;
+    }
+
+    setSyncStatus('synced');
+  }, [acknowledgeBaseline, remoteReady, settings, supabase, userId]);
+
   const value = useMemo<ProfileSettingsContextValue>(
     () => ({
       settings,
       profileComplete: isProfileComplete(settings),
+      isDirty,
       setDisplayName: (displayName) => {
         updateSettings((current) => ({ ...current, displayName }));
       },
@@ -263,16 +333,26 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       },
       resetSettings: () => {
         const cleared = clearProfileSettings(userId);
-        lastRemoteSettingsRef.current = serializeForRemote(cleared);
+        const baseline = serializeForRemote(cleared);
+        lastRemoteSettingsRef.current = baseline;
+        setSavedBaseline(baseline);
         setSettings(cleared);
       },
       commitProfileSetup: () => {
-        setSettings((current) => prepareProfileSettingsForPersistence(current));
+        setSettings((current) => {
+          const persisted = prepareProfileSettingsForPersistence(current);
+          const baseline = serializeForRemote(persisted);
+          setSavedBaseline(baseline);
+          lastRemoteSettingsRef.current = baseline;
+          return persisted;
+        });
       },
+      saveProfile,
+      revertToSavedBaseline,
       syncStatus,
       syncError,
     }),
-    [settings, syncError, syncStatus, userId],
+    [isDirty, saveProfile, revertToSavedBaseline, settings, syncError, syncStatus, userId],
   );
 
   return <ProfileSettingsContext.Provider value={value}>{children}</ProfileSettingsContext.Provider>;

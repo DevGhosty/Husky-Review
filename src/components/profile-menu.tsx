@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   LogOut,
   Palette,
-  ShieldCheck,
   Sparkles,
   Target,
   UserRound,
@@ -40,7 +39,6 @@ const sectionIcons = {
   notifications: Bell,
   'career-goals': Target,
   appearance: Palette,
-  privacy: ShieldCheck,
 } as const;
 
 const triggerClass =

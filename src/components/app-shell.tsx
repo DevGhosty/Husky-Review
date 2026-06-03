@@ -15,7 +15,6 @@ const navItems = [
   { label: 'Roadmap', to: '/app/roadmap' },
   { label: 'Resources', to: '/app/resources' },
   { label: 'Saved Reviews', to: '/app/saved-reviews' },
-  { label: 'Privacy', to: '/app/privacy' },
   { label: 'Profile', to: '/app/profile' },
 ];
 

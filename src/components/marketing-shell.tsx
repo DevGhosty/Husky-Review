@@ -62,8 +62,8 @@ export function MarketingShell({ children }: MarketingShellProps) {
               <Link to="/#how-it-works" className={hashLinkClass}>
                 How it works
               </Link>
-              <Link to="/#trust" className={hashLinkClass}>
-                Privacy
+              <Link to="/legal#privacy" className={hashLinkClass}>
+                Legal
               </Link>
             </div>
             <div className="flex items-center gap-2">
@@ -105,8 +105,8 @@ export function MarketingShell({ children }: MarketingShellProps) {
               >
                 Sign in
               </button>
-              <Link className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" to="/app/privacy">
-                Privacy center
+              <Link className="text-primary transition-colors hover:text-primary/90 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background" to="/legal">
+                Legal
               </Link>
             </div>
           </div>
