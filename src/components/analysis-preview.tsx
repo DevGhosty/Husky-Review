@@ -52,10 +52,14 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
           <div className="dashboard-card rounded-2xl px-4 py-3">
             <p className="text-sm font-semibold text-foreground">
               {analysis.quota.source === 'app-key' && analysis.quota.remaining !== null
-                ? `${analysis.quota.remaining} app-key review${analysis.quota.remaining === 1 ? '' : 's'} left this week`
+                ? `${analysis.quota.remaining} app-key AI review${analysis.quota.remaining === 1 ? '' : 's'} left this week`
                 : analysis.quota.source === 'user-key'
-                  ? 'Analyzed with your API key'
-                  : 'Analyzed with local fallback'}
+                  ? 'Analyzed with your Gemini API key'
+                  : analysis.fallbackReason === 'no_api_key'
+                    ? 'Local catalog matching — add GEMINI_API_KEY on Vercel for AI analysis'
+                    : analysis.fallbackReason === 'gemini_error'
+                      ? 'Gemini unavailable — used local catalog matching for this review'
+                      : 'Analyzed with local catalog matching'}
             </p>
           </div>
         ) : null}

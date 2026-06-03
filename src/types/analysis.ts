@@ -73,6 +73,7 @@ export interface ReviewAnalysis {
   roadmapWeeks: RoadmapWeek[];
   selectedIds: string[];
   aiProvider?: 'app-key' | 'user-key' | 'deterministic';
+  fallbackReason?: 'no_api_key' | 'gemini_error' | null;
   quota?: ReviewQuotaStatus;
   createdAt: string;
   updatedAt: string;
