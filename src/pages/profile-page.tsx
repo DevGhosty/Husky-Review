@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useProfileSettings } from '../context/profile-settings-context';
 import { useReview } from '../context/review-context';
-import { ACTIVITY_INTEREST_OPTIONS, UWB_MAJORS } from '../data/uwb-catalog';
+import { ACTIVITY_INTEREST_OPTIONS, UW_MAJORS } from '../data/uwb-catalog';
 import {
   profileSectionHref,
   profileSections,
@@ -274,7 +274,7 @@ export function ProfilePage() {
                   onChange={(event) => setMajor(event.target.value)}
                   className={selectClassName}
                 >
-                  {UWB_MAJORS.map((major) => (
+                  {UW_MAJORS.map((major) => (
                     <option key={major} value={major}>
                       {major}
                     </option>
@@ -300,7 +300,7 @@ export function ProfilePage() {
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Badge tone="purple">{settings.major}</Badge>
-              <Badge tone="gray">UWB student workspace</Badge>
+              <Badge tone="gray">UW student workspace</Badge>
               <Badge tone={syncStatus === 'synced' ? 'green' : syncStatus === 'error' ? 'gold' : 'gray'}>
                 {syncStatus === 'synced' ? 'Profile synced' : syncStatus === 'loading' ? 'Syncing profile' : 'Local fallback'}
               </Badge>
@@ -374,7 +374,7 @@ export function ProfilePage() {
               />
               <SettingSwitchRow
                 label="New verified resources"
-                description="Highlight when UWB activity records are refreshed."
+                description="Highlight when UW activity records are refreshed."
                 checked={settings.resourceUpdates}
                 onCheckedChange={(checked) => setBooleanPref('resourceUpdates', checked)}
               />
@@ -416,7 +416,7 @@ export function ProfilePage() {
               <div>
                 <p className="text-sm font-black text-foreground">Activity interests</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Select the kinds of UW Bothell classes, clubs, and activities you want prioritized when we match your resume to campus opportunities.
+                  Select the kinds of UW classes, clubs, and activities you want prioritized when we match your resume to campus opportunities.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {ACTIVITY_INTEREST_OPTIONS.map((option) => {
@@ -441,7 +441,7 @@ export function ProfilePage() {
               <div className="inset-row flex items-start gap-3 rounded-2xl p-4">
                 <GraduationCap className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
                 <p className="text-sm leading-6 text-muted-foreground">
-                  These map to the activity types Husky-Review pulls from the UWB catalog: courses, clubs, events, research, fellowships, and projects. Preferences are stored locally and can later inform ranking once authenticated student profiles are connected.
+                  These map to the activity types Husky-Review pulls from the UW catalog: courses, clubs, events, research, fellowships, and projects. Preferences are stored locally and can later inform ranking once authenticated student profiles are connected.
                 </p>
               </div>
             </div>

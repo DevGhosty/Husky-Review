@@ -26,7 +26,7 @@ function useNotifications(): AppNotification[] {
         {
           id: 'analysis-running',
           title: 'Review in progress',
-          body: 'Husky-Review is comparing your resume against the job posting and ranking UWB activities.',
+          body: 'Husky-Review is comparing your resume against the job posting and ranking UW activities.',
           time: 'Just now',
           icon: Loader2,
         },

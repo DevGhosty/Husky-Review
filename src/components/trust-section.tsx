@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 
 const trustItems = [
   {
-    title: 'Verified UWB opportunities',
+    title: 'Verified UW opportunities',
     description: 'Recommendations open from campus sources and curated student resources so you can verify before you commit.',
     icon: ShieldCheck,
   },

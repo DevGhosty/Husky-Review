@@ -28,7 +28,7 @@
 - [ ] `AUTH0_CLAIM_NAMESPACE` (same namespace used by the Auth0 Action; defaults to `https://husky-review.app/claims`)
 - [ ] `AUTH0_ALLOWED_ORIGINS` (comma-separated; API CORS allowlist)
 - [ ] `CRON_SECRET` (server-only; protects resume purge cron)
-- [ ] `ANTHROPIC_API_KEY` (server-only; optional locally but required for Claude-backed production analysis)
+- [ ] `GEMINI_API_KEY` (server-only; optional locally but required for Gemini-backed production analysis)
 - [ ] `VITE_SUPABASE_URL`
 - [ ] `VITE_SUPABASE_ANON_KEY`
 - [ ] `SUPABASE_URL`
@@ -67,7 +67,7 @@
 - [ ] Confirm API calls without tokens return `401`.
 - [ ] Confirm invalid tokens return `401`.
 - [ ] Confirm a third app-key review in the same 7-day window returns `429` and the UI offers BYOK.
-- [ ] Confirm a valid user-supplied Anthropic key can run an additional review and is not persisted.
+- [ ] Confirm a valid user-supplied Gemini key can run an additional review and is not persisted.
 - [ ] Confirm Vercel function logs show no Supabase service-role key exposure.
 
 ## Supabase Verification

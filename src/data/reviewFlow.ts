@@ -12,7 +12,7 @@ export const loadingSteps: LoadingStep[] = [
     description: 'Matching the posting against resume bullets and keywords.',
   },
   {
-    label: 'Searching verified UWB activities',
+    label: 'Searching verified UW activities',
     description: 'Retrieving active clubs, courses, events, and research roles.',
   },
   {

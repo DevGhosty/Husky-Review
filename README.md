@@ -1,21 +1,21 @@
 # Husky-Review
 
-**Actionable UWB Resume Review** is a web application concept for helping University of Washington Bothell students improve their resumes for specific job postings. Instead of giving generic resume advice, the project is designed to recommend real UWB opportunities that students can act on, including verified clubs, courses, fellowships, events, and research roles.
+**Actionable UW Resume Review** is a web application concept for helping University of Washington students improve their resumes for specific job postings. Instead of giving generic resume advice, the project is designed to recommend real UW opportunities that students can act on, including verified clubs, courses, fellowships, events, and research roles.
 
-The repository contains the Husky-Review React app, Auth0-protected workspace routes, Supabase-backed resume/review persistence, verified UWB catalog tables, and a server-side review analysis endpoint. When `ANTHROPIC_API_KEY` is configured, `/api/reviews/analyze` uses Claude for structured analysis with a 2-review weekly app-key limit per signed-in user. Students can paste their own Anthropic key for extra reviews; that key is sent only for the request and is not stored. Without a server key, local development falls back to deterministic catalog matching.
+The repository contains the Husky-Review React app, Auth0-protected workspace routes, Supabase-backed resume/review persistence, verified UW catalog tables, and a server-side review analysis endpoint. When `GEMINI_API_KEY` is configured, `/api/reviews/analyze` uses Gemini for structured analysis with a 2-review weekly app-key limit per signed-in user. Students can paste their own Gemini key for extra reviews; that key is sent only for the request and is not stored. Without a server key, local development falls back to deterministic catalog matching.
 
 ## Problem
 
-Generic AI resume tools often suggest activities that are not available to UWB students, no longer active, or disconnected from the local campus context. In the project proposal, 11 of 14 surveyed UWB CSS Discord members reported receiving recommendations from generic AI resume tools for clubs, courses, or certifications that did not exist at UWB or were no longer active.
+Generic AI resume tools often suggest activities that are not available to UW students, no longer active, or disconnected from the local campus context. In the project proposal, 11 of 14 surveyed UWB CSS Discord members reported receiving recommendations from generic AI resume tools for clubs, courses, or certifications that did not exist at UWB or were no longer active.
 
-Husky-Review addresses that gap by grounding recommendations in a curated database of verified UWB activities. Each activity is intended to include an active status and a last-verified date so stale entries can be flagged, updated, or withheld.
+Husky-Review addresses that gap by grounding recommendations in a curated database of verified UW activities. Each activity is intended to include an active status and a last-verified date so stale entries can be flagged, updated, or withheld.
 
 ## Intended Workflow
 
 1. A student uploads a resume.
 2. The student pastes a job description.
 3. The system analyzes the resume and job posting for skill and keyword gaps.
-4. The system retrieves relevant verified UWB activities from the database.
+4. The system retrieves relevant verified UW activities from the database.
 5. The student receives ranked recommendations grouped into:
    - **In-Time Activities**: actionable before the application deadline.
    - **Next-Time Activities**: longer-term opportunities for future applications.
@@ -25,9 +25,9 @@ Husky-Review addresses that gap by grounding recommendations in a curated databa
 
 - Resume upload and server-side text extraction.
 - Structured gap analysis for missing skills, keywords, and experience signals.
-- Verified UWB activity database with source, active status, and last-verified date.
+- Verified UW activity database with source, active status, and last-verified date.
 - Catalog-backed retrieval against verified activity descriptions and skills.
-- Optional Claude-assisted ranking and classification of recommendations.
+- Optional Gemini-assisted ranking and classification of recommendations.
 - Per-user weekly app-key review quota, with bring-your-own-key support for extra reviews.
 - Token-conscious AI context packing: trimmed resume/posting text plus only the top verified catalog candidates.
 - In-Time vs Next-Time activity grouping.
@@ -39,13 +39,13 @@ Husky-Review addresses that gap by grounding recommendations in a curated databa
 - **Frontend:** React, Vite, Tailwind CSS
 - **Backend:** Node.js, Express
 - **Database and sessions:** Supabase
-- **AI analysis:** Anthropic Claude API with deterministic local fallback
+- **AI analysis:** Google Gemini API with deterministic local fallback
 - **Deployment target:** Vercel
 - **Project site target:** GitHub Pages
 
 ## Security and Privacy Goals
 
-- Store the app API key only on the server through environment variables; user-supplied Anthropic keys are request-only and not persisted.
+- Store the app API key only on the server through environment variables; user-supplied Gemini keys are request-only and not persisted.
 - Validate resume file type before upload processing.
 - Enforce input length limits for resumes and job descriptions.
 - Apply rate limiting to inference endpoints.
@@ -77,7 +77,7 @@ cp .env.example .env
 Expected environment variables may include:
 
 ```bash
-ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
@@ -90,16 +90,16 @@ Do not commit real API keys or production credentials.
 
 The proposal organizes the project into four milestones:
 
-- **Week 1:** Populate 50+ verified UWB activities, set up the environment, and build a basic upload flow that returns raw gap text.
+- **Week 1:** Populate 50+ verified UW activities, set up the environment, and build a basic upload flow that returns raw gap text.
 - **Week 2:** Implement the full embedding pipeline and In-Time vs Next-Time classification, validated against a manually labeled 10-resume test set.
-- **Week 3:** Build the frontend roadmap view and GitHub Pages project site, then re-verify the activity database and run usability testing with five UWB students.
-- **Week 4:** Harden deployment, complete a security review checklist, and collect structured feedback from at least 10 UWB students.
+- **Week 3:** Build the frontend roadmap view and GitHub Pages project site, then re-verify the activity database and run usability testing with five UW students.
+- **Week 4:** Harden deployment, complete a security review checklist, and collect structured feedback from at least 10 UW students.
 
 For the full proposal and review notes, see [docs/proposal.md](docs/proposal.md).
 
 ## Evaluation Targets
 
-- 50+ verified UWB activities in the database.
+- 50+ verified UW activities in the database.
 - Fewer than 10% unverifiable entries included; unverifiable entries should be withheld.
 - 80% agreement between model output and the manually labeled gold standard for In-Time vs Next-Time classification.
 - 80%+ task completion during usability testing.

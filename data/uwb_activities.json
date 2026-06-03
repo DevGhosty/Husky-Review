@@ -235,8 +235,8 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~15 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
-    "registration_info": "Enroll via UWB SDB registration. Check prerequisite (CSS 143 or equivalent).",
+    "cost": "UW tuition",
+    "registration_info": "Enroll via UW registration. Check prerequisite (CSS 143 or equivalent).",
     "notes": "Offered most quarters. Confirm current offerings on MyPlan."
   },
   {
@@ -250,7 +250,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~15 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Prerequisite: CSS 342.",
     "notes": "Offered most quarters. Confirm on MyPlan."
   },
@@ -265,9 +265,9 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~8 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Prerequisite: English composition. Check SDB for current prerequisite details.",
-    "notes": "Verify course number and title in current UWB catalog."
+    "notes": "Verify course number and title in current UW catalog."
   },
   {
     "name": "CSS 422 – Hardware and Computer Organization",
@@ -280,7 +280,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~12 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Check prerequisites on MyPlan.",
     "notes": "Confirm offering schedule; may be offered once per year."
   },
@@ -295,7 +295,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~15 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Prerequisite: CSS 422 or equivalent.",
     "notes": "Verify prerequisite chain on MyPlan."
   },
@@ -310,7 +310,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~15 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Prerequisite: CSS 430.",
     "notes": "Verify prerequisite on MyPlan."
   },
@@ -325,7 +325,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~15 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Check prerequisites on MyPlan.",
     "notes": "Verify offering schedule and whether AWS credits are provided."
   },
@@ -340,7 +340,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~20 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Prerequisite: CSS 480.",
     "notes": "Verify prerequisite on MyPlan. Projects are typically showcased at end-of-year event."
   },
@@ -355,7 +355,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~12 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Check prerequisites on MyPlan.",
     "notes": "Verify offering schedule; may be offered once per year."
   },
@@ -370,7 +370,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~12 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Check prerequisites on MyPlan.",
     "notes": "Verify offering schedule."
   },
@@ -385,7 +385,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~12 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Check prerequisites on MyPlan.",
     "notes": "Verify offering schedule and confirm it is distinct from CSS 432."
   },
@@ -400,7 +400,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~12 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Prerequisite: CSS 343. Verify on MyPlan.",
     "notes": "Typically required before CSS 440 (capstone)."
   },
@@ -415,7 +415,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~12 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Check prerequisites on MyPlan.",
     "notes": "Verify offering schedule."
   },
@@ -430,7 +430,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~15 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Check prerequisites (CSS 343 and linear algebra recommended). Verify on MyPlan.",
     "notes": "Verify offering schedule."
   },
@@ -445,7 +445,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~10–15 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Check current quarter's SDB/MyPlan for available sections and topics.",
     "notes": "Topic changes each quarter. Must re-verify skills and description each time a new section is added."
   },
@@ -460,7 +460,7 @@
     "verified_by": "pending",
     "time_commitment": "10 weeks, ~10 hours/week",
     "duration": "one quarter (repeatable)",
-    "cost": "UWB tuition (1–5 credits)",
+    "cost": "UW tuition (1–5 credits)",
     "registration_info": "Contact a CSS faculty member directly to propose a project before registering.",
     "notes": "Requires faculty sponsorship. Confirm current faculty research areas on the CSS department website."
   },
@@ -477,7 +477,7 @@
     "duration": "one quarter or longer, renewable",
     "cost": "paid stipend or academic credit",
     "registration_info": "Applications accepted on a rolling basis; check URP site for current open positions.",
-    "notes": "Verify the URP site is current and that UWB students are explicitly eligible."
+    "notes": "Verify the URP site is current and that UW students are explicitly eligible."
   },
   {
     "name": "UWB STARS – Summer Teaching and Research Scholars",
@@ -527,7 +527,7 @@
   {
     "name": "NSF Research Experiences for Undergraduates (REU)",
     "category": "research",
-    "description": "National Science Foundation-funded summer research programs at universities nationwide. UWB students are eligible to apply. REU participation is one of the strongest research credentials for computing undergraduates applying to graduate programs or research-adjacent industry roles.",
+    "description": "National Science Foundation-funded summer research programs at universities nationwide. UW students are eligible to apply. REU participation is one of the strongest research credentials for computing undergraduates applying to graduate programs or research-adjacent industry roles.",
     "skills": ["research", "machine learning", "algorithms", "systems programming", "academic writing", "public speaking"],
     "source_url": "https://www.nsf.gov/crssprgm/reu/list.jsp",
     "active": true,
@@ -567,7 +567,7 @@
     "duration": "one or more quarters",
     "cost": "free",
     "registration_info": "Competitive application; check Foster School website for dates and eligibility.",
-    "notes": "Verify whether UWB students (not just UW Seattle) are eligible to apply."
+    "notes": "Verify whether UW students (not just UW Seattle) are eligible to apply."
   },
   {
     "name": "Management Leadership for Tomorrow (MLT) Early Careers",
@@ -587,7 +587,7 @@
   {
     "name": "Rewriting the Code (RTC) Fellowship",
     "category": "fellowship",
-    "description": "National fellowship supporting women and gender-diverse students in computing. Benefits include mentorship, networking with tech companies, access to exclusive recruiting events, and a community of 25,000+ peers. Open to UWB students.",
+    "description": "National fellowship supporting women and gender-diverse students in computing. Benefits include mentorship, networking with tech companies, access to exclusive recruiting events, and a community of 25,000+ peers. Open to UW students.",
     "skills": ["professional development", "networking", "leadership", "software engineering", "community building"],
     "source_url": "https://rewritingthecode.org",
     "active": true,
@@ -602,7 +602,7 @@
   {
     "name": "Microsoft Explore Program",
     "category": "fellowship",
-    "description": "Microsoft's early-stage internship for first- and second-year students from underrepresented groups. Participants rotate through software engineering, program management, and UX research over 12 weeks in Redmond — directly accessible for UWB students by geography.",
+    "description": "Microsoft's early-stage internship for first- and second-year students from underrepresented groups. Participants rotate through software engineering, program management, and UX research over 12 weeks in Redmond — directly accessible for UW students by geography.",
     "skills": ["software development", "product management", "ux research", "professional development", "microsoft technologies"],
     "source_url": "https://careers.microsoft.com/students/us/en/usexploremicrosoftprogram",
     "active": true,
@@ -657,7 +657,7 @@
     "duration": "self-paced, complete any time while enrolled",
     "cost": "free with UW NetID",
     "registration_info": "Log in with your UW NetID at careers.uw.edu.",
-    "notes": "Verify whether the Husky Career Advantage credential is still actively offered and that UWB students can access the UW Career Center."
+    "notes": "Verify whether the Husky Career Advantage credential is still actively offered and that UW students can access the UW Career Center."
   },
   {
     "name": "UWB Undergraduate Mentorship Program",
@@ -687,7 +687,7 @@
     "duration": "one quarter minimum",
     "cost": "varies; financial aid may apply",
     "registration_info": "Contact the UWB Global Studies office one full quarter before intended travel.",
-    "notes": "Verify current program offerings and confirm financial aid portability for UWB students."
+    "notes": "Verify current program offerings and confirm financial aid portability for UW students."
   },
   {
     "name": "UWB Hackathon",
@@ -716,8 +716,8 @@
     "time_commitment": "24–36 hours, one weekend",
     "duration": "one weekend event",
     "cost": "free",
-    "registration_info": "Register via MLH or the DiamondHacks website. UWB students eligible.",
-    "notes": "Verify DiamondHacks is scheduled for the current year and confirm UWB student eligibility."
+    "registration_info": "Register via MLH or the DiamondHacks website. UW students eligible.",
+    "notes": "Verify DiamondHacks is scheduled for the current year and confirm UW student eligibility."
   },
   {
     "name": "UWB Career and Internship Fair",
@@ -730,7 +730,7 @@
     "verified_by": "pending",
     "time_commitment": "half-day event",
     "duration": "one day, twice per year",
-    "cost": "free with UWB student ID",
+    "cost": "free with UW student ID",
     "registration_info": "Register through Handshake or uwb.edu/careers. Walk-ins also typically accepted.",
     "notes": "Verify current semester date and whether pre-registration is required."
   },
@@ -752,7 +752,7 @@
   {
     "name": "Major League Hacking (MLH) Member Events",
     "category": "event",
-    "description": "Series of student hackathons affiliated with Major League Hacking, held throughout the year at universities in the Pacific Northwest and online. UWB students regularly participate. Hackathon projects strengthen portfolios, GitHub activity, and professional profiles.",
+    "description": "Series of student hackathons affiliated with Major League Hacking, held throughout the year at universities in the Pacific Northwest and online. UW students regularly participate. Hackathon projects strengthen portfolios, GitHub activity, and professional profiles.",
     "skills": ["software development", "teamwork", "problem solving", "rapid prototyping", "portfolio building"],
     "source_url": "https://mlh.io",
     "active": true,
@@ -762,12 +762,12 @@
     "duration": "recurring throughout the year",
     "cost": "free or low registration fee",
     "registration_info": "Browse and register at mlh.io for upcoming events.",
-    "notes": "Verify current MLH event schedule includes PNW or online events accessible to UWB students."
+    "notes": "Verify current MLH event schedule includes PNW or online events accessible to UW students."
   },
   {
     "name": "Grace Hopper Celebration (GHC) – Student Scholar Track",
     "category": "event",
-    "description": "World's largest gathering of women technologists. Student scholar applications are available for UWB students, especially those in WiC. Attendance connects students with major tech company recruiters and role models in the field. In-person and virtual tracks available.",
+    "description": "World's largest gathering of women technologists. Student scholar applications are available for UW students, especially those in WiC. Attendance connects students with major tech company recruiters and role models in the field. In-person and virtual tracks available.",
     "skills": ["networking", "professional development", "diversity and inclusion", "career exploration"],
     "source_url": "https://ghc.anitab.org",
     "active": true,
@@ -805,7 +805,7 @@
     "verified_by": "pending",
     "time_commitment": "one quarter, ~5–10 hours/week",
     "duration": "one quarter",
-    "cost": "UWB tuition",
+    "cost": "UW tuition",
     "registration_info": "Typically fulfilled through designated Discovery Core-tagged courses. Confirm options with an academic advisor.",
     "notes": "Verify the Discovery Core research track is still part of the current UWB general education requirements."
   }

@@ -1,4 +1,4 @@
--- Stores manually curated and verified UWB activities (clubs, courses, research,
+-- Stores manually curated and verified UW activities (clubs, courses, research,
 -- fellowships, programs, events). Populated by seed.sql and maintained by the team.
 -- Unique on name so upserts are idempotent.
 

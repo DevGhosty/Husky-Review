@@ -42,8 +42,8 @@ export function RecommendationDashboard({ status, deadline, selectedIds, recomme
           <h2 className="type-section-title type-section-title--brand mt-4">Recommendation dashboard</h2>
           <p className="type-lead mt-3 max-w-2xl">
             {isReady
-              ? `Verified UWB activities are grouped around the ${formatDeadline(deadline)} deadline so students can separate immediate application moves from longer-term resume building.`
-              : 'Run a review to unlock ranked UWB recommendations grouped by urgency.'}
+              ? `Verified UW activities are grouped around the ${formatDeadline(deadline)} deadline so students can separate immediate application moves from longer-term resume building.`
+              : 'Run a review to unlock ranked UW recommendations grouped by urgency.'}
           </p>
         </div>
         <Surface variant="card" className="rounded-2xl px-4 py-3 text-sm font-semibold text-muted-foreground">
