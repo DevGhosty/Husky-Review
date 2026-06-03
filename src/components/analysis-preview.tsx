@@ -58,7 +58,7 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
                   : analysis.fallbackReason === 'no_api_key'
                     ? 'Local catalog matching — add GEMINI_API_KEY on Vercel for AI analysis'
                     : analysis.fallbackReason === 'gemini_error'
-                      ? 'Gemini unavailable — used local catalog matching for this review'
+                      ? 'Gemini scoring unavailable — used local catalog matching for this review'
                       : 'Analyzed with local catalog matching'}
             </p>
           </div>
