@@ -11,24 +11,15 @@ import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders, type Res
 import { filterActivitiesByInterests, parseActivityInterests } from '../catalog-filters.js';
 import { buildReviewAnalysis, extractResumeText, type ActivityRow } from '../review-analysis.js';
 import { checkAppKeyQuota, consumeAppKeyQuota, deterministicQuotaStatus, getAppGeminiKey, userKeyQuotaStatus } from '../review-quota.js';
+import { campusNameToCampus, getCompletedProfileCampus, type ProfileCompletionRow } from '../profile-completion.js';
 
 type Campus = ActivityRow['campus'];
 
-interface ProfileRow {
-  display_name: string | null;
-  major: string | null;
-  campus: string | null;
+interface ProfileRow extends ProfileCompletionRow {
   include_other_campuses: boolean | null;
-  profile_completed_at: string | null;
   activity_interests: string[] | null;
   prioritize_in_time: boolean | null;
   include_long_term: boolean | null;
-}
-
-const campusValues = new Set<Campus>(['seattle', 'bothell', 'tacoma']);
-
-function isCampus(value: unknown): value is Campus {
-  return typeof value === 'string' && campusValues.has(value as Campus);
 }
 
 function campusToCourseCode(campus: Campus) {
@@ -43,16 +34,6 @@ function campusToOrgName(campus: Campus) {
   return 'Seattle';
 }
 
-function campusNameToCampus(value: unknown): Campus | null {
-  if (isCampus(value)) return value;
-  if (typeof value !== 'string') return null;
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'b' || normalized === 'bothell') return 'bothell';
-  if (normalized === 't' || normalized === 'tacoma') return 'tacoma';
-  if (normalized === '' || normalized === 'seattle') return 'seattle';
-  return null;
-}
-
 function requireCompleteProfile(profile: ProfileRow | null): {
   campus: Campus;
   includeOtherCampuses: boolean;
@@ -60,15 +41,9 @@ function requireCompleteProfile(profile: ProfileRow | null): {
   prioritizeInTime: boolean;
   includeLongTerm: boolean;
 } {
-  const campus = campusNameToCampus(profile?.campus);
-  const complete = Boolean(
-    profile?.profile_completed_at &&
-      profile.display_name?.trim() &&
-      profile.major?.trim() &&
-      campus,
-  );
+  const campus = getCompletedProfileCampus(profile);
 
-  if (!complete || !campus) {
+  if (!campus) {
     const error = new Error('Complete your profile with name, major, and campus before running a review.');
     (error as any).statusCode = 409;
     throw error;
