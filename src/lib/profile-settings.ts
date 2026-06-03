@@ -45,7 +45,8 @@ export const defaultProfileSettings: ProfileSettings = {
   profileCompletedAt: null,
 };
 
-const STORAGE_KEY = 'husky-review-profile-settings';
+const STORAGE_KEY_PREFIX = 'husky-review-profile-settings';
+const LEGACY_STORAGE_KEY = 'husky-review-profile-settings';
 
 const targetRoleValues: TargetRole[] = ['internship', 'co-op', 'full-time'];
 const activityTypeValues = new Set<ActivityType>(['club', 'course', 'event', 'fellowship', 'project', 'research']);
@@ -86,12 +87,33 @@ function parseActivityInterests(raw: Partial<ProfileSettings> & { focusAreas?: u
     return valid.length > 0 ? valid : defaultProfileSettings.activityInterests;
   }
 
-  // Legacy SWE focusAreas are ignored — fall back to inclusive defaults
   if (Array.isArray(raw.focusAreas)) {
     return defaultProfileSettings.activityInterests;
   }
 
   return defaultProfileSettings.activityInterests;
+}
+
+function parseStoredSettings(raw: Partial<ProfileSettings> & { focusAreas?: unknown[] }): ProfileSettings {
+  return {
+    ...defaultProfileSettings,
+    ...raw,
+    campus: parseCampus(raw.campus),
+    activityInterests: parseActivityInterests(raw),
+    targetRole: isTargetRole(raw.targetRole) ? raw.targetRole : defaultProfileSettings.targetRole,
+    includeOtherCampuses:
+      typeof raw.includeOtherCampuses === 'boolean'
+        ? raw.includeOtherCampuses
+        : defaultProfileSettings.includeOtherCampuses,
+    profileCompletedAt: parseProfileCompletedAt(raw.profileCompletedAt),
+  };
+}
+
+export function profileStorageKey(auth0UserId?: string | null): string {
+  if (auth0UserId?.trim()) {
+    return `${STORAGE_KEY_PREFIX}:${auth0UserId}`;
+  }
+  return LEGACY_STORAGE_KEY;
 }
 
 export function hasRequiredProfileFields(settings: Pick<ProfileSettings, 'displayName' | 'major' | 'campus'>): boolean {
@@ -102,57 +124,81 @@ export function isProfileComplete(settings: ProfileSettings): boolean {
   return hasRequiredProfileFields(settings) && Boolean(settings.profileCompletedAt);
 }
 
-export function completeProfileSettings(settings: ProfileSettings, completedAt = new Date().toISOString()): ProfileSettings {
-  const hasRequiredFields = hasRequiredProfileFields(settings);
-
+/** Live edits: preserve spaces while typing; only normalize campus. */
+export function normalizeProfileSettingsDraft(settings: ProfileSettings): ProfileSettings {
   return {
     ...settings,
-    displayName: settings.displayName.trim(),
-    major: settings.major.trim(),
     campus: parseCampus(settings.campus),
-    profileCompletedAt: hasRequiredFields ? settings.profileCompletedAt || completedAt : null,
   };
 }
 
-export function loadProfileSettings(): ProfileSettings {
+/** Persisted snapshot (localStorage + Supabase): trim text fields and stamp completion. */
+export function prepareProfileSettingsForPersistence(
+  settings: ProfileSettings,
+  completedAt = new Date().toISOString(),
+): ProfileSettings {
+  const draft = normalizeProfileSettingsDraft(settings);
+  const hasRequiredFields = hasRequiredProfileFields(draft);
+
+  return {
+    ...draft,
+    displayName: draft.displayName.trim(),
+    major: draft.major.trim(),
+    profileCompletedAt: hasRequiredFields ? draft.profileCompletedAt || completedAt : null,
+  };
+}
+
+/** @deprecated Use prepareProfileSettingsForPersistence for saves; normalizeProfileSettingsDraft for live edits. */
+export function completeProfileSettings(settings: ProfileSettings, completedAt = new Date().toISOString()): ProfileSettings {
+  return prepareProfileSettingsForPersistence(settings, completedAt);
+}
+
+export function loadProfileSettings(auth0UserId?: string | null): ProfileSettings {
   if (typeof window === 'undefined') {
     return defaultProfileSettings;
   }
 
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const scopedKey = profileStorageKey(auth0UserId);
+    let raw = localStorage.getItem(scopedKey);
+
+    if (!raw && auth0UserId) {
+      raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (raw) {
+        localStorage.setItem(scopedKey, raw);
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+      }
+    }
+
+    if (!raw && !auth0UserId) {
+      raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    }
+
     if (!raw) {
       return defaultProfileSettings;
     }
 
-    const parsed = JSON.parse(raw) as Partial<ProfileSettings> & { focusAreas?: unknown[] };
-    return {
-      ...defaultProfileSettings,
-      ...parsed,
-      campus: parseCampus(parsed.campus),
-      activityInterests: parseActivityInterests(parsed),
-      targetRole: isTargetRole(parsed.targetRole) ? parsed.targetRole : defaultProfileSettings.targetRole,
-      includeOtherCampuses:
-        typeof parsed.includeOtherCampuses === 'boolean'
-          ? parsed.includeOtherCampuses
-          : defaultProfileSettings.includeOtherCampuses,
-      profileCompletedAt: parseProfileCompletedAt(parsed.profileCompletedAt),
-    };
+    return parseStoredSettings(JSON.parse(raw) as Partial<ProfileSettings> & { focusAreas?: unknown[] });
   } catch {
     return defaultProfileSettings;
   }
 }
 
-export function saveProfileSettings(settings: ProfileSettings): void {
+export function saveProfileSettings(settings: ProfileSettings, auth0UserId?: string | null): void {
   if (typeof window === 'undefined') {
     return;
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+
+  const key = profileStorageKey(auth0UserId);
+  localStorage.setItem(key, JSON.stringify(prepareProfileSettingsForPersistence(settings)));
 }
 
-export function clearProfileSettings(): ProfileSettings {
+export function clearProfileSettings(auth0UserId?: string | null): ProfileSettings {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(profileStorageKey(auth0UserId));
+    if (!auth0UserId) {
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
   }
   return defaultProfileSettings;
 }

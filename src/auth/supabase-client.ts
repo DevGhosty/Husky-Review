@@ -1,6 +1,12 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CONFIG } from './auth0-config';
-import { defaultProfileSettings, isCampus, type Campus, type ProfileSettings } from '../lib/profile-settings';
+import {
+  defaultProfileSettings,
+  isCampus,
+  prepareProfileSettingsForPersistence,
+  type Campus,
+  type ProfileSettings,
+} from '../lib/profile-settings';
 import type { ActivityType, ReviewAnalysis, ReviewQuotaStatus, SavedReviewSummary } from '../types/analysis';
 
 export function hasSupabaseConfig() {
@@ -288,22 +294,23 @@ export function profileRecordToSettings(record: ProfileRecord): ProfileSettings 
 }
 
 export function settingsToProfileRecord(auth0UserId: string, settings: ProfileSettings): ProfileRecord {
+  const persisted = prepareProfileSettingsForPersistence(settings);
   return {
     auth0_user_id: auth0UserId,
-    display_name: settings.displayName,
-    major: settings.major,
-    campus: settings.campus || null,
-    graduation_year: settings.graduationYear,
-    prioritize_in_time: settings.prioritizeInTime,
-    show_verification_dates: settings.showVerificationDates,
-    include_long_term: settings.includeLongTerm,
-    include_other_campuses: settings.includeOtherCampuses,
-    deadline_reminders: settings.deadlineReminders,
-    roadmap_alerts: settings.roadmapAlerts,
-    resource_updates: settings.resourceUpdates,
-    email_digest: settings.emailDigest,
-    target_role: settings.targetRole,
-    activity_interests: settings.activityInterests,
-    profile_completed_at: settings.profileCompletedAt,
+    display_name: persisted.displayName,
+    major: persisted.major,
+    campus: persisted.campus || null,
+    graduation_year: persisted.graduationYear,
+    prioritize_in_time: persisted.prioritizeInTime,
+    show_verification_dates: persisted.showVerificationDates,
+    include_long_term: persisted.includeLongTerm,
+    include_other_campuses: persisted.includeOtherCampuses,
+    deadline_reminders: persisted.deadlineReminders,
+    roadmap_alerts: persisted.roadmapAlerts,
+    resource_updates: persisted.resourceUpdates,
+    email_digest: persisted.emailDigest,
+    target_role: persisted.targetRole,
+    activity_interests: persisted.activityInterests,
+    profile_completed_at: persisted.profileCompletedAt,
   };
 }

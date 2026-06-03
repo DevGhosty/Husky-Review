@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useProfileSettings } from '../context/profile-settings-context';
 import { useReview } from '../context/review-context';
+import { MajorCombobox } from '../components/major-combobox';
 import { ACTIVITY_INTEREST_OPTIONS } from '../data/uwb-catalog';
 import {
   campusLabel,
@@ -306,16 +307,12 @@ export function ProfilePage() {
                   className="h-11 rounded-xl px-3"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="major">Major</Label>
-                <Input
-                  id="major"
-                  value={settings.major}
-                  onChange={(event) => setMajor(event.target.value)}
-                  placeholder="Computer Science, Biology, Business..."
-                  className="h-11 rounded-xl px-3"
-                />
-              </div>
+              <MajorCombobox
+                id="major"
+                value={settings.major}
+                onChange={setMajor}
+                placeholder="Search majors — Computer Science, Informatics, Nursing..."
+              />
               <div className="space-y-2">
                 <Label htmlFor="campus">Campus</Label>
                 <select

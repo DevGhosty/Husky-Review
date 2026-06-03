@@ -8,11 +8,12 @@ import {
   type ProfileRecord,
 } from '../auth/supabase-client';
 import {
-  completeProfileSettings,
   clearProfileSettings,
   defaultProfileSettings,
   isProfileComplete,
   loadProfileSettings,
+  normalizeProfileSettingsDraft,
+  prepareProfileSettingsForPersistence,
   saveProfileSettings,
   type Campus,
   type ProfileSettings,
@@ -51,16 +52,27 @@ interface ProfileSettingsProviderProps {
   children: ReactNode;
 }
 
+function authDisplayName(user: { name?: string | null; nickname?: string | null } | undefined): string {
+  const candidate = user?.name || user?.nickname || '';
+  return typeof candidate === 'string' ? candidate : '';
+}
+
+function serializeForRemote(settings: ProfileSettings): string {
+  return JSON.stringify(prepareProfileSettingsForPersistence(settings));
+}
+
 export function ProfileSettingsProvider({ children }: ProfileSettingsProviderProps) {
   const { getIdTokenClaims, isAuthenticated, isLoading, user } = useAuth0();
-  const [settings, setSettings] = useState<ProfileSettings>(() => loadProfileSettings());
+  const userId = user?.sub;
+  const [settings, setSettings] = useState<ProfileSettings>(defaultProfileSettings);
   const [remoteReady, setRemoteReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState<ProfileSettingsContextValue['syncStatus']>('local');
   const [syncError, setSyncError] = useState<string | null>(null);
   const lastRemoteSettingsRef = useRef('');
+  const activeUserIdRef = useRef<string | undefined>(undefined);
 
   function updateSettings(updater: (current: ProfileSettings) => ProfileSettings) {
-    setSettings((current) => completeProfileSettings(updater(current)));
+    setSettings((current) => normalizeProfileSettingsDraft(updater(current)));
   }
 
   const supabase = useMemo(() => {
@@ -75,20 +87,47 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
   }, [getIdTokenClaims]);
 
   useEffect(() => {
-    saveProfileSettings(settings);
-  }, [settings]);
+    if (isLoading) {
+      return;
+    }
+
+    if (!isAuthenticated || !userId) {
+      activeUserIdRef.current = undefined;
+      setRemoteReady(false);
+      setSyncStatus('local');
+      setSyncError(null);
+      lastRemoteSettingsRef.current = '';
+      setSettings(defaultProfileSettings);
+      return;
+    }
+
+    if (activeUserIdRef.current === userId) {
+      return;
+    }
+
+    activeUserIdRef.current = userId;
+    setRemoteReady(false);
+    setSyncError(null);
+    lastRemoteSettingsRef.current = '';
+    setSettings(loadProfileSettings(userId));
+  }, [isAuthenticated, isLoading, userId]);
+
+  useEffect(() => {
+    if (!userId || !isAuthenticated) {
+      return;
+    }
+
+    saveProfileSettings(settings, userId);
+  }, [isAuthenticated, settings, userId]);
 
   useEffect(() => {
     if (isLoading) {
       return;
     }
 
-    const userId = user?.sub;
     const client = supabase;
 
     if (!isAuthenticated || !userId || !client) {
-      setRemoteReady(false);
-      setSyncStatus('local');
       return;
     }
 
@@ -117,10 +156,22 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
 
       if (data) {
         const remoteSettings = profileRecordToSettings(data);
-        lastRemoteSettingsRef.current = JSON.stringify(remoteSettings);
+        lastRemoteSettingsRef.current = serializeForRemote(remoteSettings);
         setSettings(remoteSettings);
       } else {
-        lastRemoteSettingsRef.current = '';
+        lastRemoteSettingsRef.current = serializeForRemote(defaultProfileSettings);
+        setSettings((current) => {
+          if (current.displayName.trim()) {
+            return current;
+          }
+
+          const suggestedName = authDisplayName(user);
+          if (!suggestedName) {
+            return current;
+          }
+
+          return normalizeProfileSettingsDraft({ ...current, displayName: suggestedName });
+        });
       }
 
       setRemoteReady(true);
@@ -132,17 +183,16 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isLoading, supabase, user?.sub]);
+  }, [isAuthenticated, isLoading, supabase, user, userId]);
 
   useEffect(() => {
-    const userId = user?.sub;
     const client = supabase;
 
     if (!isAuthenticated || !userId || !client || !remoteReady) {
       return;
     }
 
-    const serialized = JSON.stringify(settings);
+    const serialized = serializeForRemote(settings);
     if (serialized === lastRemoteSettingsRef.current) {
       return;
     }
@@ -152,9 +202,10 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         setSyncStatus('loading');
         setSyncError(null);
 
+        const persisted = prepareProfileSettingsForPersistence(settings);
         const { error } = await activeClient
           .from('profiles')
-          .upsert(settingsToProfileRecord(activeUserId, settings), { onConflict: 'auth0_user_id' });
+          .upsert(settingsToProfileRecord(activeUserId, persisted), { onConflict: 'auth0_user_id' });
 
         if (error) {
           setSyncStatus('error');
@@ -162,7 +213,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
           return;
         }
 
-        lastRemoteSettingsRef.current = serialized;
+        lastRemoteSettingsRef.current = serializeForRemote(persisted);
         setSyncStatus('synced');
       }
 
@@ -170,7 +221,7 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
     }, 450);
 
     return () => window.clearTimeout(timer);
-  }, [isAuthenticated, remoteReady, settings, supabase, user?.sub]);
+  }, [isAuthenticated, remoteReady, settings, supabase, userId]);
 
   const value = useMemo<ProfileSettingsContextValue>(
     () => ({
@@ -204,12 +255,14 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
         updateSettings((current) => ({ ...current, graduationYear }));
       },
       resetSettings: () => {
-        setSettings(clearProfileSettings());
+        const cleared = clearProfileSettings(userId);
+        lastRemoteSettingsRef.current = serializeForRemote(cleared);
+        setSettings(cleared);
       },
       syncStatus,
       syncError,
     }),
-    [settings, syncError, syncStatus],
+    [settings, syncError, syncStatus, userId],
   );
 
   return <ProfileSettingsContext.Provider value={value}>{children}</ProfileSettingsContext.Provider>;
