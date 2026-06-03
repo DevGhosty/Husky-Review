@@ -579,7 +579,7 @@ export async function extractResumeText(buffer: Buffer, contentType: string | nu
 
   const raw = buffer.toString('utf8');
   const xmlText = Array.from(raw.matchAll(/<w:t[^>]*>(.*?)<\/w:t>/g))
-    .map((match) => match[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'))
+    .map((match) => match[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'))
     .join(' ');
   const visibleText = (xmlText || raw.replace(/[^\x20-\x7E]+/g, ' ')).replace(/\s+/g, ' ').trim();
   return visibleText.slice(0, 20000) || `${fileName} ${contentType || ''}`;

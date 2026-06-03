@@ -123,22 +123,22 @@ async function assertPublicPostingUrl(url: URL, lookupFn: LookupFn) {
 function decodeEntities(value: string) {
   return value
     .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
     .replace(/&lt;/gi, '<')
     .replace(/&gt;/gi, '>')
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
     .replace(/&#(\d+);/g, (_match, code) => String.fromCharCode(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_match, code) => String.fromCharCode(Number.parseInt(code, 16)));
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code) => String.fromCharCode(Number.parseInt(code, 16)))
+    .replace(/&amp;/gi, '&');
 }
 
 export function postingHtmlToText(value: string) {
   return decodeEntities(
     value
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
-      .replace(/<svg[\s\S]*?<\/svg>/gi, ' ')
+      .replace(/<script[\s\S]*?<\/script\s*>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style\s*>/gi, ' ')
+      .replace(/<noscript[\s\S]*?<\/noscript\s*>/gi, ' ')
+      .replace(/<svg[\s\S]*?<\/svg\s*>/gi, ' ')
       .replace(/<\/(p|div|section|article|li|h[1-6]|br|tr)>/gi, '\n')
       .replace(/<[^>]+>/g, ' '),
   )
