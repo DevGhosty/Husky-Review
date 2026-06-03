@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useBlocker, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -180,6 +180,7 @@ export function ProfilePage() {
   } = useProfileSettings();
   const [explicitSaveError, setExplicitSaveError] = useState<string | null>(null);
   const [explicitSavePending, setExplicitSavePending] = useState(false);
+  const allowSavedProfileNavigationRef = useRef(false);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const returnTo = safeReturnTo(searchParams.get('returnTo'));
@@ -206,6 +207,7 @@ export function ProfilePage() {
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
+      !allowSavedProfileNavigationRef.current &&
       isProfileDirty() &&
       currentLocation.pathname === '/app/profile' &&
       nextLocation.pathname !== '/app/profile',
@@ -213,6 +215,11 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (blocker.state !== 'blocked') {
+      return;
+    }
+
+    if (allowSavedProfileNavigationRef.current) {
+      blocker.proceed();
       return;
     }
 
@@ -262,7 +269,11 @@ export function ProfilePage() {
     try {
       await saveProfile();
       if (isSetupMode) {
+        allowSavedProfileNavigationRef.current = true;
         navigate(returnTo, { replace: true });
+        window.setTimeout(() => {
+          allowSavedProfileNavigationRef.current = false;
+        }, 0);
       }
     } catch (saveError) {
       setExplicitSaveError((saveError as Error).message || 'Profile could not sync. Please try saving again.');
