@@ -354,8 +354,7 @@ export function ProfilePage() {
     return (
       <Button
         type="button"
-        variant="outline"
-        className="h-12 border-white/20 text-white hover:bg-white/10 hover:text-white"
+        className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90 disabled:opacity-55"
         disabled={!isDirty || isSaving}
         onClick={handleSaveProfile}
       >
