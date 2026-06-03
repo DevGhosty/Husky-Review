@@ -33,7 +33,12 @@ const {
   defaultProfileSettings,
   isProfileComplete,
   loadProfileSettings,
+  normalizeProfileSettingsDraft,
+  prepareProfileSettingsForPersistence,
+  profileStorageKey,
+  saveProfileSettings,
 } = await importTypeScriptModule('../src/lib/profile-settings.ts');
+const { filterUwMajors } = await importTypeScriptModule('../src/data/uw-majors.ts');
 
 const baseInput = {
   reviewId: 'review-test',
@@ -116,8 +121,9 @@ test('profile settings parse campus fields and preserve completion semantics', (
   };
 
   try {
+    const userId = 'auth0|profile-test-user';
     storage.set(
-      'husky-review-profile-settings',
+      profileStorageKey(userId),
       JSON.stringify({
         displayName: ' Alex Husky ',
         major: ' Informatics ',
@@ -128,7 +134,7 @@ test('profile settings parse campus fields and preserve completion semantics', (
       }),
     );
 
-    const parsed = loadProfileSettings();
+    const parsed = loadProfileSettings(userId);
     assert.equal(parsed.displayName, ' Alex Husky ');
     assert.equal(parsed.major, ' Informatics ');
     assert.equal(parsed.campus, 'tacoma');
@@ -138,7 +144,7 @@ test('profile settings parse campus fields and preserve completion semantics', (
     assert.equal(isProfileComplete(parsed), true);
 
     storage.set(
-      'husky-review-profile-settings',
+      profileStorageKey(userId),
       JSON.stringify({
         displayName: 'Alex Husky',
         major: 'Informatics',
@@ -148,13 +154,36 @@ test('profile settings parse campus fields and preserve completion semantics', (
       }),
     );
 
-    const invalid = loadProfileSettings();
+    const invalid = loadProfileSettings(userId);
     assert.equal(invalid.campus, '');
     assert.equal(isProfileComplete(invalid), false);
   } finally {
     globalThis.window = originalWindow;
     globalThis.localStorage = originalLocalStorage;
   }
+});
+
+test('profile draft keeps spaces while typing but persistence trims text fields', () => {
+  const draft = normalizeProfileSettingsDraft({
+    ...defaultProfileSettings,
+    displayName: 'John ',
+    major: 'Computer ',
+  });
+
+  assert.equal(draft.displayName, 'John ');
+  assert.equal(draft.major, 'Computer ');
+
+  const persisted = prepareProfileSettingsForPersistence(draft);
+  assert.equal(persisted.displayName, 'John');
+  assert.equal(persisted.major, 'Computer');
+});
+
+test('major search filters UW catalog suggestions', () => {
+  const matches = filterUwMajors('comp sci');
+  assert.ok(matches.some((major) => /computer science/i.test(major)));
+
+  const custom = filterUwMajors('Custom Interdisciplinary Major');
+  assert.equal(custom[0], 'Custom Interdisciplinary Major');
 });
 
 test('profile completion stamps complete profiles and clears incomplete profiles', () => {
@@ -165,6 +194,8 @@ test('profile completion stamps complete profiles and clears incomplete profiles
     campus: 'seattle',
   }, '2026-06-03T10:00:00.000Z');
 
+  assert.equal(completed.displayName, 'Alex Husky');
+  assert.equal(completed.major, 'Informatics');
   assert.equal(completed.profileCompletedAt, '2026-06-03T10:00:00.000Z');
   assert.equal(isProfileComplete(completed), true);
 
