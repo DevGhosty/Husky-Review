@@ -90,11 +90,14 @@ function safeReturnTo(value: string | null) {
     return '/app';
   }
 
+  let returnTo = '/app';
   try {
-    return sanitizeAppReturnTo(decodeURIComponent(value));
+    returnTo = sanitizeAppReturnTo(decodeURIComponent(value));
   } catch {
-    return sanitizeAppReturnTo(value);
+    returnTo = sanitizeAppReturnTo(value);
   }
+
+  return returnTo.startsWith('/app/profile') ? '/app' : returnTo;
 }
 
 function SettingSwitchRow({
