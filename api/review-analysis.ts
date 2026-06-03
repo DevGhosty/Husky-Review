@@ -83,7 +83,8 @@ const AI_RESUME_TEXT_LIMIT = 3200;
 const AI_JOB_TEXT_LIMIT = 2400;
 const AI_CATALOG_CANDIDATE_LIMIT = 8;
 const AI_CATALOG_DESCRIPTION_LIMIT = 180;
-const AI_MAX_OUTPUT_TOKENS = 1200;
+const AI_MAX_OUTPUT_TOKENS = 4096;
+const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -699,7 +700,7 @@ async function buildGeminiAnalysis(input: AnalysisInput) {
   };
 
   const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
     {
       method: 'POST',
       headers: {
@@ -717,8 +718,33 @@ async function buildGeminiAnalysis(input: AnalysisInput) {
   }
 
   const data: any = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return normalizeAiAnalysis(JSON.parse(text), input);
+  const candidate = data?.candidates?.[0];
+  const text = candidate?.content?.parts?.[0]?.text || '';
+  const finishReason = candidate?.finishReason || 'unknown';
+
+  if (!text.trim()) {
+    console.warn('Gemini returned empty analysis text', {
+      finishReason,
+      blockReason: data?.promptFeedback?.blockReason || null,
+    });
+    throw new Error(`Gemini returned empty analysis text (${finishReason})`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    console.warn('Gemini returned invalid JSON', {
+      finishReason,
+      textLength: text.length,
+      textPrefix: text.replace(/\s+/g, ' ').slice(0, 160),
+      textSuffix: text.replace(/\s+/g, ' ').slice(-160),
+      parseError: (error as Error).message,
+    });
+    throw new Error(`Gemini returned invalid JSON (${finishReason}): ${(error as Error).message}`);
+  }
+
+  return normalizeAiAnalysis(parsed, input);
 }
 
 export async function buildReviewAnalysis(input: AnalysisInput) {
