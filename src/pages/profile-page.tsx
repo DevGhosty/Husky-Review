@@ -13,6 +13,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useProfileSettings } from '../context/profile-settings-context';
+import { sanitizeAppReturnTo } from '../auth/auth0-config';
 import { useReview } from '../context/review-context';
 import { MajorCombobox } from '../components/major-combobox';
 import { ACTIVITY_INTEREST_OPTIONS } from '../data/uwb-catalog';
@@ -90,10 +91,9 @@ function safeReturnTo(value: string | null) {
   }
 
   try {
-    const decoded = decodeURIComponent(value);
-    return decoded.startsWith('/app') ? decoded : '/app';
+    return sanitizeAppReturnTo(decodeURIComponent(value));
   } catch {
-    return value.startsWith('/app') ? value : '/app';
+    return sanitizeAppReturnTo(value);
   }
 }
 
