@@ -40,11 +40,11 @@ const baseInput = {
   activities: [
     {
       id: 'activity-data',
-      name: 'UWB Data Science Club',
+      name: 'UW Data Science Club',
       category: 'club',
       description: 'Students practice Python, SQL, analytics, communication, and data visualization.',
       skills: ['python', 'sql', 'analytics', 'communication'],
-      source_url: 'https://www.uwb.edu/dsa/clubs-organizations',
+      source_url: 'https://www.washington.edu/student-life',
       active: true,
       last_verified: '2026-05-12',
       time_commitment: '2 hours/week',
@@ -57,7 +57,7 @@ const baseInput = {
       category: 'event',
       description: 'Workshop for documentation, communication, and resume bullet writing.',
       skills: ['documentation', 'communication', 'writing'],
-      source_url: 'https://www.uwb.edu/events',
+      source_url: 'https://www.washington.edu/events',
       active: true,
       last_verified: '2026-05-10',
       time_commitment: '1 hour',
@@ -70,7 +70,7 @@ const baseInput = {
       category: 'event',
       description: 'Python SQL',
       skills: ['python', 'sql'],
-      source_url: 'https://www.uwb.edu/events',
+      source_url: 'https://www.washington.edu/events',
       active: false,
       last_verified: '2026-05-10',
       time_commitment: '1 hour',
@@ -153,7 +153,7 @@ test('Gemini context is bounded and limited to ranked verified candidates', asyn
                         active: true,
                         lastVerified: '2026-05-12',
                         confidence: 88,
-                        sourceLabel: 'uwb.edu',
+                        sourceLabel: 'washington.edu',
                         roadmapWeek: 1,
                         roadmapAction: 'Attend and revise a bullet.',
                       },
@@ -218,14 +218,14 @@ test('Gemini output is bounded and limited to verified candidate ids', async () 
                     {
                       id: 'activity-data',
                       group: 'in-time',
-                      name: 'UWB Data Science Club',
+                      name: 'UW Data Science Club',
                       type: 'club',
                       whyItHelps: longText,
                       tags: [longText, 'Python'],
                       active: true,
                       lastVerified: '2026-05-12',
                       confidence: 999,
-                      sourceLabel: 'uwb.edu',
+                      sourceLabel: 'washington.edu',
                       roadmapWeek: 10,
                       roadmapAction: longText,
                     },
@@ -294,6 +294,62 @@ test('Gemini output is bounded and limited to verified candidate ids', async () 
     assert.deepEqual(analysis.selectedIds, ['activity-data']);
   } finally {
     delete process.env.GEMINI_API_KEY;
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('user-supplied Gemini key is sent as the Gemini request key', async () => {
+  const originalFetch = globalThis.fetch;
+  let requestHeaders = null;
+  globalThis.fetch = async (_url, init) => {
+    requestHeaders = init.headers;
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    matchScore: { score: 82, label: 'Strong match', summary: 'Good alignment.' },
+                    recommendations: [
+                      {
+                        id: 'activity-data',
+                        group: 'in-time',
+                        name: 'UW Data Science Club',
+                        type: 'club',
+                        whyItHelps: 'Relevant practice.',
+                        tags: ['Python'],
+                        active: true,
+                        lastVerified: '2026-05-12',
+                        confidence: 88,
+                        sourceLabel: 'washington.edu',
+                        roadmapWeek: 1,
+                        roadmapAction: 'Attend and revise a bullet.',
+                      },
+                    ],
+                    selectedIds: ['activity-data'],
+                  }),
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    };
+  };
+
+  try {
+    const analysis = await buildReviewAnalysis({
+      ...baseInput,
+      geminiApiKey: 'user-supplied-gemini-key-12345',
+      apiKeySource: 'user-key',
+    });
+
+    assert.equal(requestHeaders['x-goog-api-key'], 'user-supplied-gemini-key-12345');
+    assert.equal(analysis.aiProvider, 'user-key');
+  } finally {
     globalThis.fetch = originalFetch;
   }
 });

@@ -301,12 +301,12 @@ export function HeroSection() {
             <span className="hero-action-mark mt-1 font-black">action board</span>
           </h1>
           <p className="mt-7 max-w-xl text-lg font-semibold leading-8 text-muted-foreground sm:text-xl">
-            Upload your resume and a real posting in the app, read AI-assisted gap analysis with UWB-linked recommendations, save reviews, and shape everything into a week-by-week board you can execute—not just read.
+            Upload your resume and a real posting in the app, read AI-assisted gap analysis with UW-linked recommendations, save reviews, and shape everything into a week-by-week board you can execute—not just read.
           </p>
 
           <div className="mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
             {[
-              { label: 'Verified UWB Opportunities', icon: ShieldCheck, tone: 'green' },
+              { label: 'Verified UW Opportunities', icon: ShieldCheck, tone: 'green' },
               { label: 'Privacy by Design', icon: LockKeyhole, tone: 'green' },
             ].map((item) => {
               const Icon = item.icon;
@@ -540,7 +540,7 @@ export function HeroSection() {
 
             <div className="mt-4 grid gap-4 rounded-2xl border border-border bg-card/70 p-3 shadow-soft dark:bg-card/40 lg:grid-cols-3">
               {[
-                ['Built for UWB students', 'Recommendations point to campus sources and programs you can act on.'],
+                ['Built for UW students', 'Recommendations point to campus sources and programs you can act on.'],
                 ['Stays current', 'Statuses and dates help you spot what is still active.'],
                 ['Actionable next steps', 'Move items from insight to your dated weekly board.'],
               ].map(([title, detail], index) => (

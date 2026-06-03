@@ -1,7 +1,7 @@
--- Seed data: verified UWB activities
+-- Seed data: verified UW activities
 -- Source of truth: data/uwb_activities.json
 -- All entries have verified_by = 'pending' — team must cross-check each row
--- against a live official UWB source before setting verified_by to a team member name.
+-- against a live official source before setting verified_by to a team member name.
 
 INSERT INTO activities
   (name, category, description, skills, source_url, active, last_verified, verified_by,
@@ -168,8 +168,8 @@ VALUES
  ARRAY['c++','data structures','algorithms','object-oriented programming','problem solving','discrete mathematics'],
  'https://myplan.uw.edu/course/#/courses/CSS%20342',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~15 hours/week', 'one quarter', 'UWB tuition',
- 'Enroll via UWB SDB registration. Check prerequisite (CSS 143 or equivalent).',
+ '10 weeks, ~15 hours/week', 'one quarter', 'UW tuition',
+ 'Enroll via UW registration. Check prerequisite (CSS 143 or equivalent).',
  'Offered most quarters. Confirm current offerings on MyPlan.'),
 
 ('CSS 343 – Data Structures, Algorithms, and Discrete Mathematics II',
@@ -178,7 +178,7 @@ VALUES
  ARRAY['c++','data structures','algorithms','graphs','dynamic programming','problem solving'],
  'https://myplan.uw.edu/course/#/courses/CSS%20343',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~15 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~15 hours/week', 'one quarter', 'UW tuition',
  'Prerequisite: CSS 342.',
  'Offered most quarters. Confirm on MyPlan.'),
 
@@ -188,9 +188,9 @@ VALUES
  ARRAY['technical writing','documentation','communication','requirements specification','api documentation'],
  'https://myplan.uw.edu/course/#/courses/CSS%20370',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~8 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~8 hours/week', 'one quarter', 'UW tuition',
  'Prerequisite: English composition. Check SDB for current prerequisite details.',
- 'Verify course number and title in current UWB catalog.'),
+ 'Verify course number and title in current UW catalog.'),
 
 ('CSS 422 – Hardware and Computer Organization',
  'course',
@@ -198,7 +198,7 @@ VALUES
  ARRAY['computer architecture','assembly language','hardware','systems programming','c','memory management'],
  'https://myplan.uw.edu/course/#/courses/CSS%20422',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~12 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~12 hours/week', 'one quarter', 'UW tuition',
  'Check prerequisites on MyPlan.',
  'Confirm offering schedule; may be offered once per year.'),
 
@@ -208,7 +208,7 @@ VALUES
  ARRAY['operating systems','c','c++','linux','multithreading','memory management','systems programming','concurrency'],
  'https://myplan.uw.edu/course/#/courses/CSS%20430',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~15 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~15 hours/week', 'one quarter', 'UW tuition',
  'Prerequisite: CSS 422 or equivalent.',
  'Verify prerequisite chain on MyPlan.'),
 
@@ -218,7 +218,7 @@ VALUES
  ARRAY['networking','socket programming','c','c++','tcp/ip','distributed systems','protocol design'],
  'https://myplan.uw.edu/course/#/courses/CSS%20432',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~15 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~15 hours/week', 'one quarter', 'UW tuition',
  'Prerequisite: CSS 430.',
  'Verify prerequisite on MyPlan.'),
 
@@ -228,7 +228,7 @@ VALUES
  ARRAY['cloud computing','aws','docker','distributed systems','devops','serverless','kubernetes','scalability'],
  'https://myplan.uw.edu/course/#/courses/CSS%20436',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~15 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~15 hours/week', 'one quarter', 'UW tuition',
  'Check prerequisites on MyPlan.',
  'Verify offering schedule and whether AWS credits are provided.'),
 
@@ -238,7 +238,7 @@ VALUES
  ARRAY['software engineering','agile','teamwork','full-stack development','project management','git','ci/cd','requirements engineering'],
  'https://myplan.uw.edu/course/#/courses/CSS%20440',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~20 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~20 hours/week', 'one quarter', 'UW tuition',
  'Prerequisite: CSS 480.',
  'Verify prerequisite on MyPlan. Projects are typically showcased at the end-of-year event.'),
 
@@ -248,7 +248,7 @@ VALUES
  ARRAY['programming languages','functional programming','type systems','compilers','language design','haskell'],
  'https://myplan.uw.edu/course/#/courses/CSS%20452',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~12 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~12 hours/week', 'one quarter', 'UW tuition',
  'Check prerequisites on MyPlan.',
  'Verify offering schedule; may be offered once per year.'),
 
@@ -258,7 +258,7 @@ VALUES
  ARRAY['artificial intelligence','python','machine learning','search algorithms','probabilistic reasoning','constraint satisfaction'],
  'https://myplan.uw.edu/course/#/courses/CSS%20471',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~12 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~12 hours/week', 'one quarter', 'UW tuition',
  'Check prerequisites on MyPlan.',
  'Verify offering schedule.'),
 
@@ -268,7 +268,7 @@ VALUES
  ARRAY['networking','tcp/ip','network protocols','security','routing','wireshark'],
  'https://myplan.uw.edu/course/#/courses/CSS%20475',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~12 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~12 hours/week', 'one quarter', 'UW tuition',
  'Check prerequisites on MyPlan.',
  'Verify offering schedule and confirm it is distinct from CSS 432.'),
 
@@ -278,7 +278,7 @@ VALUES
  ARRAY['software engineering','design patterns','testing','agile','requirements engineering','object-oriented design'],
  'https://myplan.uw.edu/course/#/courses/CSS%20480',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~12 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~12 hours/week', 'one quarter', 'UW tuition',
  'Prerequisite: CSS 343. Verify on MyPlan.',
  'Typically required before CSS 440 (capstone).'),
 
@@ -288,7 +288,7 @@ VALUES
  ARRAY['sql','databases','data modeling','postgresql','query optimization','transactions','relational algebra'],
  'https://myplan.uw.edu/course/#/courses/CSS%20484',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~12 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~12 hours/week', 'one quarter', 'UW tuition',
  'Check prerequisites on MyPlan.',
  'Verify offering schedule.'),
 
@@ -298,7 +298,7 @@ VALUES
  ARRAY['machine learning','python','scikit-learn','neural networks','deep learning','data science','pytorch','model evaluation'],
  'https://myplan.uw.edu/course/#/courses/CSS%20487',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~15 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~15 hours/week', 'one quarter', 'UW tuition',
  'Check prerequisites (CSS 343 and linear algebra recommended). Verify on MyPlan.',
  'Verify offering schedule.'),
 
@@ -308,7 +308,7 @@ VALUES
  ARRAY['varies by topic','software development','specialized computing'],
  'https://myplan.uw.edu/course/#/courses/CSS%20490',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~10–15 hours/week', 'one quarter', 'UWB tuition',
+ '10 weeks, ~10–15 hours/week', 'one quarter', 'UW tuition',
  'Check current quarter''s SDB/MyPlan for available sections and topics.',
  'Topic changes each quarter. Must re-verify skills and description each time a new section is added.'),
 
@@ -320,7 +320,7 @@ VALUES
  ARRAY['research','independent study','technical writing','problem solving','project management','academic presentation'],
  'https://www.uwb.edu/css/research',
  TRUE, '2026-05-12', 'pending',
- '10 weeks, ~10 hours/week', 'one quarter (repeatable)', 'UWB tuition (1–5 credits)',
+ '10 weeks, ~10 hours/week', 'one quarter (repeatable)', 'UW tuition (1–5 credits)',
  'Contact a CSS faculty member directly to propose a project before registering.',
  'Requires faculty sponsorship. Confirm current faculty research areas on the CSS department website.'),
 
@@ -332,7 +332,7 @@ VALUES
  TRUE, '2026-05-12', 'pending',
  '10–15 hours/week during active quarters', 'one quarter or longer, renewable', 'paid stipend or academic credit',
  'Applications accepted on a rolling basis; check URP site for current open positions.',
- 'Verify the URP site is current and that UWB students are explicitly eligible.'),
+ 'Verify the URP site is current and that UW students are explicitly eligible.'),
 
 ('UWB STARS – Summer Teaching and Research Scholars',
  'research',
@@ -366,7 +366,7 @@ VALUES
 
 ('NSF Research Experiences for Undergraduates (REU)',
  'research',
- 'National Science Foundation-funded summer research programs at universities nationwide. UWB students are eligible to apply. REU participation is one of the strongest research credentials for computing undergraduates applying to graduate programs or research-adjacent industry roles.',
+ 'National Science Foundation-funded summer research programs at universities nationwide. UW students are eligible to apply. REU participation is one of the strongest research credentials for computing undergraduates applying to graduate programs or research-adjacent industry roles.',
  ARRAY['research','machine learning','algorithms','systems programming','academic writing','public speaking'],
  'https://www.nsf.gov/crssprgm/reu/list.jsp',
  TRUE, '2026-05-12', 'pending',
@@ -380,7 +380,7 @@ VALUES
  ARRAY['research','interdisciplinary thinking','inquiry','academic writing'],
  'https://www.uwb.edu/discoverycore',
  TRUE, '2026-05-12', 'pending',
- 'one quarter, ~5–10 hours/week', 'one quarter', 'UWB tuition',
+ 'one quarter, ~5–10 hours/week', 'one quarter', 'UW tuition',
  'Typically fulfilled through designated Discovery Core-tagged courses. Confirm options with an academic advisor.',
  'Verify the Discovery Core research track is still part of current UWB general education requirements.'),
 
@@ -394,7 +394,7 @@ VALUES
  TRUE, '2026-05-12', 'pending',
  'varies; workshops plus independent project work', 'one or more quarters', 'free',
  'Competitive application; check Foster School website for dates and eligibility.',
- 'Verify whether UWB students (not just UW Seattle) are eligible to apply.'),
+ 'Verify whether UW students (not just UW Seattle) are eligible to apply.'),
 
 ('Management Leadership for Tomorrow (MLT) Early Careers',
  'fellowship',
@@ -408,7 +408,7 @@ VALUES
 
 ('Rewriting the Code (RTC) Fellowship',
  'fellowship',
- 'National fellowship supporting women and gender-diverse students in computing. Benefits include mentorship, networking with tech companies, access to exclusive recruiting events, and a community of 25,000+ peers. Open to UWB students.',
+ 'National fellowship supporting women and gender-diverse students in computing. Benefits include mentorship, networking with tech companies, access to exclusive recruiting events, and a community of 25,000+ peers. Open to UW students.',
  ARRAY['professional development','networking','leadership','software engineering','community building'],
  'https://rewritingthecode.org',
  TRUE, '2026-05-12', 'pending',
@@ -418,7 +418,7 @@ VALUES
 
 ('Microsoft Explore Program',
  'fellowship',
- 'Microsoft''s early-stage internship for first- and second-year students from underrepresented groups. Participants rotate through software engineering, program management, and UX research over 12 weeks in Redmond — directly accessible for UWB students by geography.',
+ 'Microsoft''s early-stage internship for first- and second-year students from underrepresented groups. Participants rotate through software engineering, program management, and UX research over 12 weeks in Redmond — directly accessible for UW students by geography.',
  ARRAY['software development','product management','ux research','professional development','microsoft technologies'],
  'https://careers.microsoft.com/students/us/en/usexploremicrosoftprogram',
  TRUE, '2026-05-12', 'pending',
@@ -456,7 +456,7 @@ VALUES
  TRUE, '2026-05-12', 'pending',
  'self-paced; estimated 5–10 hours total', 'self-paced, complete any time while enrolled', 'free with UW NetID',
  'Log in with your UW NetID at careers.uw.edu.',
- 'Verify whether the Husky Career Advantage credential is still actively offered and that UWB students can access the UW Career Center.'),
+ 'Verify whether the Husky Career Advantage credential is still actively offered and that UW students can access the UW Career Center.'),
 
 ('UWB Undergraduate Mentorship Program',
  'program',
@@ -476,7 +476,7 @@ VALUES
  TRUE, '2026-05-12', 'pending',
  'one quarter or full academic year abroad', 'one quarter minimum', 'varies; financial aid may apply',
  'Contact the UWB Global Studies office one full quarter before intended travel.',
- 'Verify current program offerings and confirm financial aid portability for UWB students.'),
+ 'Verify current program offerings and confirm financial aid portability for UW students.'),
 
 -- ── EVENTS ───────────────────────────────────────────────────────────────────
 
@@ -498,7 +498,7 @@ VALUES
  TRUE, '2026-05-12', 'pending',
  '24–36 hours, one weekend', 'one weekend event', 'free',
  'Register via MLH or the DiamondHacks website.',
- 'Verify DiamondHacks is scheduled for the current year and confirm UWB student eligibility.'),
+ 'Verify DiamondHacks is scheduled for the current year and confirm UW student eligibility.'),
 
 ('UWB Career and Internship Fair',
  'event',
@@ -506,7 +506,7 @@ VALUES
  ARRAY['networking','professional communication','resume presentation','career planning'],
  'https://www.uwb.edu/careers/career-fair',
  TRUE, '2026-05-12', 'pending',
- 'half-day event', 'one day, twice per year', 'free with UWB student ID',
+ 'half-day event', 'one day, twice per year', 'free with UW student ID',
  'Register through Handshake or uwb.edu/careers. Walk-ins also typically accepted.',
  'Verify current semester date and whether pre-registration is required.'),
 
@@ -522,17 +522,17 @@ VALUES
 
 ('Major League Hacking (MLH) Member Events',
  'event',
- 'Series of student hackathons affiliated with Major League Hacking, held throughout the year at universities in the Pacific Northwest and online. UWB students regularly participate. Hackathon projects strengthen portfolios, GitHub activity, and professional profiles.',
+ 'Series of student hackathons affiliated with Major League Hacking, held throughout the year at universities in the Pacific Northwest and online. UW students regularly participate. Hackathon projects strengthen portfolios, GitHub activity, and professional profiles.',
  ARRAY['software development','teamwork','problem solving','rapid prototyping','portfolio building'],
  'https://mlh.io',
  TRUE, '2026-05-12', 'pending',
  '24–36 hours per event', 'recurring throughout the year', 'free or low registration fee',
  'Browse and register at mlh.io for upcoming events.',
- 'Verify current MLH event schedule includes PNW or online events accessible to UWB students.'),
+ 'Verify current MLH event schedule includes PNW or online events accessible to UW students.'),
 
 ('Grace Hopper Celebration (GHC) – Student Scholar Track',
  'event',
- 'World''s largest gathering of women technologists. Student scholar applications are available for UWB students, especially those in WiC. Attendance connects students with major tech company recruiters and role models. In-person and virtual tracks available.',
+ 'World''s largest gathering of women technologists. Student scholar applications are available for UW students, especially those in WiC. Attendance connects students with major tech company recruiters and role models. In-person and virtual tracks available.',
  ARRAY['networking','professional development','diversity and inclusion','career exploration'],
  'https://ghc.anitab.org',
  TRUE, '2026-05-12', 'pending',

@@ -38,7 +38,7 @@ export function AppShell({ children }: AppShellProps) {
               </Link>
               <span className="hidden h-7 w-px bg-border lg:block" aria-hidden="true" />
               <span className="hidden truncate text-[0.95rem] font-medium text-muted-foreground xl:block">
-                Actionable UWB Resume Review
+                Actionable UW Resume Review
               </span>
             </div>
 

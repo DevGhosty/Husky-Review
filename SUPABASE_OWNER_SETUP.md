@@ -1,6 +1,6 @@
 # Husky-Review — Supabase setup handoff
 
-This document is for the **Supabase project owner**. It describes what to configure in the Supabase dashboard so the Husky-Review app (Auth0 + Vercel) can store profile settings, private resume files, and **read your existing UWB catalog** (classes, activities, clubs, courses, events, and related tables).
+This document is for the **Supabase project owner**. It describes what to configure in the Supabase dashboard so the Husky-Review app (Auth0 + Vercel) can store profile settings, private resume files, and **read your existing UW catalog** (classes, activities, clubs, courses, events, and related tables).
 
 **Production app:** https://husky-review.vercel.app  
 **Auth0 tenant (for Third-Party Auth):** `dev-gamqgs47xldlc3hi.us.auth0.com`  
@@ -13,7 +13,7 @@ This document is for the **Supabase project owner**. It describes what to config
 | Feature | Who authenticates | How Supabase is accessed |
 |---------|-------------------|---------------------------|
 | Profile settings (browser) | Auth0 ID token via **Third-Party Auth** | Anon key + RLS on `public.profiles` |
-| UWB catalog (classes, activities, etc.) | Auth0 ID token (signed-in `@uw.edu`) | Anon key + RLS — **read-only** `SELECT` for `authenticated` |
+| UW catalog (classes, activities, etc.) | Auth0 ID token (signed-in `@uw.edu`) | Anon key + RLS — **read-only** `SELECT` for `authenticated` |
 | Resume upload / list / delete | Auth0 access token → **Vercel API** | **Service role** key (server only); API filters by Auth0 user id |
 | Review history and AI quota | Auth0 access token through **Vercel API** | **Service role** key (server only); review rows are account-scoped |
 | Scheduled resume cleanup | Vercel cron job | **Service role** deletes rows + storage objects |
@@ -234,9 +234,9 @@ Purging more frequently would require a Vercel Pro plan or a manual/API-triggere
 
 ---
 
-## 9. Existing UWB catalog (classes, activities, and related tables)
+## 9. Existing UW catalog (classes, activities, and related tables)
 
-The Husky-Review migrations include the current `activities`, `course_sections`, and `campus_orgs` tables. If the production database has additional verified UWB content, the app team needs your help to **document** what exists and **expose read-only access** for signed-in students.
+The Husky-Review migrations include the current `activities`, `course_sections`, and `campus_orgs` tables. If the production database has additional verified UW content, the app team needs your help to **document** what exists and **expose read-only access** for signed-in students.
 
 **Access model:** catalog is **read-only in the browser** for any signed-in `@uw.edu` user — same as profiles: **anon key + Auth0 ID token + RLS**. Students do not write catalog rows from the SPA; ingestion stays in the dashboard or your pipelines.
 
@@ -272,7 +272,7 @@ where table_schema = 'public'
 
 | Table | Purpose (your description) | Approx. row count | Notes |
 |-------|----------------------------|-------------------|-------|
-| e.g. `classes` | UWB courses | | |
+| e.g. `classes` | UW courses | | |
 | e.g. `activities` | clubs, events, research | | |
 
 Also note:
@@ -375,4 +375,4 @@ When finished, please confirm:
 
 ---
 
-*Last updated: Husky-Review security hardening plus UWB catalog handoff (classes, activities, read-only authenticated RLS).*
+*Last updated: Husky-Review security hardening plus UW catalog handoff (classes, activities, read-only authenticated RLS).*

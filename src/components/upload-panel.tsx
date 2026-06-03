@@ -36,7 +36,7 @@ interface UploadPanelProps {
   onAnalyze: () => void;
 }
 
-const readinessSteps = ['Resume parsing', 'Job requirement comparison', 'Verified UWB retrieval', 'Roadmap generation'];
+const readinessSteps = ['Resume parsing', 'Job requirement comparison', 'Verified UW retrieval', 'Roadmap generation'];
 
 export function UploadPanel({
   status,
@@ -92,7 +92,7 @@ export function UploadPanel({
           <Badge tone="gold" className="rounded-full px-4 py-2">Review workspace</Badge>
           <h2 className="mt-6 text-3xl font-black tracking-normal sm:text-4xl">Start with the resume and role you care about.</h2>
           <p className="mt-4 text-base leading-7 text-white/75">
-            The review flow stores your resume, compares it with the role, and turns verified UWB activities into an action plan.
+            The review flow stores your resume, compares it with the role, and turns verified UW activities into an action plan.
           </p>
           <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.08] p-5">
             <div className="flex items-center justify-between text-sm font-semibold text-white/[0.72]">
@@ -278,8 +278,8 @@ export function UploadPanel({
                   <KeyRound className="size-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <Label htmlFor="anthropic-api-key" className="text-sm font-black text-foreground">
-                    Anthropic API key for extra reviews
+                  <Label htmlFor="gemini-api-key" className="text-sm font-black text-foreground">
+                    Gemini API key for extra reviews
                   </Label>
                   <p className="mt-1 text-xs font-semibold leading-5 text-muted-foreground">
                     {quotaLoading
@@ -294,12 +294,12 @@ export function UploadPanel({
                   </p>
                   {quotaError ? <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">{quotaError}</p> : null}
                   <Input
-                    id="anthropic-api-key"
+                    id="gemini-api-key"
                     type="password"
                     autoComplete="off"
                     value={userApiKey}
                     onChange={(event) => onUserApiKeyChange(event.target.value)}
-                    placeholder="sk-ant-..."
+                    placeholder="AIza..."
                     className="mt-3 h-11 rounded-xl border-border bg-background px-3 text-sm font-semibold text-foreground focus-visible:border-ring focus-visible:ring-ring/30"
                   />
                   {usingOwnKey ? (

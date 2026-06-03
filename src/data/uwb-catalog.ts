@@ -10,7 +10,7 @@ export const ACTIVITY_INTEREST_OPTIONS: ActivityInterestOption[] = [
   {
     id: 'course',
     label: 'Courses',
-    description: 'Degree and elective classes from the UWB catalog',
+    description: 'Degree and elective classes from the UW catalog',
   },
   {
     id: 'club',
@@ -39,7 +39,7 @@ export const ACTIVITY_INTEREST_OPTIONS: ActivityInterestOption[] = [
   },
 ];
 
-export const UWB_MAJORS = [
+export const UW_MAJORS = [
   'Business Administration',
   'Computer Science',
   'Nursing',

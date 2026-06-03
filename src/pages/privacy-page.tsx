@@ -25,7 +25,7 @@ const privacyList = [
   { label: 'Job posting URL', value: 'Stored with the review record for reopening saved analysis', icon: ShieldCheck },
   { label: 'Generated analysis', value: 'Stored in account-scoped review records in Supabase', icon: Database },
   { label: 'Deletion policy', value: 'Resumes are purged by scheduled cleanup after the retention window', icon: Trash2 },
-  { label: 'External services', value: 'Auth0, Supabase, and optional server-side Anthropic analysis are used for the product workflow', icon: ServerOff },
+  { label: 'External services', value: 'Auth0, Supabase, and optional server-side Gemini analysis are used for the product workflow', icon: ServerOff },
   { label: 'Account data', value: 'Server APIs verify Auth0 tokens before touching Supabase service-role operations', icon: CheckCircle2 },
 ];
 

@@ -52,8 +52,8 @@ function validateAnalyzeBody(body: any) {
     throw error;
   }
 
-  if (userApiKey && !/^sk-ant-[a-zA-Z0-9_-]{20,}$/.test(userApiKey)) {
-    const error = new Error('Enter a valid Anthropic API key or leave the field blank');
+  if (userApiKey && !/^[a-zA-Z0-9_-]{20,}$/.test(userApiKey)) {
+    const error = new Error('Enter a valid Gemini API key or leave the field blank');
     (error as any).statusCode = 400;
     throw error;
   }
@@ -74,7 +74,7 @@ function toRecommendationRows(reviewId: string, selectedIds: string[], recommend
     active: recommendation.active !== false,
     last_verified: recommendation.lastVerified || null,
     confidence: recommendation.confidence || 0,
-    source_label: recommendation.sourceLabel || 'UWB catalog source',
+    source_label: recommendation.sourceLabel || 'UW catalog source',
     roadmap_week: recommendation.roadmapWeek || 1,
     roadmap_action: recommendation.roadmapAction || '',
     selected: selectedIds.includes(recommendation.id),
@@ -165,7 +165,7 @@ export default async function handler(req: any, res: any) {
       .limit(80);
 
     if (activitiesError) {
-      return sendInternalError(res, 'Failed to fetch verified UWB activities', activitiesError);
+      return sendInternalError(res, 'Failed to fetch verified UW activities', activitiesError);
     }
 
     const reviewId = randomUUID();
@@ -178,7 +178,7 @@ export default async function handler(req: any, res: any) {
       jobPostingUrl: resolvedPosting.jobPostingUrl,
       deadline: input.deadline,
       activities: (activities || []) as ActivityRow[],
-      anthropicApiKey: input.userApiKey || appKey || undefined,
+      geminiApiKey: input.userApiKey || appKey || undefined,
       apiKeySource: input.userApiKey ? 'user-key' : appKey ? 'app-key' : undefined,
     });
 

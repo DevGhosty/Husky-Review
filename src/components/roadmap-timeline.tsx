@@ -69,7 +69,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds, recommendations
                           </Badge>
                         </div>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                          {isReady ? week.summary : 'This week will populate after the analysis connects gaps to verified UWB actions.'}
+                          {isReady ? week.summary : 'This week will populate after the analysis connects gaps to verified UW actions.'}
                         </p>
                         <div className="mt-5 grid gap-3">
                           {isReady ? (

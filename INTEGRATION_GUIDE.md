@@ -1,6 +1,6 @@
 # Auth0 + Supabase Integration Guide for Husky-Review
 
-This app keeps Auth0 as the identity provider and uses Supabase for account-scoped profile settings, private resume metadata, private resume file storage, review history, app-key AI quota tracking, and verified UWB catalog data.
+This app keeps Auth0 as the identity provider and uses Supabase for account-scoped profile settings, private resume metadata, private resume file storage, review history, app-key AI quota tracking, and verified UW catalog data.
 
 ## 1. Auth0 Setup
 
@@ -83,11 +83,11 @@ VITE_SUPABASE_ANON_KEY=your_publishable_or_anon_key
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-ANTHROPIC_API_KEY=your_server_side_anthropic_key
+GEMINI_API_KEY=your_server_side_gemini_key
 ```
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` in browser code.
-`ANTHROPIC_API_KEY` is server-only. Signed-in users get 2 app-key Claude reviews per 7-day window; they can paste their own Anthropic key in the app for additional reviews, and that key is not stored.
+`GEMINI_API_KEY` is server-only. Signed-in users get 2 app-key Gemini reviews per 7-day window; they can paste their own Gemini key in the app for additional reviews, and that key is not stored.
 
 ## 4. App Flow
 
@@ -96,7 +96,7 @@ Never expose `SUPABASE_SERVICE_ROLE_KEY` in browser code.
 3. Resume uploads go through Vercel API routes with Auth0 access tokens.
 4. API routes verify Auth0 tokens with `jose` and Auth0 JWKS.
 5. API routes use the server-only Supabase service role key, filter by Auth0 `sub`, store files under `resumes/<auth0-sub>/...`, and return short-lived signed URLs.
-6. `/api/reviews/analyze` fetches the uploaded resume, retrieves active verified UWB activities, packs a trimmed AI context, enforces the weekly app-key quota, and persists the review result.
+6. `/api/reviews/analyze` fetches the uploaded resume, retrieves active verified UW activities, packs a trimmed AI context, enforces the weekly app-key quota, and persists the review result.
 
 ## 5. Verification
 

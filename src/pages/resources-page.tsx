@@ -28,7 +28,7 @@ export function ResourcesPage() {
               Campus-connected activities without filler recommendations.
             </h1>
             <p className="relative mt-5 max-w-2xl type-lead">
-              Browse UWB activity recommendations with active status, last-verified dates, source labels, and roadmap selection controls.
+              Browse UW activity recommendations with active status, last-verified dates, source labels, and roadmap selection controls.
             </p>
             <div className="relative mt-6 flex flex-col gap-3 sm:flex-row">
               <Button asChild className="h-12">

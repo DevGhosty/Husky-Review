@@ -2,7 +2,7 @@ import type { GapCategory, LoadingStep, Recommendation, RoadmapWeek } from '../t
 
 export const defaultDeadline = '2026-05-31';
 
-export const sampleFileName = 'sample-uwb-resume.pdf';
+export const sampleFileName = 'sample-uw-resume.pdf';
 
 export const sampleJobPostingUrl = 'https://careers.uw.edu/jobs/healthcare-program-coordinator-intern';
 
@@ -21,7 +21,7 @@ export const loadingSteps: LoadingStep[] = [
     description: 'Matching the posting against resume bullets and keywords.',
   },
   {
-    label: 'Searching verified UWB activities',
+    label: 'Searching verified UW activities',
     description: 'Retrieving active clubs, courses, events, and research roles.',
   },
   {
@@ -61,7 +61,7 @@ export const recommendations: Recommendation[] = [
   {
     id: 'css-club-review-night',
     group: 'in-time',
-    name: 'UWB Career Prep Resume Night',
+    name: 'UW Career Prep Resume Night',
     type: 'event',
     whyItHelps:
       'Gives you fast feedback on bullets, project framing, and missing keywords before the application deadline.',
@@ -69,14 +69,14 @@ export const recommendations: Recommendation[] = [
     active: true,
     lastVerified: 'May 8, 2026',
     confidence: 94,
-    sourceLabel: 'UWB Career Services events',
+    sourceLabel: 'UW Career Services events',
     roadmapWeek: 1,
     roadmapAction: 'Bring the target posting and revise three bullets after peer feedback.',
   },
   {
     id: 'career-services-advisor',
     group: 'in-time',
-    name: 'UWB Career Services Advising',
+    name: 'UW Career Services Advising',
     type: 'event',
     whyItHelps:
       'Connects your resume gaps to concrete wording changes and application timing advice.',
@@ -84,7 +84,7 @@ export const recommendations: Recommendation[] = [
     active: true,
     lastVerified: 'May 7, 2026',
     confidence: 91,
-    sourceLabel: 'UWB Career Services',
+    sourceLabel: 'UW Career Services',
     roadmapWeek: 1,
     roadmapAction: 'Book a 30-minute review and ask for feedback on coordination and communication language.',
   },
@@ -99,7 +99,7 @@ export const recommendations: Recommendation[] = [
     active: true,
     lastVerified: 'May 6, 2026',
     confidence: 88,
-    sourceLabel: 'UWB School of Business events',
+    sourceLabel: 'UW School of Business events',
     roadmapWeek: 2,
     roadmapAction: 'Attend the workshop and add one teamwork or facilitation bullet to your resume.',
   },
@@ -129,14 +129,14 @@ export const recommendations: Recommendation[] = [
     active: true,
     lastVerified: 'May 1, 2026',
     confidence: 84,
-    sourceLabel: 'UWB course catalog',
+    sourceLabel: 'UW course catalog',
     roadmapWeek: 3,
     roadmapAction: 'Discuss enrollment with your advisor and note learning goals tied to the posting.',
   },
   {
     id: 'women-in-stem-fellowship',
     group: 'next-time',
-    name: 'UWB STEM Leadership Fellowship',
+    name: 'UW STEM Leadership Fellowship',
     type: 'fellowship',
     whyItHelps:
       'Adds structured leadership and mentorship evidence for roles asking for collaboration signals.',
@@ -144,7 +144,7 @@ export const recommendations: Recommendation[] = [
     active: true,
     lastVerified: 'April 29, 2026',
     confidence: 79,
-    sourceLabel: 'UWB student opportunities',
+    sourceLabel: 'UW student opportunities',
     roadmapWeek: 3,
     roadmapAction: 'Save the next fellowship cycle and draft a leadership-focused application note.',
   },
@@ -198,7 +198,7 @@ export const roadmapWeeks: RoadmapWeek[] = [
       {
         id: 'week-3-apply',
         text: 'Apply and save next-time opportunities.',
-        detail: 'Keep longer-term UWB recommendations for the next recruiting cycle.',
+        detail: 'Keep longer-term UW recommendations for the next recruiting cycle.',
       },
     ],
   },
