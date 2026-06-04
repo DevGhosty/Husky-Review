@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { getAccessTokenRequestOptions } from '../auth/auth0-config';
+import { getApiAccessToken } from '../auth/api-access-token';
 import { fetchReview, updateReviewSelections } from '../auth/supabase-client';
 import { defaultDeadline, loadingSteps } from '../data/reviewFlow';
 import type { ReviewAnalysis, ReviewStatus } from '../types/analysis';
@@ -26,7 +26,7 @@ interface ReviewContextValue {
   startAnalysis: () => void;
   completeAnalysis: (analysis: ReviewAnalysis) => void;
   failAnalysis: (message: string) => void;
-  loadReviewById: (reviewId: string) => Promise<void>;
+  loadReviewById: (reviewId: string) => Promise<boolean>;
   toggleRecommendation: (id: string) => void;
   resetReview: () => void;
 }
@@ -128,18 +128,20 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
     setError(message);
   }
 
-  async function loadReviewById(reviewId: string) {
+  async function loadReviewById(reviewId: string): Promise<boolean> {
     if (!isAuthenticated) {
       failAnalysis('Sign in to open saved reviews.');
-      return;
+      return false;
     }
 
-    startAnalysis();
     try {
-      const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+      const token = await getApiAccessToken(getAccessTokenSilently);
+      startAnalysis();
       completeAnalysis(await fetchReview(token, reviewId));
+      return true;
     } catch (loadError) {
       failAnalysis((loadError as Error).message);
+      return false;
     }
   }
 
@@ -155,7 +157,7 @@ export function ReviewProvider({ children }: ReviewProviderProps) {
       return;
     }
 
-    void getAccessTokenSilently(getAccessTokenRequestOptions())
+    void getApiAccessToken(getAccessTokenSilently)
       .then((token) => updateReviewSelections(token, analysis.id, nextSelectedIds))
       .then((updatedAnalysis) => {
         setAnalysis(updatedAnalysis);

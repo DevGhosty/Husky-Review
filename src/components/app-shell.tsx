@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useEffect, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
+import { getApiAccessToken } from '../auth/api-access-token';
 import { BrandLockup } from './brand-lockup';
 import { NotificationsPanel } from './notifications-panel';
 import { ProfileMenu } from './profile-menu';
@@ -22,6 +24,18 @@ const navLinkFocus =
   'rounded-lg px-2 py-2 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 export function AppShell({ children }: AppShellProps) {
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    void getApiAccessToken(getAccessTokenSilently).catch(() => {
+      // Non-fatal warm-up; individual API calls retry token fetch.
+    });
+  }, [getAccessTokenSilently, isAuthenticated]);
+
   return (
     <div className="min-h-screen overflow-x-hidden px-3 py-3 text-foreground sm:px-5 sm:py-6">
       <div className="app-frame mx-auto max-w-[92rem] rounded-[var(--radius-shell,1.8rem)]">

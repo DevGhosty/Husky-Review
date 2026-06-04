@@ -230,7 +230,7 @@ test('profile settings baseline detects dirty drafts and round-trips', () => {
   });
 
   const baseline = profileSettingsBaseline(saved);
-  const dirtyDraft = normalizeProfileSettingsDraft({ ...saved, includeOtherCampuses: true });
+  const dirtyDraft = normalizeProfileSettingsDraft({ ...saved, emailDigest: true });
   assert.notEqual(profileSettingsBaseline(dirtyDraft), baseline);
 
   const restored = parseProfileSettingsBaseline(baseline);
@@ -956,4 +956,72 @@ test('parseGeminiHttpError maps invalid API key responses', () => {
     JSON.stringify({ error: { message: 'API key not valid. Please pass a valid API key.' } }),
   );
   assert.match(message, /Google AI Studio/i);
+});
+
+const {
+  dedupeCatalogActivities,
+  inferCampusFromSourceUrl,
+  reconcileActivityCampus,
+} = await importTypeScriptModule('../api/catalog-campus.ts', ['../api/profile-completion.ts', '../api/review-analysis.ts']);
+
+test('inferCampusFromSourceUrl maps HuskyLink to Seattle and Gather to Bothell', () => {
+  assert.equal(inferCampusFromSourceUrl('https://huskylink.washington.edu/organizations/foo'), 'seattle');
+  assert.equal(inferCampusFromSourceUrl('https://gather.uwb.edu/club/123'), 'bothell');
+  assert.equal(inferCampusFromSourceUrl('https://dubnet.tacoma.uw.edu/organizations'), 'tacoma');
+});
+
+test('inferCampusFromSourceUrl ignores hostnames embedded in path or query', () => {
+  assert.equal(
+    inferCampusFromSourceUrl('https://evil.example/redirect?next=huskylink.washington.edu'),
+    null,
+  );
+  assert.equal(inferCampusFromSourceUrl('https://evil.example/gather.uwb.edu/club'), null);
+});
+
+test('reconcileActivityCampus overrides mislabeled HuskyLink rows', () => {
+  assert.equal(
+    reconcileActivityCampus('bothell', 'https://huskylink.washington.edu/organizations'),
+    'seattle',
+  );
+});
+
+test('dedupeCatalogActivities prefers scraped campus_orgs over activities', () => {
+  const merged = dedupeCatalogActivities([
+    {
+      id: '81f3f145-0000-4000-8000-000000000001',
+      name: 'AI & Data Analytics Club',
+      category: 'club',
+      campus: 'bothell',
+      description: 'Stale seed row',
+      skills: ['data'],
+      source_url: 'https://huskylink.washington.edu/organizations',
+      active: true,
+      last_verified: '2026-01-01',
+      time_commitment: null,
+      duration: 'ongoing',
+      registration_info: null,
+    },
+    {
+      id: 'org:a9b81434-6898-4493-b408-cf571654b92a',
+      name: 'AI & Data Analytics Club',
+      category: 'club',
+      campus: 'seattle',
+      description: 'Foster Seattle club',
+      skills: ['data'],
+      source_url: 'https://huskylink.washington.edu/organizations',
+      active: true,
+      last_verified: '2026-06-01',
+      time_commitment: null,
+      duration: 'ongoing',
+      registration_info: null,
+    },
+  ]);
+
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].id, 'org:a9b81434-6898-4493-b408-cf571654b92a');
+  assert.equal(merged[0].campus, 'seattle');
+});
+
+test('default profile settings include cross-campus recommendations', () => {
+  assert.equal(defaultProfileSettings.includeOtherCampuses, true);
 });

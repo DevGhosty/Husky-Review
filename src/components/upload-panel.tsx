@@ -285,6 +285,7 @@ export function UploadPanel({
                 </div>
               </div>
               <Button
+                type="button"
                 variant="primary"
                 className={cn(
                   'h-12 min-w-44',

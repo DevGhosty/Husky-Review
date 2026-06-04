@@ -36,7 +36,7 @@ export const defaultProfileSettings: ProfileSettings = {
   prioritizeInTime: true,
   showVerificationDates: true,
   includeLongTerm: true,
-  includeOtherCampuses: false,
+  includeOtherCampuses: true,
   deadlineReminders: true,
   roadmapAlerts: true,
   resourceUpdates: true,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import { getAccessTokenRequestOptions } from '../auth/auth0-config';
+import { getApiAccessToken } from '../auth/api-access-token';
 import { deleteReview as deleteReviewRequest, fetchReviews } from '../auth/supabase-client';
 import type { SavedReviewSummary } from '../types/analysis';
 
@@ -22,7 +22,7 @@ export function useReviews() {
       try {
         setLoading(true);
         setError(null);
-        const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+        const token = await getApiAccessToken(getAccessTokenSilently);
         const data = await fetchReviews(token);
         if (!cancelled) {
           setReviews(data);
@@ -47,7 +47,7 @@ export function useReviews() {
 
   const deleteReview = async (id: string) => {
     try {
-      const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+      const token = await getApiAccessToken(getAccessTokenSilently);
       await deleteReviewRequest(token, id);
       setReviews((current) => current.filter((review) => review.id !== id));
     } catch (deleteError) {

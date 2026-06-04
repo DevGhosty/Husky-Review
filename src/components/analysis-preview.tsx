@@ -21,9 +21,14 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
   const activeStep = loadingSteps[loadingStepIndex] ?? loadingSteps[0];
   const categories = analysis?.gapCategories || [];
   const score = analysis?.matchScore;
+  const matchScorePercent =
+    isSuccess && score ? Math.max(0, Math.min(100, Math.round(score.score))) : 0;
+  const matchScoreRingStyle = {
+    background: `conic-gradient(from -90deg, #D8C577 0 ${matchScorePercent}%, rgba(255,255,255,0.12) ${matchScorePercent}% 100%)`,
+  };
 
   return (
-    <Section id="analysis" className="mx-auto max-w-[86rem] px-5 py-12 sm:px-8 lg:px-12">
+    <Section id="analysis" className="scroll-mt-28 mx-auto max-w-[86rem] px-5 py-12 sm:px-8 lg:px-12">
       <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <Badge tone={isSuccess ? 'green' : isLoading ? 'amber' : 'gray'} className="rounded-full px-4 py-2">
@@ -91,7 +96,15 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
             <Badge tone="goldOnDark" className="rounded-full">{isSuccess ? score?.label : 'Waiting for input'}</Badge>
           </div>
           <div className="relative mt-7 grid place-items-center">
-            <div className="grid size-44 place-items-center rounded-full bg-[conic-gradient(#D8C577_0_76%,rgba(255,255,255,0.12)_76%_100%)] p-2 shadow-progress-track">
+            <div
+              className="grid size-44 place-items-center rounded-full p-2 shadow-progress-track"
+              style={matchScoreRingStyle}
+              role="meter"
+              aria-label="Match score"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={matchScorePercent}
+            >
               <div className="grid size-full place-items-center rounded-full bg-husky-purple-dark">
                 <div className="text-center">
                   <p className="text-sm font-semibold text-white/60">Match Score</p>
