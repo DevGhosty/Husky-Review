@@ -1010,6 +1010,8 @@ test('normalizeGeminiApiKey strips bearer prefix and quotes', () => {
   assert.equal(normalizeGeminiApiKey('  Bearer AIzaSyABC1234567890abcdefghij  '), 'AIzaSyABC1234567890abcdefghij');
   assert.equal(normalizeGeminiApiKey('"AIzaSyABC1234567890abcdefghij"'), 'AIzaSyABC1234567890abcdefghij');
   assert.ok(isValidGeminiApiKey('AIzaSyABC1234567890abcdefghij'));
+  assert.ok(isValidGeminiApiKey('AQ.AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcdefghij'));
+  assert.equal(isValidGeminiApiKey('AQ.short'), false);
 });
 
 test('user Gemini key failure surfaces geminiErrorMessage', async () => {
