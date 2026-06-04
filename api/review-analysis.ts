@@ -18,6 +18,7 @@ import {
   GEMINI_MODEL_CANDIDATES,
   isGeminiModelUnavailable,
   parseGeminiHttpError,
+  resolveGeminiApiKey,
 } from './gemini-api.js';
 
 export interface AnalysisInput {
@@ -979,7 +980,7 @@ function normalizeAiAnalysis(value: any, input: AnalysisInput) {
 }
 
 async function buildGeminiAnalysis(input: AnalysisInput): Promise<StoredAnalysis | null> {
-  const apiKey = input.geminiApiKey?.trim() || process.env.GEMINI_API_KEY?.trim();
+  const { apiKey } = resolveGeminiApiKey(input);
   if (!apiKey) {
     return null;
   }
@@ -999,7 +1000,8 @@ async function buildGeminiAnalysis(input: AnalysisInput): Promise<StoredAnalysis
 }
 
 export async function buildReviewAnalysis(input: AnalysisInput) {
-  const hasGeminiKey = Boolean(input.geminiApiKey?.trim() || process.env.GEMINI_API_KEY?.trim());
+  const { apiKey, keySource } = resolveGeminiApiKey(input);
+  const hasGeminiKey = Boolean(apiKey);
   let fallbackReason: 'no_api_key' | 'gemini_error' | null = null;
   let geminiErrorMessage: string | null = null;
 
@@ -1008,7 +1010,8 @@ export async function buildReviewAnalysis(input: AnalysisInput) {
     if (aiAnalysis) {
       return {
         ...aiAnalysis,
-        aiProvider: input.apiKeySource || 'app-key',
+        aiProvider: input.apiKeySource || (keySource === 'user' ? 'user-key' : 'app-key'),
+        geminiKeySource: keySource,
         fallbackReason: null,
         geminiErrorMessage: null,
       };
@@ -1030,6 +1033,7 @@ export async function buildReviewAnalysis(input: AnalysisInput) {
   return {
     ...buildHeuristicAnalysis(input),
     aiProvider: 'deterministic',
+    geminiKeySource: keySource,
     fallbackReason,
     geminiErrorMessage,
   };

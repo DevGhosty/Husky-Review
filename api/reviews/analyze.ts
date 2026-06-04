@@ -357,7 +357,7 @@ export default async function handler(req: any, res: any) {
       activityInterests: profileScope.activityInterests,
       prioritizeInTime: profileScope.prioritizeInTime,
       includeLongTerm: profileScope.includeLongTerm,
-      geminiApiKey: input.userApiKey || appKey || undefined,
+      geminiApiKey: input.userApiKey || undefined,
       apiKeySource: input.userApiKey ? 'user-key' : appKey ? 'app-key' : undefined,
     });
 
@@ -416,6 +416,15 @@ export default async function handler(req: any, res: any) {
         'geminiErrorMessage' in analysis && typeof analysis.geminiErrorMessage === 'string'
           ? analysis.geminiErrorMessage
           : null,
+      geminiKeySource:
+        'geminiKeySource' in analysis &&
+        (analysis.geminiKeySource === 'user' || analysis.geminiKeySource === 'app' || analysis.geminiKeySource === 'none')
+          ? analysis.geminiKeySource
+          : usingUserKey
+            ? 'user'
+            : appKey
+              ? 'app'
+              : 'none',
       createdAt: review?.created_at || analysis.createdAt,
       updatedAt: review?.updated_at || analysis.updatedAt,
     });

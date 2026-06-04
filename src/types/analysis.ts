@@ -76,6 +76,7 @@ export interface ReviewAnalysis {
   aiProvider?: 'app-key' | 'user-key' | 'deterministic';
   fallbackReason?: 'no_api_key' | 'gemini_error' | null;
   geminiErrorMessage?: string | null;
+  geminiKeySource?: 'user' | 'app' | 'none';
   quota?: ReviewQuotaStatus;
   createdAt: string;
   updatedAt: string;

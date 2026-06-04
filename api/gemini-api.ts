@@ -1,5 +1,70 @@
-export const GEMINI_MODEL_CANDIDATES = ['gemini-2.5-flash-lite', 'gemini-2.0-flash'] as const;
+export const GEMINI_MODEL_CANDIDATES = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'] as const;
 export const GEMINI_MODEL = GEMINI_MODEL_CANDIDATES[0];
+
+export type GeminiKeySource = 'user' | 'app' | 'none';
+
+export function resolveGeminiApiKey(
+  input: { geminiApiKey?: string; apiKeySource?: 'app-key' | 'user-key' },
+  appKey = process.env.GEMINI_API_KEY?.trim() || '',
+): { apiKey: string; keySource: GeminiKeySource } {
+  const userKey = input.geminiApiKey?.trim() || '';
+
+  if (input.apiKeySource === 'user-key') {
+    return userKey ? { apiKey: userKey, keySource: 'user' } : { apiKey: '', keySource: 'none' };
+  }
+
+  if (userKey) {
+    return { apiKey: userKey, keySource: 'user' };
+  }
+
+  if (appKey) {
+    return { apiKey: appKey, keySource: 'app' };
+  }
+
+  return { apiKey: '', keySource: 'none' };
+}
+
+export async function verifyGeminiApiKey(apiKey: string): Promise<
+  | { ok: true; model: string }
+  | { ok: false; message: string }
+> {
+  const body = {
+    contents: [{ role: 'user', parts: [{ text: 'Reply with the JSON object {"ok":true} only.' }] }],
+    generationConfig: {
+      temperature: 0,
+      maxOutputTokens: 32,
+      responseMimeType: 'application/json',
+    },
+  };
+
+  let lastMessage = 'No supported Gemini model responded for this API key.';
+
+  for (const model of GEMINI_MODEL_CANDIDATES) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify(body),
+      },
+    );
+
+    if (response.ok) {
+      return { ok: true, model };
+    }
+
+    const errorText = await response.text();
+    lastMessage = parseGeminiHttpError(response.status, errorText);
+    if (!isGeminiModelUnavailable(response.status, errorText)) {
+      return { ok: false, message: lastMessage };
+    }
+  }
+
+  return { ok: false, message: lastMessage };
+}
 
 export function normalizeGeminiApiKey(raw: unknown): string {
   if (typeof raw !== 'string') {
