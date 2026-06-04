@@ -1,38 +1,88 @@
 import type { ActivityRow } from './review-analysis.js';
 import { campusNameToCampus, type ProfileCampus } from './profile-completion.js';
 
-export function inferCampusFromSourceUrl(sourceUrl: string | null | undefined): ProfileCampus | null {
-  const url = (sourceUrl || '').toLowerCase();
-  if (!url) return null;
+const BOTHELL_HOSTS = ['gather.uwb.edu', 'bothell.uw.edu'] as const;
+const TACOMA_HOSTS = ['dubnet.tacoma.uw.edu', 'tacoma.uw.edu'] as const;
+const SEATTLE_HOSTS = ['huskylink.washington.edu'] as const;
+const AUTHORITATIVE_HOSTS = [...SEATTLE_HOSTS, ...BOTHELL_HOSTS, ...TACOMA_HOSTS] as const;
 
-  if (url.includes('gather.uwb.edu') || url.includes('uwb.edu/club') || url.includes('bothell.uw.edu')) {
+function parseHttpSourceUrl(sourceUrl: string | null | undefined): URL | null {
+  const trimmed = (sourceUrl || '').trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(trimmed.includes('://') ? trimmed : `https://${trimmed}`);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function hostnameMatches(hostname: string, allowedHost: string): boolean {
+  const host = hostname.toLowerCase();
+  const allowed = allowedHost.toLowerCase();
+  return host === allowed || host.endsWith(`.${allowed}`);
+}
+
+function hostnameInSet(hostname: string, allowedHosts: readonly string[]): boolean {
+  return allowedHosts.some((allowedHost) => hostnameMatches(hostname, allowedHost));
+}
+
+function inferCampusFromTimeschedPath(pathname: string, search: string): ProfileCampus | null {
+  const path = pathname.toLowerCase();
+  const params = new URLSearchParams(search);
+
+  if (/\/b(\/|$)/.test(path) || params.get('campus')?.toLowerCase() === 'b') {
     return 'bothell';
   }
-  if (url.includes('dubnet.tacoma') || url.includes('tacoma.uw.edu')) {
+  if (/\/t(\/|$)/.test(path) || params.get('campus')?.toLowerCase() === 't') {
     return 'tacoma';
   }
-  if (url.includes('huskylink.washington.edu')) {
+
+  return null;
+}
+
+export function inferCampusFromSourceUrl(sourceUrl: string | null | undefined): ProfileCampus | null {
+  const parsed = parseHttpSourceUrl(sourceUrl);
+  if (!parsed) {
+    return null;
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  const pathname = parsed.pathname.toLowerCase();
+
+  if (hostnameInSet(hostname, BOTHELL_HOSTS)) {
+    return 'bothell';
+  }
+  if (hostnameMatches(hostname, 'uwb.edu') && pathname.startsWith('/club')) {
+    return 'bothell';
+  }
+  if (hostnameInSet(hostname, TACOMA_HOSTS)) {
+    return 'tacoma';
+  }
+  if (hostnameInSet(hostname, SEATTLE_HOSTS)) {
     return 'seattle';
   }
 
-  if (url.includes('timeschd')) {
-    if (/\/b\//i.test(url) || url.includes('campus=b')) return 'bothell';
-    if (/\/t\//i.test(url) || url.includes('campus=t')) return 'tacoma';
-    if (/\/b$/i.test(url) || url.endsWith('/b')) return 'bothell';
-    if (/\/t$/i.test(url) || url.endsWith('/t')) return 'tacoma';
+  if (hostnameMatches(hostname, 'washington.edu') && pathname.includes('/timeschd')) {
+    return inferCampusFromTimeschedPath(pathname, parsed.search);
   }
 
   return null;
 }
 
 export function isAuthoritativeCampusSource(sourceUrl: string | null | undefined): boolean {
-  const url = (sourceUrl || '').toLowerCase();
-  return (
-    url.includes('huskylink.washington.edu') ||
-    url.includes('gather.uwb.edu') ||
-    url.includes('dubnet.tacoma') ||
-    url.includes('tacoma.uw.edu')
-  );
+  const parsed = parseHttpSourceUrl(sourceUrl);
+  if (!parsed) {
+    return false;
+  }
+
+  return hostnameInSet(parsed.hostname.toLowerCase(), AUTHORITATIVE_HOSTS);
 }
 
 export function reconcileActivityCampus(
