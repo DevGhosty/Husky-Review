@@ -80,7 +80,7 @@ If the shared weekly AI quota is used up, paste a **Google AI Studio** API key i
 
 ## Technical Overview
 
-### System architecture
+### System Architecture
 
 ```mermaid
 flowchart TB
@@ -120,7 +120,7 @@ flowchart TB
   Scrape -.->|scrapers populate| PG
 ```
 
-### Review analysis pipeline
+### Review Analysis Pipeline
 
 ```mermaid
 sequenceDiagram
@@ -146,7 +146,7 @@ sequenceDiagram
   SPA-->>User: Analysis preview + roadmap
 ```
 
-### Tech stack
+### Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -158,7 +158,7 @@ sequenceDiagram
 | **AI** | Google Gemini (`gemini-2.5-flash` primary) with deterministic fallback |
 | **Analytics** | Vercel Analytics & Speed Insights |
 
-### Application routes
+### Application Routes
 
 | Route | Access | Purpose |
 |-------|--------|---------|
@@ -170,7 +170,7 @@ sequenceDiagram
 | `/app/roadmap` | Signed-in | Weekly action plan |
 | `/app/saved-reviews` | Signed-in | Review & resume history |
 
-### Data model (high level)
+### Data Model (High Level)
 
 - **`profiles`** — campus, major, review preferences, completion marker.
 - **`resumes`** — file metadata and storage paths (Auth0 `sub` scoped).
@@ -180,24 +180,24 @@ sequenceDiagram
 
 Catalog campus labels are reconciled using source hostnames (e.g. HuskyLink → Seattle, Gather UWB → Bothell). Scrapers under `data/scraper/` refresh org and schedule data.
 
-### Security highlights
+### Security Highlights
 
 - API routes verify **Auth0 JWTs**; service-role Supabase access stays on the server.
 - **RLS** isolates user-owned rows; quota functions run as `SECURITY INVOKER` with execute limited to `service_role`.
 - Job posting URLs are fetched with **SSRF protections** (private IP blocking, redirect limits).
-- Resume uploads are type-checked; Gemini prompts treat user content as **untrusted data** (instruction-tuning resistant copy).
+- Resume uploads are type-checked; Gemini prompts treat user content as **untrusted data** (prompt-injection resistant copy).
 
 ---
 
 ## AI Integration
 
-### Design goals
+### Design Goals
 
 1. **Ground answers in the catalog** — Gemini chooses from pre-ranked verified activities, not hallucinated clubs.
 2. **Stay within token limits** — resume and job text are trimmed; only top catalog candidates are sent.
 3. **Fail gracefully** — if Gemini is unavailable, the same pipeline uses deterministic matching so the UI still works.
 
-### Key resolution
+### API Key Resolution
 
 | Mode | Behavior |
 |------|----------|
@@ -207,21 +207,21 @@ Catalog campus labels are reconciled using source hostnames (e.g. HuskyLink → 
 
 User-key mode uses only the pasted key (server key is not mixed in). Students can verify keys via `/api/gemini-verify`.
 
-### Model and API behavior
+### Model and API Behavior
 
 - **Models tried in order:** `gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.0-flash`.
 - **Output:** JSON via `responseMimeType: application/json`, temperature `0.2`.
 - **Gemini 2.5:** `thinkingBudget: 0` so reasoning tokens do not truncate JSON.
 - **Retries:** higher `maxOutputTokens` on truncation (`MAX_TOKENS`).
 
-### Two-step Gemini flow
+### Two-Step Gemini Flow
 
 1. **Scoring** — `matchScore` + exactly three `gapCategories` (skills, keywords, experience).
 2. **Recommendations** — narrative `whyItHelps`, tags, confidence, roadmap hooks for catalog IDs already ranked heuristically.
 
 Results are merged with a **heuristic baseline** so IDs, campus, sources, and verification dates stay consistent with the database. Invalid or unknown activity IDs from the model are dropped.
 
-### Catalog feeding the model
+### Catalog Feeding the Model
 
 Before any AI call, the server:
 
@@ -230,15 +230,15 @@ Before any AI call, the server:
 3. **Ranks** by keyword/skill overlap, embedding-style cosine similarity, and home-campus boost.
 4. Sends up to **8–18** candidates (more when cross-campus is on) with short descriptions.
 
-### What the UI shows when AI is not used
+### When AI Is Not Used
 
 The analysis card states when the run used **local catalog matching** instead of Gemini (missing server key, quota, or API error). User-supplied key errors surface a clear message without blocking the deterministic fallback.
 
 ---
 
-## For developers
+## For Developers
 
-### Local setup
+### Local Setup
 
 ```bash
 npm install
@@ -269,7 +269,7 @@ Apply Supabase migrations in timestamp order under `supabase/migrations/` before
 | [SUPABASE_OWNER_SETUP.md](./SUPABASE_OWNER_SETUP.md) | Database owner setup |
 | [docs/proposal.md](./docs/proposal.md) | Original project proposal & research context |
 
-### Repository branches
+### Repository Branches
 
 - **`development`** — integration branch (preview deploys).
 - **`main`** — production-aligned release branch.
@@ -278,4 +278,4 @@ Apply Supabase migrations in timestamp order under `supabase/migrations/` before
 
 ## License & attribution
 
-Built for the UW community. For questions about the deployed instance, start from the live app and profile/settings flows above; for infrastructure, see the deployment docs linked in **For developers**.
+Built for the UW community. For questions about the deployed instance, start from the live app and profile/settings flows above; for infrastructure, see the deployment docs linked in **For Developers**.
