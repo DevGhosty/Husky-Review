@@ -1,8 +1,8 @@
 # Husky-Review
 
-**Actionable UW Resume Review** is a web application concept for helping University of Washington students improve their resumes for specific job postings. Instead of giving generic resume advice, the project is designed to recommend real UW opportunities that students can act on, including verified clubs, courses, fellowships, events, and research roles.
+**Actionable UW Resume Review** helps University of Washington students improve resumes for specific job postings. Instead of generic advice, it recommends real UW opportunities students can act on: verified clubs, courses, fellowships, events, and research roles.
 
-The repository contains the Husky-Review React app, Auth0-protected workspace routes, Supabase-backed resume/review persistence, verified UW catalog tables, and a server-side review analysis endpoint. First-time signed-in users complete a basic profile with name, major, and campus before running reviews, so recommendations default to their campus while allowing opt-in cross-campus results. When `GEMINI_API_KEY` is configured, `/api/reviews/analyze` uses Gemini for structured analysis with a 2-review weekly app-key limit per signed-in user. Students can paste their own Gemini key for extra reviews; that key is sent only for the request and is not stored. Without a server key, local development falls back to deterministic catalog matching.
+The app includes Auth0-protected workspace routes, Supabase-backed resume and review persistence, scraped and curated UW catalog data, and a server-side analysis endpoint. First-time users complete a profile (name, major, campus) before running reviews. Recommendations default to the home campus with an opt-in cross-campus setting. When `GEMINI_API_KEY` is configured, `/api/reviews/analyze` uses Gemini with a 2-review weekly app-key limit per user. Students can paste their own Gemini key for additional reviews; that key is request-only and is not stored. Without a server key, analysis falls back to deterministic catalog matching.
 
 ## Problem
 
@@ -22,7 +22,14 @@ Husky-Review addresses that gap by grounding recommendations in a curated databa
    - **Next-Time Activities**: longer-term opportunities for future applications.
 7. The result is presented as a week-by-week action roadmap.
 
-## Planned Features
+## Repository Branches
+
+- **`development`** — active integration branch; deploy previews from here.
+- **`main`** — release branch for production; merge from `development` when ready.
+
+Open [PR #60](https://github.com/DevGhosty/Husky-Review/pull/60) merges the latest `development` work into `main` (requires an approving review from another collaborator because of branch protection).
+
+## Features
 
 - Resume upload and server-side text extraction.
 - Structured gap analysis for missing skills, keywords, and experience signals.
@@ -35,10 +42,10 @@ Husky-Review addresses that gap by grounding recommendations in a curated databa
 - Week-by-week roadmap for improving a resume before or after a deadline.
 - Privacy-conscious account handling with scheduled cleanup for uploaded resume files.
 
-## Planned Tech Stack
+## Tech Stack
 
 - **Frontend:** React, Vite, Tailwind CSS
-- **Backend:** Node.js, Express
+- **Backend:** Node.js, Vercel serverless API routes
 - **Database and sessions:** Supabase
 - **AI analysis:** Google Gemini API with deterministic local fallback
 - **Deployment target:** Vercel
@@ -88,6 +95,8 @@ CRON_SECRET=
 Do not commit real API keys or production credentials.
 
 Run Supabase migrations before enabling review analysis in a deployed environment. The profile campus columns and `profile_completed_at` marker are required because the API rejects analysis requests from incomplete profiles.
+
+For production checks, see [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md).
 
 ## Proposal Milestones
 
