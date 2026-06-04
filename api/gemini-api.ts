@@ -1,0 +1,68 @@
+export const GEMINI_MODEL_CANDIDATES = ['gemini-2.5-flash-lite', 'gemini-2.0-flash'] as const;
+export const GEMINI_MODEL = GEMINI_MODEL_CANDIDATES[0];
+
+export function normalizeGeminiApiKey(raw: unknown): string {
+  if (typeof raw !== 'string') {
+    return '';
+  }
+
+  let value = raw.trim();
+  if (!value) {
+    return '';
+  }
+
+  if (value.toLowerCase().startsWith('bearer ')) {
+    value = value.slice(7).trim();
+  }
+
+  value = value.replace(/^['"]|['"]$/g, '').trim();
+  return value;
+}
+
+export function isValidGeminiApiKey(value: string): boolean {
+  return /^[A-Za-z0-9_-]{20,}$/.test(value);
+}
+
+export function parseGeminiHttpError(status: number, errorText: string): string {
+  try {
+    const parsed = JSON.parse(errorText) as { error?: { message?: string; status?: string } };
+    const message = parsed?.error?.message?.trim();
+    if (message) {
+      if (/API key not valid|API_KEY_INVALID|invalid api key/i.test(message)) {
+        return 'Gemini rejected this API key. Create one at Google AI Studio (aistudio.google.com/apikey), not a Google Cloud console key.';
+      }
+      if (/permission|PERMISSION_DENIED|Generative Language API/i.test(message)) {
+        return 'This API key cannot access the Gemini API. Enable the Generative Language API for the key’s Google Cloud project, or create a new key in Google AI Studio.';
+      }
+      if (/quota|RESOURCE_EXHAUSTED|rate limit/i.test(message)) {
+        return 'Gemini rate limit or quota exceeded for this API key. Try again later or check billing in Google AI Studio.';
+      }
+      return message;
+    }
+  } catch {
+    // Fall through to status-based messages.
+  }
+
+  if (status === 400) {
+    return 'Gemini rejected the request. Confirm your key is from Google AI Studio (aistudio.google.com/apikey).';
+  }
+  if (status === 403) {
+    return 'Gemini API key was denied. Use a key from Google AI Studio (aistudio.google.com/apikey).';
+  }
+  if (status === 404) {
+    return 'Gemini model is unavailable for this API key. Try again later or contact support.';
+  }
+  if (status === 429) {
+    return 'Gemini rate limit exceeded for this API key. Wait a few minutes and try again.';
+  }
+
+  return `Gemini request failed (HTTP ${status}).`;
+}
+
+export function isGeminiModelUnavailable(status: number, errorText: string): boolean {
+  if (status === 404) {
+    return true;
+  }
+
+  return /not found|NOT_FOUND|is not supported|unsupported model/i.test(errorText);
+}
