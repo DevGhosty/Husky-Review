@@ -39,6 +39,7 @@ const {
   buildRoadmapPlan,
   daysUntilDeadline,
   extractResumeText,
+  isUsableExtractedResumeText,
   groupForActivity,
   isHeavyOngoingEngagement,
   outreachCapacityForDeadline,
@@ -541,11 +542,22 @@ test('user-supplied Gemini key is sent as the Gemini request key', async () => {
   }
 });
 
+test('isUsableExtractedResumeText rejects filename-only extraction', () => {
+  assert.equal(isUsableExtractedResumeText('resume.pdf', 'resume.pdf'), false);
+  assert.equal(
+    isUsableExtractedResumeText(
+      'Jordan Parker built Flink and Paimon pipelines for Lakehouse storage with PyTorch feature pipelines and Parquet compaction.',
+      'resume.pdf',
+    ),
+    true,
+  );
+});
+
 test('resume extraction handles plain document fallback', async () => {
-  // PDF extraction now uses pdf-parse (async); a synthetic PDF buffer cannot be parsed
-  // by the real parser so it falls back to the filename.
+  // Invalid PDF bytes cannot be parsed; extraction returns the filename (analyze API rejects that).
   const pdfResult = await extractResumeText(Buffer.from('%PDF synthetic'), 'application/pdf', 'resume.pdf');
-  assert.ok(typeof pdfResult === 'string', 'PDF extraction returns a string');
+  assert.equal(pdfResult, 'resume.pdf');
+  assert.equal(isUsableExtractedResumeText(pdfResult, 'resume.pdf'), false);
 
   const docResult = await extractResumeText(Buffer.from('plain text resume'), 'application/msword', 'resume.doc');
   assert.match(docResult, /plain text resume/);

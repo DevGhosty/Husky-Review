@@ -10,7 +10,12 @@ import {
 } from '../job-posting.js';
 import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders, type ResumeRow } from '../supabase-admin.js';
 import { filterActivitiesByInterests, parseActivityInterests } from '../catalog-filters.js';
-import { buildReviewAnalysis, extractResumeText, type ActivityRow } from '../review-analysis.js';
+import {
+  buildReviewAnalysis,
+  extractResumeText,
+  isUsableExtractedResumeText,
+  type ActivityRow,
+} from '../review-analysis.js';
 import { checkAppKeyQuota, consumeAppKeyQuota, deterministicQuotaStatus, getAppGeminiKey, userKeyQuotaStatus } from '../review-quota.js';
 import {
   dedupeCatalogActivities,
@@ -299,6 +304,12 @@ export default async function handler(req: any, res: any) {
 
     const resumeBuffer = Buffer.from(await fileData.arrayBuffer());
     const resumeText = await extractResumeText(resumeBuffer, resumeRow.content_type, resumeRow.filename);
+    if (!isUsableExtractedResumeText(resumeText, resumeRow.filename)) {
+      return res.status(422).json({
+        message:
+          'We could not read enough text from this resume file. Export a text-based PDF (not a scan-only image), or upload a .docx with selectable text.',
+      });
+    }
     const resolvedPosting = await resolveJobDescription({
       jobDescription: input.jobDescription,
       jobPostingUrl: input.jobPostingUrl,
