@@ -36,9 +36,12 @@ const {
   applyRecommendationPreferences,
   balanceRecommendationGroups,
   buildReviewAnalysis,
+  buildRoadmapPlan,
   daysUntilDeadline,
   extractResumeText,
   groupForActivity,
+  isHeavyOngoingEngagement,
+  outreachCapacityForDeadline,
   rankActivities,
 } = await importTypeScriptModule('../api/review-analysis.ts', [
   '../api/gemini-api.ts',
@@ -808,6 +811,62 @@ test('groupForActivity keeps top matches in-time for distant deadlines', () => {
 
   assert.equal(groupForActivity(orgActivity, 0, farDeadline), 'in-time');
   assert.equal(groupForActivity(orgActivity, 7, farDeadline), 'next-time');
+});
+
+test('outreachCapacityForDeadline allows optional second outreach only with more than 28 days left', () => {
+  const soon = outreachCapacityForDeadline('2026-06-10', Date.parse('2026-06-01T12:00:00'));
+  assert.equal(soon.primary, 1);
+  assert.equal(soon.optional, 0);
+
+  const roomy = outreachCapacityForDeadline('2026-08-01', Date.parse('2026-06-01T12:00:00'));
+  assert.equal(roomy.primary, 1);
+  assert.equal(roomy.optional, 1);
+});
+
+test('isHeavyOngoingEngagement separates hackathon-style clubs from outreach clubs', () => {
+  assert.equal(isHeavyOngoingEngagement({ name: 'Best Buddies', type: 'club' }), false);
+  assert.equal(isHeavyOngoingEngagement({ name: 'Accelerated Mechatronics Prototyping', type: 'club' }), true);
+});
+
+test('buildRoadmapPlan avoids duplicate phase actions and routes ongoing clubs to phase 3', () => {
+  const recommendation = (id, name, group, type = 'club') => ({
+    id,
+    group,
+    name,
+    type,
+    campus: 'bothell',
+    whyItHelps: 'Helps the role.',
+    tags: ['Python'],
+    active: true,
+    lastVerified: '2026-05-12',
+    confidence: 90,
+    sourceLabel: 'uwb.edu',
+    sourceUrl: 'https://example.edu/club',
+    roadmapWeek: 2,
+    roadmapAction: 'placeholder',
+  });
+
+  const plan = buildRoadmapPlan(
+    { reviewId: 'review-roadmap', deadline: '2026-06-10' },
+    [
+      recommendation('club-a', 'Best Buddies', 'in-time'),
+      recommendation('club-b', 'BJD Heaven Club', 'in-time'),
+      recommendation('club-c', 'Accelerated Mechatronics Prototyping', 'in-time'),
+      recommendation('club-d', 'Algorithmic Trading Club', 'next-time'),
+    ],
+    ['software', 'engineer', 'intern'],
+  );
+
+  const phase2 = plan.roadmapWeeks[1];
+  const phase3 = plan.roadmapWeeks[2];
+  assert.equal(phase2.actions.length, 1);
+  assert.match(phase2.actions[0].detail, /primary outreach/i);
+  assert.ok(phase3.actions.some((action) => action.text.includes('Mechatronics')));
+  assert.ok(phase3.actions.some((action) => action.text.includes('Algorithmic Trading')));
+
+  const phase2Ids = new Set(phase2.actions.map((action) => action.id));
+  assert.equal(phase2Ids.size, phase2.actions.length);
+  assert.ok(plan.recommendations.filter((item) => item.roadmapWeek === 2).length <= 2);
 });
 
 test('balanceRecommendationGroups promotes in-time matches when grouping is too strict', () => {

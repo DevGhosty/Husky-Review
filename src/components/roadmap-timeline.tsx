@@ -1,6 +1,6 @@
 import { CalendarCheck2, CheckCircle2 } from 'lucide-react';
 import { cn, formatDeadline } from '../lib/utils';
-import type { Recommendation, ReviewStatus, RoadmapWeek } from '../types/analysis';
+import type { ReviewStatus, RoadmapWeek } from '../types/analysis';
 import { Section } from './layout/section';
 import { Badge } from './ui/badge';
 
@@ -8,13 +8,11 @@ interface RoadmapTimelineProps {
   status: ReviewStatus;
   deadline: string;
   selectedIds: string[];
-  recommendations: Recommendation[];
   roadmapWeeks: RoadmapWeek[];
 }
 
-export function RoadmapTimeline({ status, deadline, selectedIds, recommendations, roadmapWeeks }: RoadmapTimelineProps) {
+export function RoadmapTimeline({ status, deadline, selectedIds, roadmapWeeks }: RoadmapTimelineProps) {
   const isReady = status === 'success';
-  const selectedRecommendations = recommendations.filter((recommendation) => selectedIds.includes(recommendation.id));
 
   return (
     <Section id="roadmap" className="mx-auto max-w-[86rem] px-5 py-14 sm:px-8 lg:px-12">
@@ -23,11 +21,11 @@ export function RoadmapTimeline({ status, deadline, selectedIds, recommendations
         <div className="absolute -right-24 bottom-8 h-80 w-80 rounded-full bg-husky-purple-soft/[0.24] blur-3xl" aria-hidden="true" />
         <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr]">
           <div className="text-white">
-            <Badge tone="onDark">Week-by-week roadmap</Badge>
+            <Badge tone="onDark">Three-phase roadmap</Badge>
             <h2 className="mt-5 text-3xl font-black tracking-normal sm:text-4xl">Move from gaps to next actions.</h2>
             <p className="mt-4 text-base leading-7 text-white/75">
               {isReady
-                ? `The roadmap is organized around the ${formatDeadline(deadline)} deadline and updates as recommendations are added or removed.`
+                ? `Phases are ordered for your ${formatDeadline(deadline)} deadline — not strict calendar weeks. Pace outreach using the capacity called out in each phase.`
                 : 'Run a review to turn the upload and job posting into a sequenced action plan.'}
             </p>
             <div className="mt-8 rounded-[1.4rem] border border-white/10 bg-white/[0.08] p-5 shadow-inset">
@@ -41,7 +39,6 @@ export function RoadmapTimeline({ status, deadline, selectedIds, recommendations
             <div className="absolute left-5 top-6 hidden h-[calc(100%-3rem)] w-px bg-white/[0.18] sm:block" aria-hidden="true" />
             <div className="space-y-5">
               {roadmapWeeks.map((week, index) => {
-                const selectedForWeek = selectedRecommendations.filter((recommendation) => recommendation.roadmapWeek === week.week);
                 return (
                   <article
                     key={week.week}
@@ -60,7 +57,7 @@ export function RoadmapTimeline({ status, deadline, selectedIds, recommendations
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                           <div>
-                            <p className="text-sm font-black uppercase tracking-[0.14em] text-primary">Week {week.week}</p>
+                            <p className="text-sm font-black uppercase tracking-[0.14em] text-primary">Phase {week.week}</p>
                             <h3 className="mt-1 text-xl font-semibold text-foreground">{week.title}</h3>
                           </div>
                           <Badge tone="gold" className="shrink-0">
@@ -89,18 +86,11 @@ export function RoadmapTimeline({ status, deadline, selectedIds, recommendations
                               </p>
                               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                                 {status === 'loading'
-                                  ? 'Recommendations are being placed into the right week.'
+                                  ? 'Recommendations are being placed into the right phase.'
                                   : 'Start a review to build this section from verified recommendations.'}
                               </p>
                             </div>
                           )}
-                          {isReady && selectedForWeek.map((recommendation) => (
-                            <div key={recommendation.id} className="rounded-2xl border border-husky-gold/30 bg-gradient-to-r from-husky-gold/[0.15] to-card p-4 shadow-soft">
-                              <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">Added from recommendations</p>
-                              <p className="mt-2 text-sm font-semibold text-foreground">{recommendation.name}</p>
-                              <p className="mt-1 text-sm leading-6 text-muted-foreground">{recommendation.roadmapAction}</p>
-                            </div>
-                          ))}
                         </div>
                       </div>
                     </div>

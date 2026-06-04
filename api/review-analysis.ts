@@ -385,12 +385,67 @@ function campusLabel(campus: ActivityRow['campus']) {
   return 'UW Bothell';
 }
 
-function roadmapAction(activity: ActivityRow, group: string, matchedSkills: string[]) {
-  const skillText = matchedSkills.slice(0, 2).join(' and ') || 'the target role';
-  if (group === 'in-time') {
-    return `Contact or attend this opportunity, then add one resume bullet tied to ${skillText}.`;
+type RoadmapEngagementHorizon = 'short-outreach' | 'ongoing-build' | 'next-cycle';
+
+export function isHeavyOngoingEngagement(recommendation: { name: string; type: string }) {
+  const text = recommendation.name.toLowerCase();
+  if (recommendation.type === 'event') {
+    return false;
   }
-  return `Save this opportunity for the next recruiting cycle and plan how it can build ${skillText}.`;
+  if (recommendation.type === 'project') {
+    return true;
+  }
+  return /hackathon|prototyping|mechatronics|mlh|major league|year-round|membership drive/.test(text);
+}
+
+export function outreachCapacityForDeadline(deadline: string, nowMs = Date.now()) {
+  const daysLeft = daysUntilDeadline(deadline, nowMs);
+  if (daysLeft <= 14) {
+    return { primary: 1, optional: 0, phase2Summary: 'Focus on one verified outreach before the deadline.' };
+  }
+  if (daysLeft <= 28) {
+    return {
+      primary: 1,
+      optional: 0,
+      phase2Summary: 'Pick one UW opportunity to explore; add a resume bullet only after real involvement.',
+    };
+  }
+  return {
+    primary: 1,
+    optional: 1,
+    phase2Summary:
+      'Start with one primary outreach, then optionally repeat with a second opportunity if you have capacity.',
+  };
+}
+
+function roadmapActionFor(
+  recommendation: { name: string; type: string; group: string; tags?: string[] },
+  matchedSkills: string[],
+  horizon: RoadmapEngagementHorizon,
+  optional = false,
+) {
+  const skillText =
+    matchedSkills.slice(0, 2).join(' and ') ||
+    (recommendation.tags || []).slice(0, 2).join(' and ') ||
+    'the target role';
+  if (recommendation.group === 'next-time' || horizon === 'next-cycle') {
+    return `Save this for a later recruiting cycle and note how it could support ${skillText}.`;
+  }
+  if (horizon === 'ongoing-build') {
+    return `Explore ${recommendation.name} over the next few weeks (event, project, or membership). Plan one truthful resume bullet after your first meaningful involvement.`;
+  }
+  if (optional) {
+    return `Optional follow-up: reach out or attend once, then add one resume bullet tied to ${skillText} if you have time after your primary outreach.`;
+  }
+  return `Choose this as your primary outreach: send one message or attend one meeting, then add one truthful resume bullet tied to ${skillText}.`;
+}
+
+function roadmapAction(activity: ActivityRow, group: string, matchedSkills: string[]) {
+  const type = activityType(activity.category);
+  const rec = { name: activity.name, type, group };
+  const horizon: RoadmapEngagementHorizon =
+    group === 'next-time' ? 'next-cycle' : isHeavyOngoingEngagement(rec) ? 'ongoing-build' : 'short-outreach';
+  return roadmapActionFor(rec, matchedSkills, horizon);
 }
 
 export function applyRecommendationPreferences<T extends { group: string; confidence: number }>(
@@ -495,14 +550,15 @@ function buildHeuristicAnalysis(input: AnalysisInput): StoredAnalysis {
       confidence,
       sourceLabel: sourceLabel(item.activity.source_url),
       sourceUrl: item.activity.source_url,
-      roadmapWeek: group === 'in-time' ? (index < 2 ? 1 : 2) : 3,
+      roadmapWeek: 2,
       roadmapAction: roadmapAction(item.activity, group, item.skillOverlap),
     };
   });
 
   const balanced = balanceRecommendationGroups(recommendations, input.deadline);
   const preferenceOrdered = applyRecommendationPreferences(balanced, input);
-  const selectedIds = buildSelectedIds(preferenceOrdered);
+  const roadmapPlan = buildRoadmapPlan(input, preferenceOrdered, missingKeywords);
+  const selectedIds = buildSelectedIds(roadmapPlan.recommendations);
   const gapCategories = [
     {
       title: 'Missing Skills',
@@ -548,59 +604,116 @@ function buildHeuristicAnalysis(input: AnalysisInput): StoredAnalysis {
           : 'The resume has a usable foundation, and the roadmap highlights the fastest ways to add verified proof.',
     },
     gapCategories,
-    recommendations: preferenceOrdered,
-    roadmapWeeks: buildRoadmapWeeks(input, preferenceOrdered, missingKeywords),
+    recommendations: roadmapPlan.recommendations,
+    roadmapWeeks: roadmapPlan.roadmapWeeks,
     selectedIds,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 }
 
-function buildRoadmapWeeks(
-  input: AnalysisInput,
+function phase1Summary(daysLeft: number) {
+  if (daysLeft <= 14) {
+    return 'Prioritize resume edits that close the biggest posting gaps before you apply.';
+  }
+  return 'Update resume wording around the strongest posting gaps. This phase is mostly solo work you can finish in a few focused sessions.';
+}
+
+export function buildRoadmapPlan(
+  input: Pick<AnalysisInput, 'reviewId' | 'deadline'>,
   preferenceOrdered: StoredRecommendation[],
   missingKeywords: string[],
 ) {
-  return [
+  const daysLeft = daysUntilDeadline(input.deadline);
+  const capacity = outreachCapacityForDeadline(input.deadline);
+  const inTime = preferenceOrdered.filter((recommendation) => recommendation.group === 'in-time');
+  const shortOutreach = inTime.filter((recommendation) => !isHeavyOngoingEngagement(recommendation));
+  const ongoingBuild = inTime.filter((recommendation) => isHeavyOngoingEngagement(recommendation));
+  const nextTime = preferenceOrdered.filter((recommendation) => recommendation.group === 'next-time');
+
+  const phase2Targets = [
+    ...shortOutreach.slice(0, capacity.primary),
+    ...shortOutreach.slice(capacity.primary, capacity.primary + capacity.optional),
+  ];
+  const phase2IdSet = new Set(phase2Targets.map((recommendation) => recommendation.id));
+  const phase3Pool = [
+    ...ongoingBuild,
+    ...nextTime.filter((recommendation) => !phase2IdSet.has(recommendation.id)),
+  ];
+  const phase3Targets = phase3Pool.slice(0, 3);
+  const phase3IdSet = new Set(phase3Targets.map((recommendation) => recommendation.id));
+
+  const recommendations = preferenceOrdered.map((recommendation) => {
+    const inPhase2 = phase2IdSet.has(recommendation.id);
+    const inPhase3Target = phase3IdSet.has(recommendation.id);
+    const optional = inPhase2 && phase2Targets.indexOf(recommendation) >= capacity.primary;
+    let horizon: RoadmapEngagementHorizon = 'short-outreach';
+    if (recommendation.group === 'next-time') {
+      horizon = 'next-cycle';
+    } else if (inPhase3Target && isHeavyOngoingEngagement(recommendation)) {
+      horizon = 'ongoing-build';
+    }
+    const roadmapWeek = inPhase2 ? 2 : 3;
+
+    return {
+      ...recommendation,
+      roadmapWeek,
+      roadmapAction: roadmapActionFor(recommendation, [], horizon, optional),
+    };
+  });
+
+  const phase2Actions = phase2Targets.map((recommendation, index) => {
+    const stored = recommendations.find((item) => item.id === recommendation.id) || recommendation;
+    const optional = index >= capacity.primary;
+    return {
+      id: `${input.reviewId}-${recommendation.id}-action`,
+      text: optional ? `${recommendation.name} (optional)` : recommendation.name,
+      detail: stored.roadmapAction,
+    };
+  });
+
+  const phase3Actions = phase3Targets.map((recommendation) => {
+    const stored = recommendations.find((item) => item.id === recommendation.id) || recommendation;
+    return {
+      id: `${input.reviewId}-${recommendation.id}-future`,
+      text: recommendation.name,
+      detail: stored.roadmapAction,
+    };
+  });
+
+  const keywordHint = missingKeywords.slice(0, 3).join(', ') || 'the top posting requirements';
+
+  const roadmapWeeks = [
     {
       week: 1,
       title: 'Tighten the application story',
-      summary: 'Update resume wording around the strongest posting gaps.',
+      summary: phase1Summary(daysLeft),
       actions: [
         {
-          id: `${input.reviewId}-week-1-bullets`,
+          id: `${input.reviewId}-phase-1-bullets`,
           text: 'Rewrite the highest-impact resume bullets.',
-          detail: `Use truthful language for ${missingKeywords.slice(0, 3).join(', ') || 'the top posting requirements'}.`,
+          detail: `Use truthful language for ${keywordHint}. Allow a few days for drafting and proofreading — this does not need to happen in a single day.`,
         },
       ],
     },
     {
       week: 2,
-      title: 'Add fast verification',
-      summary: 'Use deadline-friendly UW resources to create a specific resume signal.',
-      actions: preferenceOrdered
-        .filter((recommendation) => recommendation.group === 'in-time')
-        .slice(0, 2)
-        .map((recommendation) => ({
-          id: `${input.reviewId}-${recommendation.id}-action`,
-          text: recommendation.name,
-          detail: recommendation.roadmapAction,
-        })),
+      title: 'Build verified proof',
+      summary: capacity.phase2Summary,
+      actions: phase2Actions,
     },
     {
       week: 3,
-      title: 'Save next-cycle builders',
-      summary: 'Preserve longer-term recommendations for future applications.',
-      actions: preferenceOrdered
-        .filter((recommendation) => recommendation.group === 'next-time')
-        .slice(0, 2)
-        .map((recommendation) => ({
-          id: `${input.reviewId}-${recommendation.id}-future`,
-          text: recommendation.name,
-          detail: recommendation.roadmapAction,
-        })),
+      title: 'Plan longer-horizon builders',
+      summary:
+        daysLeft <= 21
+          ? 'Defer multi-week clubs, hackathons, and next-cycle opportunities until after this application.'
+          : 'Track opportunities that need weeks of involvement or belong in a future recruiting cycle.',
+      actions: phase3Actions,
     },
   ];
+
+  return { recommendations, roadmapWeeks };
 }
 
 function applyRecommendationPlan(
@@ -611,13 +724,14 @@ function applyRecommendationPlan(
 ) {
   const balanced = balanceRecommendationGroups(recommendations, input.deadline);
   const preferenceOrdered = applyRecommendationPreferences(balanced, input);
-  const selectedIds = buildSelectedIds(preferenceOrdered);
+  const roadmapPlan = buildRoadmapPlan(input, preferenceOrdered, missingKeywords);
+  const selectedIds = buildSelectedIds(roadmapPlan.recommendations);
 
   return {
     ...base,
-    recommendations: preferenceOrdered,
+    recommendations: roadmapPlan.recommendations,
     selectedIds,
-    roadmapWeeks: buildRoadmapWeeks(input, preferenceOrdered, missingKeywords),
+    roadmapWeeks: roadmapPlan.roadmapWeeks,
   };
 }
 
@@ -908,7 +1022,7 @@ async function requestGeminiRecommendations(
   return requestGeminiJson(apiKey, {
     system_instruction: {
       parts: [{
-        text: 'You are Husky-Review, a UW student resume coach. Recommend only activities from verifiedCatalogCandidates using their exact id values. When daysUntilDeadline is large, prefer group in-time for the top actionable matches. Return only compact JSON with a recommendations array (max 8 items). Do not invent ids. Keep whyItHelps under 180 characters and tags to at most 4 short labels.',
+        text: 'You are Husky-Review, a UW student resume coach. Recommend only activities from verifiedCatalogCandidates using their exact id values. When daysUntilDeadline is large, prefer group in-time for the top actionable matches. roadmapAction must be realistic: one outreach step at a time, no demanding contact+attend+bullet in a single calendar week, and hackathon or multi-week clubs should sound like ongoing exploration — not a one-week deliverable. Return only compact JSON with a recommendations array (max 8 items). Do not invent ids. Keep whyItHelps under 180 characters and tags to at most 4 short labels.',
       }],
     },
     contents: [{ role: 'user', parts: [{ text: JSON.stringify(promptData) }] }],

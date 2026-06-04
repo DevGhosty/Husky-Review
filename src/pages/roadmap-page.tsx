@@ -30,10 +30,10 @@ export function RoadmapPage() {
                 Roadmap
               </Badge>
               <h1 className="type-page-title type-page-title--brand mt-4 max-w-3xl">
-                Plan the next three weeks with verified actions.
+                Plan the next three phases with verified actions.
               </h1>
               <p className="type-lead mt-5 max-w-2xl">
-                Review the week-by-week action plan and the recommendation cards currently attached to it.
+                Review the phased action plan and the recommendation cards below. Phases are ordered by priority, not strict seven-day deadlines.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:w-[24rem]">
@@ -55,7 +55,6 @@ export function RoadmapPage() {
         status={status}
         deadline={deadline}
         selectedIds={selectedIds}
-        recommendations={recommendations}
         roadmapWeeks={roadmapWeeks}
       />
 
@@ -68,7 +67,7 @@ export function RoadmapPage() {
               </span>
               <h2 className="mt-5 text-xl font-semibold text-foreground">Building your roadmap</h2>
               <p className="type-body mx-auto mt-2 max-w-lg">
-                Recommendations are being placed into the right week. Check back in a moment.
+                Recommendations are being placed into the right phase. Check back in a moment.
               </p>
             </Surface>
           ) : selectedRecommendations.length > 0 ? (
