@@ -12,6 +12,10 @@ import { getSupabaseAdmin, sendError, sendInternalError, setApiHeaders, type Res
 import { filterActivitiesByInterests, parseActivityInterests } from '../catalog-filters.js';
 import { buildReviewAnalysis, extractResumeText, type ActivityRow } from '../review-analysis.js';
 import { checkAppKeyQuota, consumeAppKeyQuota, deterministicQuotaStatus, getAppGeminiKey, userKeyQuotaStatus } from '../review-quota.js';
+import {
+  dedupeCatalogActivities,
+  reconcileActivityCampus,
+} from '../catalog-campus.js';
 import { campusNameToCampus, getCompletedProfileCampus, type ProfileCompletionRow } from '../profile-completion.js';
 
 type Campus = ActivityRow['campus'];
@@ -135,7 +139,8 @@ function toRecommendationRows(reviewId: string, selectedIds: string[], recommend
 function normalizeActivityRows(rows: any[]): ActivityRow[] {
   return rows
     .map((activity) => {
-      const campus = campusNameToCampus(activity.campus) || 'bothell';
+      const campus = reconcileActivityCampus(campusNameToCampus(activity.campus), activity.source_url);
+      if (!campus) return null;
       return {
         id: String(activity.id),
         name: activity.name,
@@ -151,7 +156,9 @@ function normalizeActivityRows(rows: any[]): ActivityRow[] {
         registration_info: activity.registration_info,
       };
     })
-    .filter((activity) => activity.name && activity.source_url && activity.last_verified);
+    .filter((activity): activity is ActivityRow =>
+      Boolean(activity && activity.name && activity.source_url && activity.last_verified),
+    );
 }
 
 function normalizeCampusOrgRows(rows: any[]): ActivityRow[] {
@@ -297,20 +304,24 @@ export default async function handler(req: any, res: any) {
       jobPostingUrl: input.jobPostingUrl,
     });
 
+    const catalogLimits = profileScope.includeOtherCampuses
+      ? { activities: 200, orgs: 150, courses: 80 }
+      : { activities: 100, orgs: 80, courses: 60 };
+
     let activitiesQuery = supabase
       .from('activities')
       .select('id, name, category, campus, description, skills, source_url, active, last_verified, time_commitment, duration, registration_info')
       .eq('active', true)
       .not('last_verified', 'is', null)
-      .limit(80);
+      .limit(catalogLimits.activities);
     let orgsQuery = supabase
       .from('campus_orgs')
       .select('id, campus, name, description, categories, website, email, source_url, scraped_at')
-      .limit(50);
+      .limit(catalogLimits.orgs);
     let coursesQuery = supabase
       .from('course_sections')
       .select('id, campus, quarter, department, course_number, course_title, sln, section, credits, meeting_days, meeting_time, instructor, status, source_url, scraped_at')
-      .limit(50);
+      .limit(catalogLimits.courses);
 
     if (!profileScope.includeOtherCampuses) {
       activitiesQuery = activitiesQuery.eq('campus', profileScope.campus);
@@ -335,11 +346,11 @@ export default async function handler(req: any, res: any) {
     }
 
     const catalogActivities = filterActivitiesByInterests(
-      [
+      dedupeCatalogActivities([
         ...normalizeActivityRows(activities || []),
         ...normalizeCampusOrgRows(campusOrgs || []),
         ...normalizeCourseRows(courseSections || []),
-      ],
+      ]),
       profileScope.activityInterests,
     );
 
@@ -354,6 +365,7 @@ export default async function handler(req: any, res: any) {
       deadline: input.deadline,
       activities: catalogActivities,
       profileCampus: profileScope.campus,
+      includeOtherCampuses: profileScope.includeOtherCampuses,
       activityInterests: profileScope.activityInterests,
       prioritizeInTime: profileScope.prioritizeInTime,
       includeLongTerm: profileScope.includeLongTerm,

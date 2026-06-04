@@ -34,6 +34,7 @@ export interface AnalysisInput {
   deadline: string;
   activities: ActivityRow[];
   profileCampus?: ActivityRow['campus'];
+  includeOtherCampuses?: boolean;
   activityInterests?: ActivityInterest[];
   prioritizeInTime?: boolean;
   includeLongTerm?: boolean;
@@ -91,6 +92,7 @@ const KNOWN_SKILLS = [
 const AI_RESUME_TEXT_LIMIT = 3200;
 const AI_JOB_TEXT_LIMIT = 2400;
 const AI_CATALOG_CANDIDATE_LIMIT = 8;
+const AI_CATALOG_CANDIDATE_LIMIT_CROSS_CAMPUS = 18;
 const AI_CATALOG_DESCRIPTION_LIMIT = 180;
 const AI_GEMINI_SCORING_MAX_OUTPUT_TOKENS = GEMINI_STRUCTURED_JSON_MAX_OUTPUT_TOKENS;
 const AI_GEMINI_RECOMMENDATIONS_MAX_OUTPUT_TOKENS = GEMINI_STRUCTURED_JSON_MAX_OUTPUT_TOKENS;
@@ -432,7 +434,12 @@ export function rankActivities(input: AnalysisInput) {
       const skillOverlap = [...missingSkills, ...jobSkillSignals].filter((skill) =>
         activitySkills.some((activitySkill) => activitySkill.includes(skill) || skill.includes(activitySkill)),
       );
-      const homeCampusBoost = input.profileCampus && activity.campus === input.profileCampus ? 16 : 0;
+      const homeCampusBoost =
+        input.profileCampus && activity.campus === input.profileCampus
+          ? input.includeOtherCampuses
+            ? 8
+            : 16
+          : 0;
       const embeddingBoost = Math.round(cosineSimilarity(queryVector, activityVector) * 40);
       const score =
         overlap.length * 8 +
@@ -614,11 +621,52 @@ function applyRecommendationPlan(
   };
 }
 
+function pickCrossCampusCandidates(activities: ActivityRow[], limit: number, homeCampus?: ActivityRow['campus']) {
+  if (!homeCampus) {
+    return activities.slice(0, limit);
+  }
+
+  const byCampus = new Map<ActivityRow['campus'], ActivityRow[]>();
+  for (const activity of activities) {
+    const bucket = byCampus.get(activity.campus) || [];
+    bucket.push(activity);
+    byCampus.set(activity.campus, bucket);
+  }
+
+  const campuses: ActivityRow['campus'][] = ['seattle', 'bothell', 'tacoma'];
+  const picked: ActivityRow[] = [];
+  const seen = new Set<string>();
+  let round = 0;
+
+  while (picked.length < limit) {
+    let added = false;
+    for (const campus of campuses) {
+      const bucket = byCampus.get(campus) || [];
+      const slots = campus === homeCampus ? 2 : 1;
+      for (let slot = 0; slot < slots && picked.length < limit; slot += 1) {
+        const activity = bucket[round];
+        if (!activity || seen.has(activity.id)) continue;
+        seen.add(activity.id);
+        picked.push(activity);
+        added = true;
+      }
+    }
+    if (!added) break;
+    round += 1;
+  }
+
+  return picked.length ? picked : activities.slice(0, limit);
+}
+
 function buildVerifiedCatalogCandidates(input: AnalysisInput) {
   const ranked = rankActivities(input);
-  const candidates = (ranked.length ? ranked.map((item) => item.activity) : input.activities)
-    .filter((activity) => activity.active && activity.source_url && activity.last_verified)
-    .slice(0, AI_CATALOG_CANDIDATE_LIMIT);
+  const limit = input.includeOtherCampuses ? AI_CATALOG_CANDIDATE_LIMIT_CROSS_CAMPUS : AI_CATALOG_CANDIDATE_LIMIT;
+  const ordered = (ranked.length ? ranked.map((item) => item.activity) : input.activities).filter(
+    (activity) => activity.active && activity.source_url && activity.last_verified,
+  );
+  const candidates = input.includeOtherCampuses
+    ? pickCrossCampusCandidates(ordered, limit, input.profileCampus)
+    : ordered.slice(0, limit);
 
   return candidates.map((activity) => ({
     id: activity.id,
