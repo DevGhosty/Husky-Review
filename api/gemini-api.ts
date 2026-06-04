@@ -98,7 +98,20 @@ export function normalizeGeminiApiKey(raw: unknown): string {
 }
 
 export function isValidGeminiApiKey(value: string): boolean {
-  return /^[A-Za-z0-9_-]{20,}$/.test(value);
+  const key = value.trim();
+  if (key.length < 20 || key.length > 256) {
+    return false;
+  }
+
+  // Google AI Studio keys: legacy AIzaSy… or newer AQ.… (includes a dot).
+  if (/^AIza[A-Za-z0-9_-]{16,}$/.test(key)) {
+    return true;
+  }
+  if (/^AQ\.[A-Za-z0-9._-]{10,}$/.test(key)) {
+    return true;
+  }
+
+  return /^[A-Za-z0-9._-]{20,}$/.test(key);
 }
 
 export function parseGeminiHttpError(status: number, errorText: string): string {
