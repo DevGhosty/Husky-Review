@@ -37,6 +37,7 @@ const PROFILE_SYNC_ANALYSIS_ERROR = 'Profile could not sync. Please save your pr
 
 export function DashboardPage() {
   const workflowRef = useRef<HTMLDivElement>(null);
+  const scrollToAnalysisAfterRunRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { getAccessTokenSilently } = useAuth0();
@@ -93,6 +94,23 @@ export function DashboardPage() {
     workflowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function scrollToAnalysisPreview() {
+    window.setTimeout(() => {
+      document.getElementById('analysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }
+
+  useEffect(() => {
+    if (!scrollToAnalysisAfterRunRef.current) {
+      return;
+    }
+
+    if (status === 'success' || status === 'error') {
+      scrollToAnalysisAfterRunRef.current = false;
+      scrollToAnalysisPreview();
+    }
+  }, [status, analysis?.id]);
+
   const activeQuota = analysis?.quota ?? sessionQuota ?? quota;
 
   async function analyzeReview() {
@@ -111,7 +129,9 @@ export function DashboardPage() {
       }
 
       let activeResumeId = resumeId;
+      scrollToAnalysisAfterRunRef.current = true;
       startAnalysis();
+      scrollToAnalysisPreview();
 
       if (resumeFile) {
         const token = await getAccessTokenSilently(getAccessTokenRequestOptions());

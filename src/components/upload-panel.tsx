@@ -285,6 +285,7 @@ export function UploadPanel({
                 </div>
               </div>
               <Button
+                type="button"
                 className="h-12 min-w-44 shadow-premium disabled:opacity-100 disabled:border disabled:border-border disabled:bg-muted disabled:text-muted-foreground"
                 disabled={!canAnalyze}
                 onClick={onAnalyze}
