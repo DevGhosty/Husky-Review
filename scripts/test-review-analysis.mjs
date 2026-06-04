@@ -47,6 +47,7 @@ const {
 } = await importTypeScriptModule('../api/review-analysis.ts', [
   '../api/gemini-api.ts',
   '../api/catalog-filters.ts',
+  '../api/extract-pdf-text.ts',
 ]);
 const { filterActivitiesByInterests, matchesActivityInterests } = await importTypeScriptModule('../api/catalog-filters.ts');
 const { fetchJobPostingText, isPublicAddress, postingHtmlToText, resolveJobDescription } = await importTypeScriptModule('../api/job-posting.ts');
@@ -566,7 +567,7 @@ test('isUsableExtractedResumeText rejects filename-only extraction', () => {
 
 test('resume extraction handles plain document fallback', async () => {
   // Invalid PDF bytes cannot be parsed; extraction returns the filename (analyze API rejects that).
-  const pdfResult = await extractResumeText(Buffer.from('%PDF synthetic'), 'application/pdf', 'resume.pdf');
+  const pdfResult = await extractResumeText(Buffer.from('%PDF-1.4 synthetic'), 'application/pdf', 'resume.pdf');
   assert.equal(pdfResult, 'resume.pdf');
   assert.equal(isUsableExtractedResumeText(pdfResult, 'resume.pdf'), false);
 
