@@ -967,6 +967,15 @@ const {
 test('inferCampusFromSourceUrl maps HuskyLink to Seattle and Gather to Bothell', () => {
   assert.equal(inferCampusFromSourceUrl('https://huskylink.washington.edu/organizations/foo'), 'seattle');
   assert.equal(inferCampusFromSourceUrl('https://gather.uwb.edu/club/123'), 'bothell');
+  assert.equal(inferCampusFromSourceUrl('https://dubnet.tacoma.uw.edu/organizations'), 'tacoma');
+});
+
+test('inferCampusFromSourceUrl ignores hostnames embedded in path or query', () => {
+  assert.equal(
+    inferCampusFromSourceUrl('https://evil.example/redirect?next=huskylink.washington.edu'),
+    null,
+  );
+  assert.equal(inferCampusFromSourceUrl('https://evil.example/gather.uwb.edu/club'), null);
 });
 
 test('reconcileActivityCampus overrides mislabeled HuskyLink rows', () => {
