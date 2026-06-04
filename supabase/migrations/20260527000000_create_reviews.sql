@@ -114,6 +114,7 @@ returns table (
   reset_at timestamptz
 )
 language plpgsql
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -179,7 +180,9 @@ returns table (
   reset_at timestamptz
 )
 language sql
+security invoker
 set search_path = public, pg_temp
+stable
 as $$
   select
     case

@@ -676,7 +676,16 @@ test('Supabase migrations include baseline dependencies before review tables', a
   assert.match(reviews, /create table if not exists public\.review_roadmap_actions[\s\S]*primary key \(review_id, id\)/i);
   assert.match(reviews, /create or replace function public\.check_weekly_review_quota/i);
   assert.match(reviews, /create or replace function public\.consume_weekly_review_quota/i);
+  assert.match(reviews, /security invoker/i);
+  assert.match(reviews, /set search_path = public, pg_temp/i);
   assert.match(reviews, /grant execute on function public\.consume_weekly_review_quota\(text, integer\) to service_role/i);
+  assert.match(
+    await readFile(
+      new URL('../supabase/migrations/20260604100000_harden_review_quota_functions.sql', import.meta.url),
+      'utf8',
+    ),
+    /revoke all on function public\.check_weekly_review_quota\(text, integer\) from anon/i,
+  );
   assert.match(fixReviewsDelete, /grant select, insert, update, delete on public\.resumes to service_role/i);
   assert.match(fixReviewsDelete, /grant select, insert, update, delete on public\.reviews to service_role/i);
   assert.match(fixReviewsDelete, /grant select, insert, update, delete on public\.review_recommendations to service_role/i);
