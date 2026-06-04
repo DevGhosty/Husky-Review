@@ -59,6 +59,12 @@ export function RecommendationCard({
               <Badge tone="gray">{campusLabels[recommendation.campus]}</Badge>
             </div>
             <h3 className="mt-4 text-xl font-semibold leading-tight tracking-normal text-foreground">{recommendation.name}</h3>
+            {recommendation.timingNote ? (
+              <p className="mt-2 flex items-start gap-1.5 text-sm leading-6 text-muted-foreground">
+                <Clock3 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                {recommendation.timingNote}
+              </p>
+            ) : null}
           </div>
           <div className="rounded-2xl bg-primary/10 px-3 py-2 text-center shadow-inner dark:bg-white/10">
             <Star className="mx-auto size-4 fill-husky-gold text-husky-gold" aria-hidden="true" />

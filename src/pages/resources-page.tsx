@@ -1,21 +1,62 @@
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DatabaseZap, Filter, ShieldCheck } from 'lucide-react';
+import { DatabaseZap, Filter, Layers, ShieldCheck } from 'lucide-react';
 import { RecommendationDashboard } from '../components/recommendation-dashboard';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Surface } from '../components/layout/surface';
 import { useReview } from '../context/review-context';
 import { useProfileSettings } from '../context/profile-settings-context';
-import { filterRecommendationsForDisplay } from '../lib/recommendation-display';
+import { ACTIVITY_INTEREST_OPTIONS } from '../data/uwb-catalog';
+import {
+  filterRecommendationsByType,
+  filterRecommendationsForDisplay,
+  type RecommendationTypeFilter,
+} from '../lib/recommendation-display';
+import type { ActivityType } from '../types/analysis';
 
 export function ResourcesPage() {
   const { status, deadline, selectedIds, analysis, toggleRecommendation } = useReview();
   const { settings } = useProfileSettings();
-  const recommendations = filterRecommendationsForDisplay(analysis?.recommendations || [], settings);
+  const [typeFilter, setTypeFilter] = useState<RecommendationTypeFilter>('all');
+
+  const baseRecommendations = useMemo(
+    () => filterRecommendationsForDisplay(analysis?.recommendations || [], settings),
+    [analysis?.recommendations, settings],
+  );
+
+  const recommendations = useMemo(
+    () => filterRecommendationsByType(baseRecommendations, typeFilter),
+    [baseRecommendations, typeFilter],
+  );
+
+  const typesCovered = useMemo(
+    () => new Set(baseRecommendations.map((item) => item.type)).size,
+    [baseRecommendations],
+  );
+
+  const filterOptions = useMemo(() => {
+    const interests = settings.activityInterests.length
+      ? settings.activityInterests
+      : (['club', 'course', 'event'] as ActivityType[]);
+    return [
+      { id: 'all' as const, label: 'All types' },
+      ...ACTIVITY_INTEREST_OPTIONS.filter((option) => interests.includes(option.id)).map((option) => ({
+        id: option.id,
+        label: option.label,
+      })),
+    ];
+  }, [settings.activityInterests]);
+
   const resourceStats = [
-    { label: 'Verified matches', value: recommendations.length.toString(), icon: ShieldCheck },
-    { label: 'In-Time options', value: recommendations.filter((item) => item.group === 'in-time').length.toString(), icon: Filter },
-    { label: 'Source metadata', value: recommendations.length ? 'On' : 'Pending', icon: DatabaseZap },
+    { label: 'Verified matches', value: baseRecommendations.length.toString(), icon: ShieldCheck },
+    { label: 'Types covered', value: typesCovered.toString(), icon: Layers },
+    {
+      label: 'In-Time options',
+      value: baseRecommendations.filter((item) => item.group === 'in-time').length.toString(),
+      icon: Filter,
+    },
+    { label: 'Source metadata', value: baseRecommendations.length ? 'On' : 'Pending', icon: DatabaseZap },
   ];
 
   return (
@@ -31,7 +72,8 @@ export function ResourcesPage() {
               Campus-connected activities without filler recommendations.
             </h1>
             <p className="relative mt-5 max-w-2xl type-lead">
-              Browse UW activity recommendations with active status, last-verified dates, source labels, and roadmap selection controls.
+              Browse up to five top matches per activity type from your profile interests, with time-commitment context,
+              verification dates, and roadmap selection controls.
             </p>
             <div className="relative mt-6 flex flex-col gap-3 sm:flex-row">
               <Button asChild className="h-12">
@@ -42,7 +84,7 @@ export function ResourcesPage() {
               </Button>
             </div>
           </Surface>
-          <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {resourceStats.map((stat) => {
               const Icon = stat.icon;
               return (
@@ -60,6 +102,26 @@ export function ResourcesPage() {
           </div>
         </div>
       </section>
+
+      {status === 'success' && baseRecommendations.length > 0 && (
+        <section className="mx-auto max-w-[86rem] px-5 pb-4 sm:px-8 lg:px-12">
+          <div className="flex flex-wrap gap-2">
+            {filterOptions.map((option) => (
+              <Button
+                key={option.id}
+                type="button"
+                variant={typeFilter === option.id ? 'primary' : 'outline'}
+                className="h-10"
+                aria-pressed={typeFilter === option.id}
+                onClick={() => setTypeFilter(option.id)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </section>
+      )}
+
       <RecommendationDashboard
         status={status}
         deadline={deadline}
@@ -67,6 +129,10 @@ export function ResourcesPage() {
         recommendations={recommendations}
         showVerificationDates={settings.showVerificationDates}
         onToggleRecommendation={toggleRecommendation}
+        layout="byType"
+        activityTypeOrder={
+          settings.activityInterests.length ? settings.activityInterests : ['club', 'course', 'event']
+        }
       />
     </main>
   );

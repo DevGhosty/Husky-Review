@@ -137,6 +137,7 @@ function toRecommendationRows(reviewId: string, selectedIds: string[], recommend
     source_label: recommendation.sourceLabel || 'UW catalog source',
     roadmap_week: recommendation.roadmapWeek || 1,
     roadmap_action: recommendation.roadmapAction || '',
+    timing_note: recommendation.timingNote || null,
     selected: selectedIds.includes(recommendation.id),
   }));
 }
