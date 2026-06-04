@@ -1,5 +1,8 @@
-import type { DragEvent } from 'react';
+import { useState, type DragEvent } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { CalendarDays, CheckCircle2, FileCheck2, FileUp, KeyRound, Link2, LockKeyhole, Loader2, WandSparkles } from 'lucide-react';
+import { getAccessTokenRequestOptions } from '../auth/auth0-config';
+import { verifyGeminiApiKey as verifyGeminiApiKeyRequest } from '../auth/supabase-client';
 import { Section } from './layout/section';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -62,6 +65,9 @@ export function UploadPanel({
   onUserApiKeyChange,
   onAnalyze,
 }: UploadPanelProps) {
+  const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+  const [keyTestMessage, setKeyTestMessage] = useState<string | null>(null);
+  const [keyTestPending, setKeyTestPending] = useState(false);
   const isLoading = status === 'loading' || isSubmitting;
   const hasPosting = hasJobPostingInput(jobDescription, jobPostingUrl);
   const usingOwnKey = userApiKey.trim().length > 0;
@@ -75,6 +81,32 @@ export function UploadPanel({
     100,
     Math.round((fileName ? 45 : 0) + (postingProgress / 100) * 45 + (deadline ? 10 : 0)),
   );
+
+  async function handleTestApiKey() {
+    const trimmedKey = userApiKey.trim();
+    if (!trimmedKey) {
+      setKeyTestMessage('Paste your Gemini API key before testing.');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setKeyTestMessage('Sign in before testing your API key.');
+      return;
+    }
+
+    setKeyTestPending(true);
+    setKeyTestMessage(null);
+
+    try {
+      const token = await getAccessTokenSilently(getAccessTokenRequestOptions());
+      const result = await verifyGeminiApiKeyRequest(token, trimmedKey);
+      setKeyTestMessage(result.ok ? result.message : result.message);
+    } catch (error) {
+      setKeyTestMessage((error as Error).message || 'API key test failed.');
+    } finally {
+      setKeyTestPending(false);
+    }
+  }
 
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
@@ -298,14 +330,46 @@ export function UploadPanel({
                     type="password"
                     autoComplete="off"
                     value={userApiKey}
-                    onChange={(event) => onUserApiKeyChange(event.target.value)}
+                    onChange={(event) => {
+                      onUserApiKeyChange(event.target.value);
+                      setKeyTestMessage(null);
+                    }}
                     placeholder="AIza..."
                     className="mt-3 h-11 rounded-xl border-border bg-background px-3 text-sm font-semibold text-foreground focus-visible:border-ring focus-visible:ring-ring/30"
                   />
-                  {usingOwnKey ? (
-                    <Badge tone="green" className="mt-3 w-fit">
-                      This review will use your key
-                    </Badge>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10"
+                      disabled={!usingOwnKey || keyTestPending || isLoading}
+                      onClick={() => {
+                        void handleTestApiKey();
+                      }}
+                    >
+                      {keyTestPending ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <KeyRound className="size-4" aria-hidden="true" />
+                      )}
+                      Test API key
+                    </Button>
+                    {usingOwnKey ? (
+                      <Badge tone="green" className="w-fit">
+                        This review will use your key only
+                      </Badge>
+                    ) : null}
+                  </div>
+                  {keyTestMessage ? (
+                    <p
+                      className={
+                        keyTestMessage.includes('Connected to Gemini')
+                          ? 'mt-3 text-xs font-semibold leading-5 text-emerald-700 dark:text-emerald-300'
+                          : 'mt-3 text-xs font-semibold leading-5 text-amber-800 dark:text-amber-200'
+                      }
+                    >
+                      {keyTestMessage}
+                    </p>
                   ) : null}
                 </div>
               </div>

@@ -181,6 +181,28 @@ export async function deleteResume(accessToken: string, resumeId: string): Promi
   }
 }
 
+export async function verifyGeminiApiKey(accessToken: string, userApiKey: string): Promise<{
+  ok: boolean;
+  keySource: 'user';
+  model?: string;
+  message: string;
+}> {
+  const response = await fetch('/api/gemini-verify', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userApiKey }),
+  });
+
+  const result = await readApiJson<{ ok: boolean; keySource: 'user'; model?: string; message: string }>(
+    response,
+    'Failed to verify Gemini API key',
+  );
+  return result;
+}
+
 export async function analyzeReview(
   accessToken: string,
   input: {

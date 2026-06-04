@@ -891,9 +891,17 @@ test('deterministic fallback explains missing server Gemini key', async () => {
   }
 });
 
-const { normalizeGeminiApiKey, isValidGeminiApiKey, parseGeminiHttpError } = await importTypeScriptModule(
-  '../api/gemini-api.ts',
-);
+const { normalizeGeminiApiKey, isValidGeminiApiKey, parseGeminiHttpError, resolveGeminiApiKey } =
+  await importTypeScriptModule('../api/gemini-api.ts');
+
+test('resolveGeminiApiKey uses only the user key in user-key mode', () => {
+  const resolved = resolveGeminiApiKey(
+    { geminiApiKey: 'user-key-only-abcdefghijklmnopqrst', apiKeySource: 'user-key' },
+    'server-secret-key-should-not-be-used',
+  );
+  assert.equal(resolved.keySource, 'user');
+  assert.equal(resolved.apiKey, 'user-key-only-abcdefghijklmnopqrst');
+});
 
 test('normalizeGeminiApiKey strips bearer prefix and quotes', () => {
   assert.equal(normalizeGeminiApiKey('  Bearer AIzaSyABC1234567890abcdefghij  '), 'AIzaSyABC1234567890abcdefghij');

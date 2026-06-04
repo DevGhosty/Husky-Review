@@ -48,7 +48,7 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
             </div>
           </div>
         )}
-        {isSuccess && (analysis?.geminiErrorMessage || analysis?.quota) ? (
+        {isSuccess && (analysis?.geminiErrorMessage || analysis?.quota || analysis?.geminiKeySource) ? (
           <div
             className={
               analysis?.geminiErrorMessage
@@ -65,11 +65,13 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
             >
               {analysis.geminiErrorMessage
                 ? `${analysis.geminiErrorMessage} This review used local catalog matching instead.`
-                : analysis.quota?.source === 'app-key' && analysis.quota.remaining !== null
-                  ? `${analysis.quota.remaining} of ${analysis.quota.limit} app-key AI review${analysis.quota.remaining === 1 ? '' : 's'} left this week`
-                  : analysis.quota?.source === 'user-key'
-                    ? 'Analyzed with your Gemini API key'
-                    : analysis.fallbackReason === 'no_api_key'
+                : analysis.geminiKeySource === 'user'
+                  ? 'Analyzed with your Gemini API key — usage should appear under Gemini 2.5 Flash in AI Studio.'
+                  : analysis.geminiKeySource === 'app'
+                    ? 'Analyzed with the shared Husky-Review key (not your personal AI Studio key).'
+                    : analysis.quota?.source === 'app-key' && analysis.quota.remaining !== null
+                      ? `${analysis.quota.remaining} of ${analysis.quota.limit} app-key AI review${analysis.quota.remaining === 1 ? '' : 's'} left this week`
+                      : analysis.fallbackReason === 'no_api_key'
                       ? 'Local catalog matching — add GEMINI_API_KEY on Vercel for AI analysis'
                       : analysis.fallbackReason === 'gemini_error'
                         ? 'Gemini scoring unavailable — used local catalog matching for this review'
