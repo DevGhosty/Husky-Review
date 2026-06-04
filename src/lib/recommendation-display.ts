@@ -1,5 +1,7 @@
-import type { Recommendation } from '../types/analysis';
+import type { ActivityType, Recommendation } from '../types/analysis';
 import type { ProfileSettings } from './profile-settings';
+
+export type RecommendationTypeFilter = 'all' | ActivityType;
 
 export function filterRecommendationsForDisplay(
   recommendations: Recommendation[],
@@ -26,4 +28,14 @@ export function filterRecommendationsForDisplay(
   }
 
   return filtered;
+}
+
+export function filterRecommendationsByType(
+  recommendations: Recommendation[],
+  typeFilter: RecommendationTypeFilter,
+): Recommendation[] {
+  if (typeFilter === 'all') {
+    return recommendations;
+  }
+  return recommendations.filter((recommendation) => recommendation.type === typeFilter);
 }

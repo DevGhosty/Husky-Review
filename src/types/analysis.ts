@@ -39,6 +39,7 @@ export interface Recommendation {
   sourceUrl?: string;
   roadmapWeek: number;
   roadmapAction: string;
+  timingNote?: string;
 }
 
 export interface RoadmapAction {

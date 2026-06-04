@@ -38,18 +38,23 @@ const {
   buildReviewAnalysis,
   buildRoadmapPlan,
   daysUntilDeadline,
+  describeActivityTiming,
   extractResumeText,
   isUsableExtractedResumeText,
   groupForActivity,
   isHeavyOngoingEngagement,
   outreachCapacityForDeadline,
   rankActivities,
+  recommendationsForRoadmapPlan,
+  selectRankedByType,
+  sortRecommendationsByPreferences,
 } = await importTypeScriptModule('../api/review-analysis.ts', [
   '../api/gemini-api.ts',
   '../api/catalog-filters.ts',
   '../api/extract-pdf-text.ts',
 ]);
-const { filterActivitiesByInterests, matchesActivityInterests } = await importTypeScriptModule('../api/catalog-filters.ts');
+const { activityTypeFromCategory, filterActivitiesByInterests, matchesActivityInterests } =
+  await importTypeScriptModule('../api/catalog-filters.ts');
 const { fetchJobPostingText, isPublicAddress, postingHtmlToText, resolveJobDescription } = await importTypeScriptModule('../api/job-posting.ts');
 const { checkAppKeyQuota, getAppKeyQuotaStatus } = await importTypeScriptModule('../api/review-quota.ts');
 const { getTokenEmail } = await importTypeScriptModule('../api/auth0-verify.ts');
@@ -146,6 +151,7 @@ test('deterministic analysis withholds inactive catalog entries', async () => {
     analysis.recommendations.some((recommendation) => recommendation.id === 'activity-inactive'),
     false,
   );
+  assert.ok(analysis.recommendations.every((recommendation) => typeof recommendation.timingNote === 'string'));
 });
 
 test('profile settings parse campus fields and preserve completion semantics', () => {
@@ -746,20 +752,26 @@ test('catalog filters respect profile activity interests', () => {
   assert.equal(filtered[0].name, 'UW Data Science Club');
 });
 
-test('review analysis honors includeLongTerm and prioritizeInTime preferences', () => {
+test('review analysis keeps full recommendation list when includeLongTerm is false', () => {
   const recommendations = [
-    { id: 'a', group: 'next-time', confidence: 90 },
-    { id: 'b', group: 'in-time', confidence: 70 },
-    { id: 'c', group: 'in-time', confidence: 95 },
+    { id: 'a', group: 'next-time', confidence: 90, type: 'course' },
+    { id: 'b', group: 'in-time', confidence: 70, type: 'club' },
+    { id: 'c', group: 'in-time', confidence: 95, type: 'event' },
   ];
 
-  const withoutLongTerm = applyRecommendationPreferences(recommendations, {
+  const sorted = sortRecommendationsByPreferences(recommendations, {
     ...baseInput,
     includeLongTerm: false,
     prioritizeInTime: true,
   });
+  assert.equal(sorted.length, 3);
+
+  const roadmapPool = recommendationsForRoadmapPlan(sorted, {
+    ...baseInput,
+    includeLongTerm: false,
+  });
   assert.deepEqual(
-    withoutLongTerm.map((item) => item.id),
+    roadmapPool.map((item) => item.id),
     ['c', 'b'],
   );
 
@@ -772,6 +784,69 @@ test('review analysis honors includeLongTerm and prioritizeInTime preferences', 
     prioritized.map((item) => item.id),
     ['c', 'b', 'a'],
   );
+});
+
+test('selectRankedByType returns matches for club and course interests', () => {
+  const input = {
+    ...baseInput,
+    activities: [
+      ...baseInput.activities.filter((activity) => activity.active),
+      {
+        id: 'course-cse',
+        name: 'CSE 373 Data Structures',
+        category: 'course',
+        campus: 'seattle',
+        description: 'Python algorithms SQL documentation for analyst internship roles.',
+        skills: ['python', 'sql', 'documentation'],
+        source_url: 'https://www.washington.edu/students/timeschd/',
+        active: true,
+        last_verified: '2026-05-12',
+        time_commitment: 'lecture',
+        duration: 'one quarter',
+        registration_info: 'Register via MyUW',
+      },
+    ],
+  };
+
+  const ranked = rankActivities(input);
+  const selected = selectRankedByType(ranked, ['club', 'course', 'event'], 5);
+  const types = new Set(selected.map((item) => activityTypeFromCategory(item.activity.category)));
+
+  assert.ok(types.has('club'));
+  assert.ok(types.has('course'));
+  assert.equal(selected.length <= 15, true);
+});
+
+test('describeActivityTiming distinguishes courses and hackathons', () => {
+  const course = baseInput.activities[0];
+  const courseNote = describeActivityTiming({
+    ...course,
+    category: 'course',
+    name: 'CSE 373',
+    duration: 'one quarter',
+  });
+  assert.match(courseNote, /quarter/i);
+
+  const hackathon = describeActivityTiming({
+    ...baseInput.activities[1],
+    category: 'project',
+    name: 'DubHacks Weekend Challenge',
+  });
+  assert.match(hackathon, /weekend|date/i);
+});
+
+test('balanceRecommendationGroups does not promote courses to in-time', () => {
+  const recommendations = [
+    { id: 'course-a', group: 'next-time', confidence: 99, type: 'course' },
+    { id: 'club-a', group: 'next-time', confidence: 70, type: 'club' },
+    { id: 'club-b', group: 'next-time', confidence: 65, type: 'club' },
+    { id: 'club-c', group: 'next-time', confidence: 60, type: 'club' },
+  ];
+
+  const balanced = balanceRecommendationGroups(recommendations, '2027-07-14');
+  const course = balanced.find((item) => item.id === 'course-a');
+  assert.equal(course?.group, 'next-time');
+  assert.ok(balanced.filter((item) => item.group === 'in-time').length >= 2);
 });
 
 test('rankActivities uses cosine similarity to boost relevant catalog rows', () => {

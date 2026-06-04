@@ -13,7 +13,11 @@ export interface ActivityRow {
   registration_info: string | null;
 }
 
-import type { ActivityInterest } from './catalog-filters.js';
+import {
+  activityTypeFromCategory,
+  parseActivityInterests,
+  type ActivityInterest,
+} from './catalog-filters.js';
 import {
   GEMINI_MODEL_CANDIDATES,
   GEMINI_STRUCTURED_JSON_MAX_OUTPUT_TOKENS,
@@ -125,8 +129,9 @@ export function isUsableExtractedResumeText(resumeText: string, fileName: string
 
 const AI_RESUME_TEXT_LIMIT = 3200;
 const AI_JOB_TEXT_LIMIT = 2400;
-const AI_CATALOG_CANDIDATE_LIMIT = 8;
-const AI_CATALOG_CANDIDATE_LIMIT_CROSS_CAMPUS = 18;
+export const PER_TYPE_RECOMMENDATION_LIMIT = 5;
+export const MAX_STORED_RECOMMENDATIONS = 30;
+const AI_GEMINI_REFINEMENT_LIMIT = 12;
 const AI_CATALOG_DESCRIPTION_LIMIT = 180;
 const AI_GEMINI_SCORING_MAX_OUTPUT_TOKENS = GEMINI_STRUCTURED_JSON_MAX_OUTPUT_TOKENS;
 const AI_GEMINI_RECOMMENDATIONS_MAX_OUTPUT_TOKENS = GEMINI_STRUCTURED_JSON_MAX_OUTPUT_TOKENS;
@@ -148,7 +153,15 @@ interface StoredRecommendation {
   sourceUrl: string;
   roadmapWeek: number;
   roadmapAction: string;
+  timingNote?: string;
 }
+
+type RankedActivity = {
+  activity: ActivityRow;
+  overlap: string[];
+  skillOverlap: string[];
+  score: number;
+};
 
 interface StoredAnalysis {
   id: string;
@@ -327,9 +340,144 @@ function activityLeadTimeSignals(activity: ActivityRow) {
   };
 }
 
+export function defaultActivityInterests(interests?: ActivityInterest[]): ActivityInterest[] {
+  const parsed = parseActivityInterests(interests);
+  return parsed.length ? parsed : ['club', 'course', 'event'];
+}
+
+export function catalogCandidateLimit(interests?: ActivityInterest[]) {
+  return Math.min(MAX_STORED_RECOMMENDATIONS, PER_TYPE_RECOMMENDATION_LIMIT * defaultActivityInterests(interests).length);
+}
+
+export function selectRankedByType(
+  ranked: RankedActivity[],
+  interests?: ActivityInterest[],
+  perTypeLimit = PER_TYPE_RECOMMENDATION_LIMIT,
+  maxTotal = MAX_STORED_RECOMMENDATIONS,
+): RankedActivity[] {
+  const normalized = defaultActivityInterests(interests);
+  const byType = new Map<ActivityInterest, RankedActivity[]>();
+
+  for (const item of ranked) {
+    const type = activityTypeFromCategory(item.activity.category);
+    const bucket = byType.get(type) || [];
+    bucket.push(item);
+    byType.set(type, bucket);
+  }
+
+  const selected: RankedActivity[] = [];
+  const seen = new Set<string>();
+
+  for (const type of normalized) {
+    let typeCount = 0;
+    for (const item of byType.get(type) || []) {
+      if (typeCount >= perTypeLimit || selected.length >= maxTotal) {
+        break;
+      }
+      if (seen.has(item.activity.id)) {
+        continue;
+      }
+      seen.add(item.activity.id);
+      selected.push(item);
+      typeCount += 1;
+    }
+  }
+
+  return selected;
+}
+
+export function selectRecommendationsByType(input: AnalysisInput, perTypeLimit = PER_TYPE_RECOMMENDATION_LIMIT) {
+  const ranked = rankActivities(input);
+  if (ranked.length) {
+    return selectRankedByType(ranked, input.activityInterests, perTypeLimit);
+  }
+
+  const interests = defaultActivityInterests(input.activityInterests);
+  const verified = input.activities.filter((activity) => activity.active && activity.source_url && activity.last_verified);
+  const byType = new Map<ActivityInterest, RankedActivity[]>();
+
+  for (const activity of verified) {
+    const type = activityTypeFromCategory(activity.category);
+    if (!interests.includes(type)) {
+      continue;
+    }
+    const bucket = byType.get(type) || [];
+    if (bucket.length >= perTypeLimit) {
+      continue;
+    }
+    bucket.push({ activity, overlap: [], skillOverlap: [], score: 36 });
+    byType.set(type, bucket);
+  }
+
+  const fallback: RankedActivity[] = [];
+  for (const type of interests) {
+    for (const item of byType.get(type) || []) {
+      if (fallback.length >= MAX_STORED_RECOMMENDATIONS) {
+        break;
+      }
+      fallback.push(item);
+    }
+  }
+
+  if (fallback.length) {
+    return fallback;
+  }
+
+  return verified.slice(0, 6).map((activity) => ({ activity, overlap: [], skillOverlap: [], score: 36 }));
+}
+
+export function describeActivityTiming(activity: ActivityRow): string {
+  const type = activityTypeFromCategory(activity.category);
+  const name = activity.name.toLowerCase();
+  const text = `${activity.time_commitment || ''} ${activity.duration || ''} ${activity.registration_info || ''} ${activity.description || ''}`
+    .replace(/\s+/g, ' ')
+    .trim();
+  const snippet = text.length > 120 ? `${text.slice(0, 117)}...` : text;
+
+  if (type === 'course') {
+    return snippet
+      ? `Typically one quarter. ${snippet}`
+      : 'Typically one quarter — plan ahead of your application deadline.';
+  }
+
+  if (type === 'event' || /hackathon|competition|case study/.test(name)) {
+    return /hackathon|competition/.test(name)
+      ? 'Often a fixed weekend or date range — confirm schedule on the source before committing.'
+      : 'Usually a short window (workshop or info session) — verify dates on the source.';
+  }
+
+  if (type === 'club') {
+    return 'Ongoing membership — benefits compound over multiple quarters, not a one-week resume fix.';
+  }
+
+  if (type === 'fellowship' || type === 'research') {
+    const { looksLongTerm } = activityLeadTimeSignals(activity);
+    return looksLongTerm
+      ? 'Multi-month or multi-quarter commitment — best for the next recruiting cycle unless the deadline is far out.'
+      : snippet || 'Semester-scale involvement — confirm expected hours on the source.';
+  }
+
+  if (type === 'project') {
+    return /hackathon|weekend|48 hour|24 hour/.test(name)
+      ? 'Short, intensive build window — check exact dates on the source.'
+      : 'Project timeline varies — confirm duration and team expectations on the source.';
+  }
+
+  return snippet || 'Check the source for time commitment and schedule.';
+}
+
 export function groupForActivity(activity: ActivityRow, index: number, deadline: string) {
   const daysLeft = daysUntilDeadline(deadline);
+  const type = activityTypeFromCategory(activity.category);
   const { looksFast, looksLongTerm } = activityLeadTimeSignals(activity);
+
+  if (type === 'course') {
+    return daysLeft <= 45 ? 'next-time' : index < 1 ? 'in-time' : 'next-time';
+  }
+
+  if (type === 'fellowship' || type === 'research') {
+    return daysLeft <= 60 || looksLongTerm || index >= 2 ? 'next-time' : 'in-time';
+  }
 
   if (daysLeft <= 14) {
     return looksFast && !looksLongTerm ? 'in-time' : 'next-time';
@@ -340,20 +488,25 @@ export function groupForActivity(activity: ActivityRow, index: number, deadline:
   }
 
   if (daysLeft <= 60) {
-    if (looksLongTerm && index >= 4) {
+    if (looksLongTerm && index >= 3) {
       return 'next-time';
     }
-    return looksFast || index < 5 ? 'in-time' : 'next-time';
+    return looksFast || index < 3 ? 'in-time' : 'next-time';
   }
 
-  if (looksLongTerm && index >= 5) {
+  if (looksLongTerm && index >= 3) {
     return 'next-time';
   }
 
-  return index < 6 ? 'in-time' : 'next-time';
+  return index < 4 ? 'in-time' : 'next-time';
 }
 
-export function balanceRecommendationGroups<T extends { id: string; group: string; confidence: number }>(
+function canPromoteRecommendationToInTime(recommendation: { type?: string }) {
+  const type = recommendation.type;
+  return type !== 'course' && type !== 'research' && type !== 'fellowship';
+}
+
+export function balanceRecommendationGroups<T extends { id: string; group: string; confidence: number; type?: string }>(
   recommendations: T[],
   deadline: string,
 ): T[] {
@@ -378,7 +531,7 @@ export function balanceRecommendationGroups<T extends { id: string; group: strin
 
   const promoteIds = new Set(
     [...recommendations]
-      .filter((item) => item.group === 'next-time')
+      .filter((item) => item.group === 'next-time' && canPromoteRecommendationToInTime(item))
       .sort((left, right) => right.confidence - left.confidence)
       .slice(0, minInTime - inTimeCount)
       .map((item) => item.id),
@@ -484,25 +637,73 @@ function roadmapAction(activity: ActivityRow, group: string, matchedSkills: stri
   return roadmapActionFor(rec, matchedSkills, horizon);
 }
 
+export function sortRecommendationsByPreferences<T extends { group: string; confidence: number }>(
+  recommendations: T[],
+  input: AnalysisInput,
+): T[] {
+  if (!input.prioritizeInTime) {
+    return recommendations;
+  }
+
+  return [...recommendations].sort((left, right) => {
+    if (left.group === right.group) {
+      return right.confidence - left.confidence;
+    }
+    return left.group === 'in-time' ? -1 : 1;
+  });
+}
+
+/** @deprecated Use sortRecommendationsByPreferences — no longer filters next-time from stored analysis. */
 export function applyRecommendationPreferences<T extends { group: string; confidence: number }>(
   recommendations: T[],
   input: AnalysisInput,
 ): T[] {
-  let filtered = recommendations;
+  return sortRecommendationsByPreferences(recommendations, input);
+}
+
+export function recommendationsForRoadmapPlan<T extends { group: string }>(
+  recommendations: T[],
+  input: AnalysisInput,
+): T[] {
   if (input.includeLongTerm === false) {
-    filtered = filtered.filter((recommendation) => recommendation.group === 'in-time');
+    return recommendations.filter((recommendation) => recommendation.group === 'in-time');
   }
+  return recommendations;
+}
 
-  if (input.prioritizeInTime) {
-    filtered = [...filtered].sort((left, right) => {
-      if (left.group === right.group) {
-        return right.confidence - left.confidence;
-      }
-      return left.group === 'in-time' ? -1 : 1;
-    });
-  }
+function buildStoredRecommendationFromRanked(
+  item: RankedActivity,
+  typeIndex: number,
+  deadline: string,
+): StoredRecommendation {
+  const group = groupForActivity(item.activity, typeIndex, deadline);
+  const tags = Array.from(
+    new Set([...(item.skillOverlap.length ? item.skillOverlap : item.overlap), ...(item.activity.skills || [])]),
+  )
+    .slice(0, 3)
+    .map((tag) => tag.replace(/\b\w/g, (match) => match.toUpperCase()));
+  const confidence = clamp(58 + item.score + (group === 'in-time' ? 4 : 0), 62, 96);
 
-  return filtered;
+  return {
+    id: item.activity.id,
+    group,
+    name: item.activity.name,
+    type: activityType(item.activity.category),
+    campus: item.activity.campus,
+    whyItHelps:
+      item.skillOverlap.length > 0
+        ? `Matches the posting signals for ${item.skillOverlap.slice(0, 3).join(', ')} with a verified ${campusLabel(item.activity.campus)} opportunity.`
+        : `Provides verified ${campusLabel(item.activity.campus)} experience that can strengthen the resume for this role.`,
+    tags: tags.length ? tags : [campusLabel(item.activity.campus), 'Resume evidence'],
+    active: item.activity.active,
+    lastVerified: item.activity.last_verified || '',
+    confidence,
+    sourceLabel: sourceLabel(item.activity.source_url),
+    sourceUrl: item.activity.source_url,
+    roadmapWeek: 2,
+    roadmapAction: roadmapAction(item.activity, group, item.skillOverlap),
+    timingNote: describeActivityTiming(item.activity),
+  };
 }
 
 export function rankActivities(input: AnalysisInput) {
@@ -554,47 +755,34 @@ function buildHeuristicAnalysis(input: AnalysisInput): StoredAnalysis {
   const matchedKeywords = jobTokens.filter((token) => resumeTokens.includes(token));
   const baseScore = jobTokens.length ? Math.round((matchedKeywords.length / jobTokens.length) * 100) : 45;
   const matchScore = clamp(baseScore + Math.min(resumeSkillSignals.length * 4, 18), 38, 92);
-  const rankedActivities = rankActivities(input).slice(0, 8);
+  const selectedRanked = selectRecommendationsByType(input);
+  const typeIndexByType = new Map<ActivityInterest, number>();
 
-  const fallbackActivities = rankedActivities.length
-    ? rankedActivities
-    : input.activities
-        .filter((activity) => activity.active && activity.source_url && activity.last_verified)
-        .slice(0, 6)
-        .map((activity) => ({ activity, overlap: [], skillOverlap: [], score: 36 }));
-
-  const recommendations = fallbackActivities.map((item, index) => {
-    const group = groupForActivity(item.activity, index, input.deadline);
-    const tags = Array.from(new Set([...(item.skillOverlap.length ? item.skillOverlap : item.overlap), ...(item.activity.skills || [])]))
-      .slice(0, 3)
-      .map((tag) => tag.replace(/\b\w/g, (match) => match.toUpperCase()));
-    const confidence = clamp(58 + item.score + (group === 'in-time' ? 4 : 0), 62, 96);
-
-    return {
-      id: item.activity.id,
-      group,
-      name: item.activity.name,
-      type: activityType(item.activity.category),
-      campus: item.activity.campus,
-      whyItHelps:
-        item.skillOverlap.length > 0
-          ? `Matches the posting signals for ${item.skillOverlap.slice(0, 3).join(', ')} with a verified ${campusLabel(item.activity.campus)} opportunity.`
-          : `Provides verified ${campusLabel(item.activity.campus)} experience that can strengthen the resume for this role.`,
-      tags: tags.length ? tags : [campusLabel(item.activity.campus), 'Resume evidence'],
-      active: item.activity.active,
-      lastVerified: item.activity.last_verified || '',
-      confidence,
-      sourceLabel: sourceLabel(item.activity.source_url),
-      sourceUrl: item.activity.source_url,
-      roadmapWeek: 2,
-      roadmapAction: roadmapAction(item.activity, group, item.skillOverlap),
-    };
+  const recommendations = selectedRanked.map((item) => {
+    const type = activityTypeFromCategory(item.activity.category);
+    const typeIndex = typeIndexByType.get(type) || 0;
+    typeIndexByType.set(type, typeIndex + 1);
+    return buildStoredRecommendationFromRanked(item, typeIndex, input.deadline);
   });
 
   const balanced = balanceRecommendationGroups(recommendations, input.deadline);
-  const preferenceOrdered = applyRecommendationPreferences(balanced, input);
-  const roadmapPlan = buildRoadmapPlan(input, preferenceOrdered, missingKeywords);
+  const sorted = sortRecommendationsByPreferences(balanced, input);
+  const roadmapPlan = buildRoadmapPlan(input, sorted, missingKeywords, {
+    phaseTargetPool: recommendationsForRoadmapPlan(sorted, input),
+  });
   const selectedIds = buildSelectedIds(roadmapPlan.recommendations);
+  const roadmapById = new Map(roadmapPlan.recommendations.map((recommendation) => [recommendation.id, recommendation]));
+  const storedRecommendations = sorted.map((recommendation) => {
+    const roadmapEntry = roadmapById.get(recommendation.id);
+    return roadmapEntry
+      ? {
+          ...recommendation,
+          roadmapWeek: roadmapEntry.roadmapWeek,
+          roadmapAction: roadmapEntry.roadmapAction,
+          group: roadmapEntry.group,
+        }
+      : recommendation;
+  });
   const gapCategories = [
     {
       title: 'Missing Skills',
@@ -640,7 +828,7 @@ function buildHeuristicAnalysis(input: AnalysisInput): StoredAnalysis {
           : 'The resume has a usable foundation, and the roadmap highlights the fastest ways to add verified proof.',
     },
     gapCategories,
-    recommendations: roadmapPlan.recommendations,
+    recommendations: storedRecommendations,
     roadmapWeeks: roadmapPlan.roadmapWeeks,
     selectedIds,
     createdAt: new Date().toISOString(),
@@ -657,15 +845,17 @@ function phase1Summary(daysLeft: number) {
 
 export function buildRoadmapPlan(
   input: Pick<AnalysisInput, 'reviewId' | 'deadline'>,
-  preferenceOrdered: StoredRecommendation[],
+  allRecommendations: StoredRecommendation[],
   missingKeywords: string[],
+  options?: { phaseTargetPool?: StoredRecommendation[] },
 ) {
   const daysLeft = daysUntilDeadline(input.deadline);
   const capacity = outreachCapacityForDeadline(input.deadline);
-  const inTime = preferenceOrdered.filter((recommendation) => recommendation.group === 'in-time');
+  const phaseTargetPool = options?.phaseTargetPool ?? allRecommendations;
+  const inTime = phaseTargetPool.filter((recommendation) => recommendation.group === 'in-time');
   const shortOutreach = inTime.filter((recommendation) => !isHeavyOngoingEngagement(recommendation));
   const ongoingBuild = inTime.filter((recommendation) => isHeavyOngoingEngagement(recommendation));
-  const nextTime = preferenceOrdered.filter((recommendation) => recommendation.group === 'next-time');
+  const nextTime = phaseTargetPool.filter((recommendation) => recommendation.group === 'next-time');
 
   const phase2Targets = [
     ...shortOutreach.slice(0, capacity.primary),
@@ -679,7 +869,7 @@ export function buildRoadmapPlan(
   const phase3Targets = phase3Pool.slice(0, 3);
   const phase3IdSet = new Set(phase3Targets.map((recommendation) => recommendation.id));
 
-  const recommendations = preferenceOrdered.map((recommendation) => {
+  const recommendations = allRecommendations.map((recommendation) => {
     const inPhase2 = phase2IdSet.has(recommendation.id);
     const inPhase3Target = phase3IdSet.has(recommendation.id);
     const optional = inPhase2 && phase2Targets.indexOf(recommendation) >= capacity.primary;
@@ -759,13 +949,26 @@ function applyRecommendationPlan(
   missingKeywords: string[],
 ) {
   const balanced = balanceRecommendationGroups(recommendations, input.deadline);
-  const preferenceOrdered = applyRecommendationPreferences(balanced, input);
-  const roadmapPlan = buildRoadmapPlan(input, preferenceOrdered, missingKeywords);
+  const sorted = sortRecommendationsByPreferences(balanced, input);
+  const roadmapPlan = buildRoadmapPlan(input, sorted, missingKeywords, {
+    phaseTargetPool: recommendationsForRoadmapPlan(sorted, input),
+  });
   const selectedIds = buildSelectedIds(roadmapPlan.recommendations);
+  const roadmapById = new Map(roadmapPlan.recommendations.map((recommendation) => [recommendation.id, recommendation]));
 
   return {
     ...base,
-    recommendations: roadmapPlan.recommendations,
+    recommendations: sorted.map((recommendation) => {
+      const roadmapEntry = roadmapById.get(recommendation.id);
+      return roadmapEntry
+        ? {
+            ...recommendation,
+            roadmapWeek: roadmapEntry.roadmapWeek,
+            roadmapAction: roadmapEntry.roadmapAction,
+            group: roadmapEntry.group,
+          }
+        : recommendation;
+    }),
     selectedIds,
     roadmapWeeks: roadmapPlan.roadmapWeeks,
   };
@@ -810,8 +1013,9 @@ function pickCrossCampusCandidates(activities: ActivityRow[], limit: number, hom
 
 function buildVerifiedCatalogCandidates(input: AnalysisInput) {
   const ranked = rankActivities(input);
-  const limit = input.includeOtherCampuses ? AI_CATALOG_CANDIDATE_LIMIT_CROSS_CAMPUS : AI_CATALOG_CANDIDATE_LIMIT;
-  const ordered = (ranked.length ? ranked.map((item) => item.activity) : input.activities).filter(
+  const limit = catalogCandidateLimit(input.activityInterests);
+  const perTypeRanked = ranked.length ? selectRankedByType(ranked, input.activityInterests) : [];
+  const ordered = (perTypeRanked.length ? perTypeRanked.map((item) => item.activity) : input.activities).filter(
     (activity) => activity.active && activity.source_url && activity.last_verified,
   );
   const candidates = input.includeOtherCampuses
@@ -1058,7 +1262,7 @@ async function requestGeminiRecommendations(
   return requestGeminiJson(apiKey, {
     system_instruction: {
       parts: [{
-        text: 'You are Husky-Review, a UW student resume coach. Recommend only activities from verifiedCatalogCandidates using their exact id values. When daysUntilDeadline is large, prefer group in-time for the top actionable matches. roadmapAction must be realistic: one outreach step at a time, no demanding contact+attend+bullet in a single calendar week, and hackathon or multi-week clubs should sound like ongoing exploration — not a one-week deliverable. Return only compact JSON with a recommendations array (max 8 items). Do not invent ids. Keep whyItHelps under 180 characters and tags to at most 4 short labels.',
+        text: `You are Husky-Review, a UW student resume coach. Recommend only activities from verifiedCatalogCandidates using their exact id values. Refine copy for a diverse set (courses, clubs, events, etc.) when present. When daysUntilDeadline is large, prefer group in-time for the top actionable matches only where realistic. roadmapAction must be realistic: one outreach step at a time. Return compact JSON with a recommendations array (max ${AI_GEMINI_REFINEMENT_LIMIT} items) — prioritize highest-impact ids, not every candidate. Do not invent ids. Keep whyItHelps under 180 characters and tags to at most 4 short labels.`,
       }],
     },
     contents: [{ role: 'user', parts: [{ text: JSON.stringify(promptData) }] }],
@@ -1186,9 +1390,9 @@ function normalizeAiAnalysis(value: any, input: AnalysisInput) {
   const allowedGroups = new Set(['in-time', 'next-time']);
   const allowedTypes = new Set(['club', 'course', 'event', 'fellowship', 'project', 'research']);
   const fallbackById = new Map(fallback.recommendations.map((recommendation) => [recommendation.id, recommendation]));
-  const recommendations = Array.isArray(value.recommendations)
+  const aiRefinements = Array.isArray(value.recommendations)
     ? value.recommendations
-        .slice(0, 8)
+        .slice(0, AI_GEMINI_REFINEMENT_LIMIT)
         .map((recommendation: any) => {
           const base = fallbackById.get(recommendation?.id);
           if (!base || !allowedGroups.has(recommendation?.group) || !allowedTypes.has(recommendation?.type)) {
@@ -1210,24 +1414,22 @@ function normalizeAiAnalysis(value: any, input: AnalysisInput) {
         .filter(Boolean)
     : [];
 
-  const mergedRecommendations = recommendations.length ? recommendations : fallback.recommendations;
-  const balancedRecommendations = balanceRecommendationGroups(mergedRecommendations, input.deadline);
-  const finalRecommendations = applyRecommendationPreferences(balancedRecommendations, input);
-  const recommendationIds = new Set(finalRecommendations.map((recommendation: any) => recommendation.id));
-  const normalizedSelectedIds = Array.isArray(value.selectedIds)
-    ? value.selectedIds.filter((id: unknown) => typeof id === 'string' && recommendationIds.has(id)).slice(0, 5)
-    : [];
-  const selectedIds = normalizedSelectedIds.length
-    ? normalizedSelectedIds
-    : buildSelectedIds(finalRecommendations);
+  const mergedById = new Map(fallback.recommendations.map((recommendation) => [recommendation.id, recommendation]));
+  for (const refinement of aiRefinements) {
+    mergedById.set(refinement.id, refinement);
+  }
+  const mergedRecommendations = Array.from(mergedById.values());
+
+  const missingKeywords = normalizeTokens(input.jobDescription).filter(
+    (token) => !normalizeTokens(input.resumeText).includes(token),
+  );
+  const planned = applyRecommendationPlan(input, mergedRecommendations, fallback, missingKeywords.slice(0, 8));
 
   return {
-    ...fallback,
+    ...planned,
     matchScore: normalizeGeminiMatchScore(value.matchScore, fallback.matchScore),
     gapCategories: normalizeGeminiGapCategories(value.gapCategories, fallback.gapCategories),
-    recommendations: finalRecommendations,
     roadmapWeeks: normalizeRoadmapWeeks(value.roadmapWeeks),
-    selectedIds: selectedIds.length ? selectedIds : fallback.selectedIds,
   };
 }
 
