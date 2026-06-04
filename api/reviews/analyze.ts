@@ -305,9 +305,12 @@ export default async function handler(req: any, res: any) {
     const resumeBuffer = Buffer.from(await fileData.arrayBuffer());
     const resumeText = await extractResumeText(resumeBuffer, resumeRow.content_type, resumeRow.filename);
     if (!isUsableExtractedResumeText(resumeText, resumeRow.filename)) {
+      const looksLikeFilenameOnly =
+        resumeText.trim().toLowerCase() === resumeRow.filename.trim().toLowerCase();
       return res.status(422).json({
-        message:
-          'We could not read enough text from this resume file. Export a text-based PDF (not a scan-only image), or upload a .docx with selectable text.',
+        message: looksLikeFilenameOnly
+          ? 'We could not parse text from this PDF on the server. Try re-uploading as a .docx, or export the PDF again with selectable text (Print to PDF from Word/Google Docs).'
+          : 'We could not read enough text from this resume file. Export a text-based PDF (not a scan-only image), or upload a .docx with selectable text.',
       });
     }
     const resolvedPosting = await resolveJobDescription({

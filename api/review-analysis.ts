@@ -1289,20 +1289,14 @@ export async function buildReviewAnalysis(input: AnalysisInput) {
 export async function extractResumeText(buffer: Buffer, contentType: string | null, fileName: string) {
   if (buffer.subarray(0, 4).toString() === '%PDF') {
     try {
-      const { PDFParse } = await import('pdf-parse');
-      const parser = new PDFParse({ data: buffer });
-      try {
-        const result = await parser.getText();
-        const text = result.text?.replace(/\s+/g, ' ').trim() ?? '';
-        if (text.length >= 80) {
-          return text.slice(0, 20000);
-        }
-        console.warn(
-          `PDF text extraction for ${fileName} returned only ${text.length} characters; refusing filename fallback for analysis.`,
-        );
-      } finally {
-        await parser.destroy();
+      const { extractPdfText } = await import('./extract-pdf-text.js');
+      const text = await extractPdfText(buffer);
+      if (text.length >= 80) {
+        return text.slice(0, 20000);
       }
+      console.warn(
+        `PDF text extraction for ${fileName} returned only ${text.length} characters (image-only or protected PDF?).`,
+      );
     } catch (error) {
       console.warn(`PDF text extraction failed for ${fileName}:`, (error as Error).message);
     }
