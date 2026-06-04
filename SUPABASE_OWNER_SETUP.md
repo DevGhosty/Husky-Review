@@ -368,7 +368,7 @@ When finished, please confirm:
 7. **Read-only RLS** on student-facing catalog tables (section 9.3) is applied
 8. Whether **pgvector** / embeddings are in use (for future analysis work)
 
-**App team contacts / repo:** Husky-Review — see also `INTEGRATION_GUIDE.md` and `DEPLOYMENT_CHECKLIST.md` for full stack setup. After you share the catalog schema, the app team will wire the UI to live data (replacing mock recommendations).
+**App team contacts / repo:** Husky-Review — see `DEPLOYMENT_CHECKLIST.md` for full stack setup. After you share the catalog schema, the app team will wire the UI to live data (replacing mock recommendations).
 
 ---
 
