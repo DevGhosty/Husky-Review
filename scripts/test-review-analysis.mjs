@@ -891,8 +891,19 @@ test('deterministic fallback explains missing server Gemini key', async () => {
   }
 });
 
-const { normalizeGeminiApiKey, isValidGeminiApiKey, parseGeminiHttpError, resolveGeminiApiKey } =
-  await importTypeScriptModule('../api/gemini-api.ts');
+const {
+  normalizeGeminiApiKey,
+  isValidGeminiApiKey,
+  parseGeminiHttpError,
+  resolveGeminiApiKey,
+  structuredJsonGenerationConfig,
+} = await importTypeScriptModule('../api/gemini-api.ts');
+
+test('structuredJsonGenerationConfig disables thinking budget for Gemini 2.5 models', () => {
+  const config = structuredJsonGenerationConfig('gemini-2.5-flash', 4096);
+  assert.equal(config.thinkingConfig?.thinkingBudget, 0);
+  assert.equal(config.maxOutputTokens, 4096);
+});
 
 test('resolveGeminiApiKey uses only the user key in user-key mode', () => {
   const resolved = resolveGeminiApiKey(
