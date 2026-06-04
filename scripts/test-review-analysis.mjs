@@ -481,7 +481,7 @@ test('Gemini output is bounded and merged with heuristic recommendations', async
     assert.equal(analysis.matchScore.summary.length, 400);
     assert.equal(analysis.gapCategories.length, 3);
     assert.equal(analysis.gapCategories[0].items.length, 5);
-    assert.equal(analysis.gapCategories[0].items[0].length, 80);
+    assert.ok(analysis.gapCategories[0].items[0].length <= 280);
     assert.ok(analysis.recommendations.length >= 1);
     assert.ok(analysis.selectedIds.length >= 1);
     assert.ok(analysis.roadmapWeeks.length >= 1);

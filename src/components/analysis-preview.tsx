@@ -141,14 +141,14 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
               <h3 className="mt-5 text-lg font-semibold text-foreground">{category.title}</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{isSuccess ? category.summary : 'Analysis details will populate here after review.'}</p>
               <Progress value={isSuccess ? category.score : isLoading ? 18 : 0} className="mt-5 h-2 bg-muted [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-husky-purple [&_[data-slot=progress-indicator]]:to-husky-gold" />
-              {isSuccess ? (
-                <div className="mt-5 flex flex-wrap gap-2">
+              {isSuccess && category.items.length > 0 ? (
+                <ul className="mt-5 list-disc space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
                   {category.items.map((item) => (
-                    <Badge key={item} tone="purple">
+                    <li key={item} className="break-words">
                       {item}
-                    </Badge>
+                    </li>
                   ))}
-                </div>
+                </ul>
               ) : isLoading ? (
                 <div className="mt-5 flex flex-col gap-2" role="status" aria-live="polite">
                   {[0, 1, 2].map((item) => (
