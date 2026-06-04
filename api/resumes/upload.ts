@@ -1,4 +1,5 @@
 import { requireAuth } from '../auth0-verify.js';
+import { MAX_RESUME_UPLOAD_BYTES } from '../resume-upload-limits.js';
 import {
   getSupabaseAdmin,
   RESUME_BUCKET,
@@ -9,15 +10,16 @@ import {
   type ResumeRow,
 } from '../supabase-admin.js';
 
+/** Must fit Vercel's ~4.5 MB request cap after base64 expansion (~4/3 × file size + JSON). */
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '4mb',
+      sizeLimit: '4.5mb',
     },
   },
 };
 
-const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = MAX_RESUME_UPLOAD_BYTES;
 const MAX_METADATA_BYTES = 8 * 1024;
 const MAX_METADATA_KEYS = 20;
 const UPLOAD_LIMIT_PER_HOUR = 20;
@@ -171,7 +173,8 @@ export default async function handler(req: any, res: any) {
     }
 
     if (buffer.byteLength > MAX_UPLOAD_BYTES) {
-      return res.status(400).json({ message: 'File exceeds the 3 MB upload limit' });
+      const limitMb = (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(1);
+      return res.status(400).json({ message: `File exceeds the ${limitMb} MB upload limit` });
     }
 
     if (!hasAllowedSignature(buffer, finalContentType)) {
@@ -211,6 +214,13 @@ export default async function handler(req: any, res: any) {
 
     return res.status(201).json(await withSignedUrl(supabase, resume as ResumeRow));
   } catch (error) {
+    const statusCode = (error as { statusCode?: number })?.statusCode;
+    if (statusCode === 413 || (error as Error).message?.toLowerCase().includes('entity too large')) {
+      const limitMb = (MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(1);
+      return res.status(413).json({
+        message: `Upload is too large (${limitMb} MB max). Use a smaller PDF or Word file.`,
+      });
+    }
     return sendError(res, error);
   }
 }

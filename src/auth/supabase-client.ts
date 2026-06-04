@@ -7,6 +7,10 @@ import {
   type Campus,
   type ProfileSettings,
 } from '../lib/profile-settings';
+import {
+  messageForUploadHttpStatus,
+  validateResumeFileSize,
+} from '../lib/resume-upload-limits';
 import type { ActivityType, ReviewAnalysis, ReviewQuotaStatus, SavedReviewSummary } from '../types/analysis';
 
 export function hasSupabaseConfig() {
@@ -91,7 +95,7 @@ function fileToBase64(file: File): Promise<string> {
 
 async function throwApiError(response: Response, fallbackMessage: string): Promise<never> {
   const contentType = response.headers.get('content-type') || '';
-  let message = fallbackMessage;
+  let message = messageForUploadHttpStatus(response.status, fallbackMessage);
 
   try {
     if (contentType.includes('application/json')) {
@@ -102,7 +106,12 @@ async function throwApiError(response: Response, fallbackMessage: string): Promi
     } else {
       const text = (await response.text()).replace(/\s+/g, ' ').trim();
       if (text) {
-        message = `${fallbackMessage}: ${text.slice(0, 240)}`;
+        const lower = text.toLowerCase();
+        if (response.status === 413 || lower.includes('entity too large') || lower.includes('too large')) {
+          message = messageForUploadHttpStatus(413, fallbackMessage);
+        } else {
+          message = `${fallbackMessage}: ${text.slice(0, 240)}`;
+        }
       }
     }
   } catch {
@@ -147,6 +156,11 @@ export async function uploadResume(
   file: File,
   metadata?: ResumeRecord['metadata'],
 ): Promise<ResumeRecord> {
+  const sizeError = validateResumeFileSize(file.size);
+  if (sizeError) {
+    throw new Error(sizeError);
+  }
+
   const base64 = await fileToBase64(file);
 
   const response = await fetch('/api/resumes/upload', {
