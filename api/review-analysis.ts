@@ -14,6 +14,11 @@ export interface ActivityRow {
 }
 
 import type { ActivityInterest } from './catalog-filters.js';
+import {
+  GEMINI_MODEL_CANDIDATES,
+  isGeminiModelUnavailable,
+  parseGeminiHttpError,
+} from './gemini-api.js';
 
 export interface AnalysisInput {
   reviewId: string;
@@ -85,7 +90,6 @@ const AI_CATALOG_CANDIDATE_LIMIT = 8;
 const AI_CATALOG_DESCRIPTION_LIMIT = 180;
 const AI_GEMINI_SCORING_MAX_OUTPUT_TOKENS = 1536;
 const AI_GEMINI_RECOMMENDATIONS_MAX_OUTPUT_TOKENS = 2048;
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 
 interface StoredRecommendation {
   id: string;
@@ -612,9 +616,9 @@ function buildVerifiedCatalogCandidates(input: AnalysisInput) {
   }));
 }
 
-async function requestGeminiJson(apiKey: string, body: Record<string, unknown>) {
+async function requestGeminiJsonForModel(apiKey: string, model: string, body: Record<string, unknown>) {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
       method: 'POST',
       headers: {
@@ -627,8 +631,13 @@ async function requestGeminiJson(apiKey: string, body: Record<string, unknown>) 
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.warn(`Gemini HTTP ${response.status}`, { errorBodyPrefix: errorText.replace(/\s+/g, ' ').slice(0, 300) });
-    throw new Error(`Gemini analysis failed with ${response.status}`);
+    console.warn(`Gemini HTTP ${response.status} (${model})`, {
+      errorBodyPrefix: errorText.replace(/\s+/g, ' ').slice(0, 300),
+    });
+    const error = new Error(parseGeminiHttpError(response.status, errorText));
+    (error as any).statusCode = response.status;
+    (error as any).errorText = errorText;
+    throw error;
   }
 
   const data: any = await response.json();
@@ -638,6 +647,7 @@ async function requestGeminiJson(apiKey: string, body: Record<string, unknown>) 
 
   if (!text.trim()) {
     console.warn('Gemini returned empty analysis text', {
+      model,
       finishReason,
       blockReason: data?.promptFeedback?.blockReason || null,
     });
@@ -648,6 +658,7 @@ async function requestGeminiJson(apiKey: string, body: Record<string, unknown>) 
     return parseGeminiJsonText(text);
   } catch (error) {
     console.warn('Gemini returned invalid JSON', {
+      model,
       finishReason,
       textLength: text.length,
       textPrefix: text.replace(/\s+/g, ' ').slice(0, 160),
@@ -656,6 +667,25 @@ async function requestGeminiJson(apiKey: string, body: Record<string, unknown>) 
     });
     throw new Error(`Gemini returned invalid JSON (${finishReason}): ${(error as Error).message}`);
   }
+}
+
+async function requestGeminiJson(apiKey: string, body: Record<string, unknown>) {
+  let lastError: Error | null = null;
+
+  for (const model of GEMINI_MODEL_CANDIDATES) {
+    try {
+      return await requestGeminiJsonForModel(apiKey, model, body);
+    } catch (error) {
+      lastError = error as Error;
+      const statusCode = (error as any).statusCode;
+      const errorText = typeof (error as any).errorText === 'string' ? (error as any).errorText : '';
+      if (!isGeminiModelUnavailable(statusCode, errorText)) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError || new Error('Gemini request failed');
 }
 
 function mergeGeminiRecommendationsWithHeuristic(
@@ -971,6 +1001,7 @@ async function buildGeminiAnalysis(input: AnalysisInput): Promise<StoredAnalysis
 export async function buildReviewAnalysis(input: AnalysisInput) {
   const hasGeminiKey = Boolean(input.geminiApiKey?.trim() || process.env.GEMINI_API_KEY?.trim());
   let fallbackReason: 'no_api_key' | 'gemini_error' | null = null;
+  let geminiErrorMessage: string | null = null;
 
   try {
     const aiAnalysis = await buildGeminiAnalysis(input);
@@ -978,19 +1009,29 @@ export async function buildReviewAnalysis(input: AnalysisInput) {
       return {
         ...aiAnalysis,
         aiProvider: input.apiKeySource || 'app-key',
+        fallbackReason: null,
+        geminiErrorMessage: null,
       };
     }
 
     fallbackReason = hasGeminiKey ? 'gemini_error' : 'no_api_key';
+    if (input.apiKeySource === 'user-key') {
+      geminiErrorMessage = 'Gemini did not return a usable analysis for your API key.';
+    }
   } catch (error) {
     fallbackReason = 'gemini_error';
-    console.error('Falling back to deterministic review analysis:', (error as Error).message);
+    const message = (error as Error).message || 'Gemini request failed';
+    console.error('Falling back to deterministic review analysis:', message);
+    if (input.apiKeySource === 'user-key') {
+      geminiErrorMessage = message;
+    }
   }
 
   return {
     ...buildHeuristicAnalysis(input),
     aiProvider: 'deterministic',
     fallbackReason,
+    geminiErrorMessage,
   };
 }
 

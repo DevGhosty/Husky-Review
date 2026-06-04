@@ -296,7 +296,7 @@ export function UploadPanel({
                           : `${quota.remaining ?? 0} of ${quota.limit} app-key reviews left${quotaReset ? ` until ${quotaReset}` : ''}. Paste your own key to avoid using app quota.`
                         : quota?.source === 'deterministic'
                           ? 'Server AI is not configured; reviews use deterministic catalog matching unless you provide your own key.'
-                          : 'Paste your own key to run this review outside the app-key quota. It is sent only for this request and is not saved.'}
+                          : 'Paste a key from Google AI Studio (aistudio.google.com/apikey). It is sent only for this request and is not saved.'}
                   </p>
                   {quotaError ? <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">{quotaError}</p> : null}
                   <Input
