@@ -21,6 +21,8 @@ const buttonVariants = cva(
           "text-primary hover:bg-primary/10 hover:text-foreground aria-expanded:bg-primary/10 aria-expanded:text-foreground dark:hover:bg-muted",
         dark:
           "bg-husky-ink text-white shadow-card hover:-translate-y-0.5 hover:bg-husky-purple-dark hover:shadow-premium",
+        goldOnDark:
+          "bg-husky-gold text-husky-purple shadow-[0_6px_20px_rgba(0,0,0,0.28)] hover:bg-white hover:text-husky-purple hover:shadow-premium disabled:opacity-100 disabled:border disabled:border-white/40 disabled:bg-white/15 disabled:text-white disabled:shadow-none",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
