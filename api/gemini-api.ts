@@ -1,5 +1,22 @@
 export const GEMINI_MODEL_CANDIDATES = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'] as const;
 export const GEMINI_MODEL = GEMINI_MODEL_CANDIDATES[0];
+export const GEMINI_STRUCTURED_JSON_MAX_OUTPUT_TOKENS = 4096;
+export const GEMINI_STRUCTURED_JSON_RETRY_MAX_OUTPUT_TOKENS = 8192;
+
+export function structuredJsonGenerationConfig(model: string, maxOutputTokens: number) {
+  const config: Record<string, unknown> = {
+    temperature: 0.2,
+    maxOutputTokens,
+    responseMimeType: 'application/json',
+  };
+
+  // 2.5 models count "thinking" tokens against maxOutputTokens, which truncates JSON early.
+  if (/gemini-2\.5/i.test(model)) {
+    config.thinkingConfig = { thinkingBudget: 0 };
+  }
+
+  return config;
+}
 
 export type GeminiKeySource = 'user' | 'app' | 'none';
 
@@ -28,18 +45,14 @@ export async function verifyGeminiApiKey(apiKey: string): Promise<
   | { ok: true; model: string }
   | { ok: false; message: string }
 > {
-  const body = {
-    contents: [{ role: 'user', parts: [{ text: 'Reply with the JSON object {"ok":true} only.' }] }],
-    generationConfig: {
-      temperature: 0,
-      maxOutputTokens: 32,
-      responseMimeType: 'application/json',
-    },
-  };
-
   let lastMessage = 'No supported Gemini model responded for this API key.';
 
   for (const model of GEMINI_MODEL_CANDIDATES) {
+    const body = {
+      contents: [{ role: 'user', parts: [{ text: 'Reply with the JSON object {"ok":true} only.' }] }],
+      generationConfig: structuredJsonGenerationConfig(model, 256),
+    };
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
