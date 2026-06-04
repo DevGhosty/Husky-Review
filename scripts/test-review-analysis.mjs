@@ -68,6 +68,10 @@ const {
 } = await importTypeScriptModule('../src/lib/profile-settings.ts');
 const { filterUwMajors } = await importTypeScriptModule('../src/data/uw-majors.ts');
 const {
+  MAX_RESUME_UPLOAD_BYTES,
+  validateResumeFileSize,
+} = await importTypeScriptModule('../src/lib/resume-upload-limits.ts');
+const {
   DEFAULT_ORPHAN_RETENTION_HOURS,
   orphanRetentionCutoffIso,
   parseOrphanRetentionHours,
@@ -540,6 +544,13 @@ test('user-supplied Gemini key is sent as the Gemini request key', async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test('resume upload limits reject files that would exceed Vercel JSON body size', () => {
+  assert.ok(MAX_RESUME_UPLOAD_BYTES >= 2.5 * 1024 * 1024);
+  assert.ok(MAX_RESUME_UPLOAD_BYTES <= 3.5 * 1024 * 1024);
+  assert.equal(validateResumeFileSize(MAX_RESUME_UPLOAD_BYTES), null);
+  assert.match(validateResumeFileSize(MAX_RESUME_UPLOAD_BYTES + 1) || '', /too large/i);
 });
 
 test('isUsableExtractedResumeText rejects filename-only extraction', () => {

@@ -12,6 +12,7 @@ import { Progress } from './ui/progress';
 import { Textarea } from './ui/textarea';
 import type { ReviewQuotaStatus, ReviewStatus } from '../types/analysis';
 import type { ResumeRecord } from '../auth/supabase-client';
+import { RESUME_UPLOAD_LIMIT_LABEL, validateResumeFileSize } from '../lib/resume-upload-limits';
 import { cn, hasJobPostingInput, isValidJobPostingUrl, jobPostingInputProgress } from '../lib/utils';
 
 interface UploadPanelProps {
@@ -68,6 +69,7 @@ export function UploadPanel({
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
   const [keyTestMessage, setKeyTestMessage] = useState<string | null>(null);
   const [keyTestPending, setKeyTestPending] = useState(false);
+  const [resumeFileError, setResumeFileError] = useState<string | null>(null);
   const isLoading = status === 'loading' || isSubmitting;
   const hasPosting = hasJobPostingInput(jobDescription, jobPostingUrl);
   const usingOwnKey = userApiKey.trim().length > 0;
@@ -108,11 +110,29 @@ export function UploadPanel({
     }
   }
 
+  function handleResumeFile(file: File | null) {
+    if (!file) {
+      setResumeFileError(null);
+      onResumeFileChange(null);
+      return;
+    }
+
+    const sizeError = validateResumeFileSize(file.size);
+    if (sizeError) {
+      setResumeFileError(sizeError);
+      onResumeFileChange(null);
+      return;
+    }
+
+    setResumeFileError(null);
+    onResumeFileChange(file);
+  }
+
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
     const droppedFile = event.dataTransfer.files.item(0);
     if (droppedFile) {
-      onResumeFileChange(droppedFile);
+      handleResumeFile(droppedFile);
     }
   }
 
@@ -172,17 +192,21 @@ export function UploadPanel({
                   accept=".pdf,.doc,.docx"
                   aria-label="Upload resume file"
                   onChange={(event) => {
-                    const selectedFile = event.target.files?.item(0);
-                    if (selectedFile) {
-                      onResumeFileChange(selectedFile);
-                    }
+                    handleResumeFile(event.target.files?.item(0) ?? null);
                   }}
                 />
                 <span className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-primary/12 to-husky-gold/20 text-primary shadow-soft transition group-hover:scale-105">
                   {fileName ? <FileCheck2 className="size-7" aria-hidden="true" /> : <FileUp className="size-7" aria-hidden="true" />}
                 </span>
                 <span className="mt-4 text-base font-black text-foreground">{fileName || 'Drop your resume here'}</span>
-                <span className="mt-1 text-sm font-medium text-muted-foreground">PDF, DOC, or DOCX up to 3 MB. Stored when you analyze.</span>
+                <span className="mt-1 text-sm font-medium text-muted-foreground">
+                  PDF, DOC, or DOCX up to {RESUME_UPLOAD_LIMIT_LABEL}. Stored when you analyze.
+                </span>
+                {resumeFileError ? (
+                  <p className="mt-3 text-sm font-semibold text-destructive" role="alert">
+                    {resumeFileError}
+                  </p>
+                ) : null}
               </Label>
               {savedResumes.length > 0 || resumesLoading ? (
                 <div className="mt-4 rounded-2xl border border-border bg-muted/35 p-4 dark:bg-muted/20">
