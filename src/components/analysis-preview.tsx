@@ -23,7 +23,7 @@ export function AnalysisPreview({ status, loadingStepIndex, analysis, error }: A
   const score = analysis?.matchScore;
 
   return (
-    <Section id="analysis" className="mx-auto max-w-[86rem] px-5 py-12 sm:px-8 lg:px-12">
+    <Section id="analysis" className="scroll-mt-28 mx-auto max-w-[86rem] px-5 py-12 sm:px-8 lg:px-12">
       <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <Badge tone={isSuccess ? 'green' : isLoading ? 'amber' : 'gray'} className="rounded-full px-4 py-2">
