@@ -332,7 +332,8 @@ export function ProfilePage() {
       return (
         <Button
           type="button"
-          className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90"
+          variant="goldOnDark"
+          className="h-12"
           disabled={!profileReady || isSaving}
           onClick={() => {
             void handleCompleteProfile();
@@ -347,7 +348,8 @@ export function ProfilePage() {
       return (
         <Button
           type="button"
-          className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90"
+          variant="goldOnDark"
+          className="h-12"
           disabled={!profileReady || isSaving}
           onClick={() => {
             void handleCompleteProfile();
@@ -361,7 +363,8 @@ export function ProfilePage() {
     return (
       <Button
         type="button"
-        className="h-12 bg-husky-gold text-husky-purple hover:bg-husky-gold/90 disabled:opacity-55"
+        variant="goldOnDark"
+        className="h-12"
         disabled={!isDirty || isSaving}
         onClick={handleSaveProfile}
       >
