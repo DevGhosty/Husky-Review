@@ -12,11 +12,15 @@ import {
   Trash2,
   UserRound,
 } from 'lucide-react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useProfileSettings } from '../context/profile-settings-context';
 import { sanitizeAppReturnTo } from '../auth/auth0-config';
 import { useReview } from '../context/review-context';
 import { MajorCombobox } from '../components/major-combobox';
+import { ProfileAvatarEditor } from '../components/profile-avatar-editor';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { ACTIVITY_INTEREST_OPTIONS } from '../data/uwb-catalog';
+import { resolveProfilePictureUrl } from '../lib/profile-picture';
 import {
   campusLabel,
   campusOptions,
@@ -159,6 +163,7 @@ export function ProfilePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const activeSection = useProfileSectionNav();
+  const { user } = useAuth0();
   const { status, fileName, selectedIds } = useReview();
   const {
     settings,
@@ -269,7 +274,9 @@ export function ProfilePage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isProfileDirty]);
 
-  const initials = (settings.displayName || 'UW')
+  const heroDisplayName = settings.displayName.trim() || user?.name || user?.nickname || 'UW student';
+  const heroPictureUrl = resolveProfilePictureUrl(settings.avatarUrl, user?.picture);
+  const initials = heroDisplayName
     .split(' ')
     .map((part) => part[0])
     .join('')
@@ -370,9 +377,10 @@ export function ProfilePage() {
           <div className="absolute -right-20 -top-20 size-64 rounded-full bg-husky-gold/20 blur-3xl motion-safe:animate-breathe" aria-hidden="true" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <span className="grid size-20 place-items-center rounded-full bg-white text-2xl font-black text-husky-purple ring-4 ring-white/10">
-                {initials}
-              </span>
+              <Avatar size="lg" className="size-20 ring-4 ring-white/10">
+                {heroPictureUrl ? <AvatarImage src={heroPictureUrl} alt={heroDisplayName} /> : null}
+                <AvatarFallback className="bg-white text-2xl font-black text-husky-purple">{initials}</AvatarFallback>
+              </Avatar>
               <div>
                 <Badge tone="goldOnDark" className="rounded-full px-4 py-2">
                   {profileComplete ? 'Student workspace' : 'Profile setup'}
@@ -767,10 +775,11 @@ export function ProfilePage() {
           <SectionPanel
             id="appearance"
             title="Appearance"
-            description="Adjust how the workspace looks on your device."
+            description="Personalize your workspace photo and theme."
             icon={Palette}
           >
-            <div className="inset-row rounded-2xl p-4">
+            <ProfileAvatarEditor />
+            <div className="inset-row mt-4 rounded-2xl p-4">
               <p className="text-sm font-black text-foreground">Theme</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Use the sun/moon control in the top navigation bar to switch between light and dark mode on any page.

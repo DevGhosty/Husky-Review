@@ -3,8 +3,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import {
   fetchProfile as fetchProfileRequest,
   profileRecordToSettings,
+  removeProfileAvatar,
   saveProfileRecord,
   settingsToProfileRecord,
+  uploadProfileAvatar,
   type ProfileRecord,
 } from '../auth/supabase-client';
 import { getAccessTokenRequestOptions } from '../auth/auth0-config';
@@ -39,6 +41,8 @@ interface ProfileSettingsContextValue {
   resetSettings: () => void;
   saveProfile: () => Promise<void>;
   revertToSavedBaseline: () => void;
+  uploadAvatar: (accessToken: string, file: File) => Promise<void>;
+  removeAvatar: (accessToken: string) => Promise<void>;
   isProfileDirty: () => boolean;
   syncStatus: 'local' | 'loading' | 'synced' | 'error';
   syncError: string | null;
@@ -205,6 +209,31 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
 
   const isDirty = useMemo(() => isProfileDirty(), [isProfileDirty, savedBaseline, settings]);
 
+  const setAvatarUrl = useCallback((avatarUrl: string | null) => {
+    updateSettings((current) => ({ ...current, avatarUrl }));
+  }, []);
+
+  const uploadAvatar = useCallback(
+    async (accessToken: string, file: File) => {
+      const avatarUrl = await uploadProfileAvatar(accessToken, file);
+      if (!avatarUrl) {
+        throw new Error('Profile picture upload did not return an image URL.');
+      }
+      setAvatarUrl(avatarUrl);
+      saveProfileSettings({ ...settingsRef.current, avatarUrl }, userId);
+    },
+    [setAvatarUrl, userId],
+  );
+
+  const removeAvatar = useCallback(
+    async (accessToken: string) => {
+      await removeProfileAvatar(accessToken);
+      setAvatarUrl(null);
+      saveProfileSettings({ ...settingsRef.current, avatarUrl: null }, userId);
+    },
+    [setAvatarUrl, userId],
+  );
+
   const revertToSavedBaseline = useCallback(() => {
     const baseline = savedBaselineRef.current;
     if (!baseline) {
@@ -288,11 +317,13 @@ export function ProfileSettingsProvider({ children }: ProfileSettingsProviderPro
       },
       saveProfile,
       revertToSavedBaseline,
+      uploadAvatar,
+      removeAvatar,
       isProfileDirty,
       syncStatus,
       syncError,
     }),
-    [isDirty, isProfileDirty, saveProfile, revertToSavedBaseline, settings, syncBaseline, syncError, syncStatus, userId],
+    [isDirty, isProfileDirty, removeAvatar, saveProfile, revertToSavedBaseline, settings, syncBaseline, syncError, syncStatus, uploadAvatar, userId],
   );
 
   return <ProfileSettingsContext.Provider value={value}>{children}</ProfileSettingsContext.Provider>;

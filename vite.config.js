@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const apiProxyTarget = process.env.VITE_API_PROXY?.trim();
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -12,4 +14,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: apiProxyTarget
+    ? {
+        proxy: {
+          '/api': {
+            target: apiProxyTarget,
+            changeOrigin: true,
+            secure: true,
+          },
+        },
+      }
+    : undefined,
 });

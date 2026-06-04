@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { isValidGeminiApiKey, normalizeGeminiApiKey } from '../gemini-api.js';
 import { requireAuth } from '../auth0-verify.js';
 import {
   MAX_JOB_DESCRIPTION_CHARS,
@@ -63,7 +64,7 @@ function validateAnalyzeBody(body: any) {
   const jobDescription = typeof body?.jobDescription === 'string' ? body.jobDescription.trim() : '';
   const jobPostingUrl = typeof body?.jobPostingUrl === 'string' ? body.jobPostingUrl.trim() : '';
   const deadline = typeof body?.deadline === 'string' ? body.deadline.trim() : '';
-  const userApiKey = typeof body?.userApiKey === 'string' ? body.userApiKey.trim() : '';
+  const userApiKey = normalizeGeminiApiKey(body?.userApiKey);
 
   if (!resumeId) {
     const error = new Error('Resume ID required');
@@ -99,8 +100,10 @@ function validateAnalyzeBody(body: any) {
     throw error;
   }
 
-  if (userApiKey && !/^[a-zA-Z0-9_-]{20,}$/.test(userApiKey)) {
-    const error = new Error('Enter a valid Gemini API key or leave the field blank');
+  if (userApiKey && !isValidGeminiApiKey(userApiKey)) {
+    const error = new Error(
+      'Enter a valid Gemini API key from Google AI Studio (aistudio.google.com/apikey), or leave the field blank.',
+    );
     (error as any).statusCode = 400;
     throw error;
   }
@@ -354,7 +357,7 @@ export default async function handler(req: any, res: any) {
       activityInterests: profileScope.activityInterests,
       prioritizeInTime: profileScope.prioritizeInTime,
       includeLongTerm: profileScope.includeLongTerm,
-      geminiApiKey: input.userApiKey || appKey || undefined,
+      geminiApiKey: input.userApiKey || undefined,
       apiKeySource: input.userApiKey ? 'user-key' : appKey ? 'app-key' : undefined,
     });
 
@@ -409,6 +412,19 @@ export default async function handler(req: any, res: any) {
           ? quota
           : deterministicQuotaStatus(),
       fallbackReason: 'fallbackReason' in analysis ? analysis.fallbackReason : null,
+      geminiErrorMessage:
+        'geminiErrorMessage' in analysis && typeof analysis.geminiErrorMessage === 'string'
+          ? analysis.geminiErrorMessage
+          : null,
+      geminiKeySource:
+        'geminiKeySource' in analysis &&
+        (analysis.geminiKeySource === 'user' || analysis.geminiKeySource === 'app' || analysis.geminiKeySource === 'none')
+          ? analysis.geminiKeySource
+          : usingUserKey
+            ? 'user'
+            : appKey
+              ? 'app'
+              : 'none',
       createdAt: review?.created_at || analysis.createdAt,
       updatedAt: review?.updated_at || analysis.updatedAt,
     });

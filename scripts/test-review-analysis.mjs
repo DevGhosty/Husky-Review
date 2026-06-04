@@ -5,7 +5,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { test } from 'node:test';
 import ts from 'typescript';
 
-async function importTypeScriptModule(path) {
+const tmpRoot = fileURLToPath(new URL('../tmp/', import.meta.url));
+await mkdir(tmpRoot, { recursive: true });
+
+async function writeTranspiledModule(path, directory) {
   const source = await readFile(new URL(path, import.meta.url), 'utf8');
   const output = ts.transpileModule(source, {
     compilerOptions: {
@@ -14,12 +17,18 @@ async function importTypeScriptModule(path) {
       esModuleInterop: true,
     },
   }).outputText;
-
-  const tmpRoot = fileURLToPath(new URL('../tmp/', import.meta.url));
-  await mkdir(tmpRoot, { recursive: true });
-  const directory = await mkdtemp(join(tmpRoot, 'husky-review-test-'));
-  const modulePath = join(directory, `${path.replace(/[^a-z0-9]/gi, '-')}.mjs`);
+  const fileName = `${path.split('/').pop().replace(/\.ts$/, '.js')}`;
+  const modulePath = join(directory, fileName);
   await writeFile(modulePath, output, 'utf8');
+  return modulePath;
+}
+
+async function importTypeScriptModule(path, dependencies = []) {
+  const directory = await mkdtemp(join(tmpRoot, 'husky-review-test-'));
+  for (const dependency of dependencies) {
+    await writeTranspiledModule(dependency, directory);
+  }
+  const modulePath = await writeTranspiledModule(path, directory);
   return import(pathToFileURL(modulePath).href);
 }
 
@@ -31,7 +40,10 @@ const {
   extractResumeText,
   groupForActivity,
   rankActivities,
-} = await importTypeScriptModule('../api/review-analysis.ts');
+} = await importTypeScriptModule('../api/review-analysis.ts', [
+  '../api/gemini-api.ts',
+  '../api/catalog-filters.ts',
+]);
 const { filterActivitiesByInterests, matchesActivityInterests } = await importTypeScriptModule('../api/catalog-filters.ts');
 const { fetchJobPostingText, isPublicAddress, postingHtmlToText, resolveJobDescription } = await importTypeScriptModule('../api/job-posting.ts');
 const { checkAppKeyQuota, getAppKeyQuotaStatus } = await importTypeScriptModule('../api/review-quota.ts');
@@ -877,4 +889,71 @@ test('deterministic fallback explains missing server Gemini key', async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+const {
+  normalizeGeminiApiKey,
+  isValidGeminiApiKey,
+  parseGeminiHttpError,
+  resolveGeminiApiKey,
+  structuredJsonGenerationConfig,
+} = await importTypeScriptModule('../api/gemini-api.ts');
+
+test('structuredJsonGenerationConfig disables thinking budget for Gemini 2.5 models', () => {
+  const config = structuredJsonGenerationConfig('gemini-2.5-flash', 4096);
+  assert.equal(config.thinkingConfig?.thinkingBudget, 0);
+  assert.equal(config.maxOutputTokens, 4096);
+});
+
+test('resolveGeminiApiKey uses only the user key in user-key mode', () => {
+  const resolved = resolveGeminiApiKey(
+    { geminiApiKey: 'user-key-only-abcdefghijklmnopqrst', apiKeySource: 'user-key' },
+    'server-secret-key-should-not-be-used',
+  );
+  assert.equal(resolved.keySource, 'user');
+  assert.equal(resolved.apiKey, 'user-key-only-abcdefghijklmnopqrst');
+});
+
+test('normalizeGeminiApiKey strips bearer prefix and quotes', () => {
+  assert.equal(normalizeGeminiApiKey('  Bearer AIzaSyABC1234567890abcdefghij  '), 'AIzaSyABC1234567890abcdefghij');
+  assert.equal(normalizeGeminiApiKey('"AIzaSyABC1234567890abcdefghij"'), 'AIzaSyABC1234567890abcdefghij');
+  assert.ok(isValidGeminiApiKey('AIzaSyABC1234567890abcdefghij'));
+});
+
+test('user Gemini key failure surfaces geminiErrorMessage', async () => {
+  const originalFetch = globalThis.fetch;
+  delete process.env.GEMINI_API_KEY;
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 400,
+    text: async () =>
+      JSON.stringify({
+        error: {
+          message: 'API key not valid. Please pass a valid API key.',
+          status: 'INVALID_ARGUMENT',
+        },
+      }),
+  });
+
+  try {
+    const analysis = await buildReviewAnalysis({
+      ...baseInput,
+      geminiApiKey: 'user-supplied-gemini-key-12345',
+      apiKeySource: 'user-key',
+    });
+
+    assert.equal(analysis.aiProvider, 'deterministic');
+    assert.equal(analysis.fallbackReason, 'gemini_error');
+    assert.match(analysis.geminiErrorMessage, /rejected this API key/i);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('parseGeminiHttpError maps invalid API key responses', () => {
+  const message = parseGeminiHttpError(
+    400,
+    JSON.stringify({ error: { message: 'API key not valid. Please pass a valid API key.' } }),
+  );
+  assert.match(message, /Google AI Studio/i);
 });

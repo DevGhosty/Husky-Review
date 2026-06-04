@@ -36,6 +36,7 @@ export interface Recommendation {
   lastVerified: string;
   confidence: number;
   sourceLabel: string;
+  sourceUrl?: string;
   roadmapWeek: number;
   roadmapAction: string;
 }
@@ -74,6 +75,8 @@ export interface ReviewAnalysis {
   selectedIds: string[];
   aiProvider?: 'app-key' | 'user-key' | 'deterministic';
   fallbackReason?: 'no_api_key' | 'gemini_error' | null;
+  geminiErrorMessage?: string | null;
+  geminiKeySource?: 'user' | 'app' | 'none';
   quota?: ReviewQuotaStatus;
   createdAt: string;
   updatedAt: string;

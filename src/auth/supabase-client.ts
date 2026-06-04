@@ -71,6 +71,8 @@ export interface ProfileRecord {
   target_role: ProfileSettings['targetRole'];
   activity_interests: ActivityType[];
   profile_completed_at: string | null;
+  avatar_storage_path?: string | null;
+  avatar_url?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -179,6 +181,28 @@ export async function deleteResume(accessToken: string, resumeId: string): Promi
   }
 }
 
+export async function verifyGeminiApiKey(accessToken: string, userApiKey: string): Promise<{
+  ok: boolean;
+  keySource: 'user';
+  model?: string;
+  message: string;
+}> {
+  const response = await fetch('/api/gemini-verify', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userApiKey }),
+  });
+
+  const result = await readApiJson<{ ok: boolean; keySource: 'user'; model?: string; message: string }>(
+    response,
+    'Failed to verify Gemini API key',
+  );
+  return result;
+}
+
 export async function analyzeReview(
   accessToken: string,
   input: {
@@ -264,6 +288,44 @@ export async function fetchProfile(accessToken: string): Promise<ProfileRecord |
   return result.profile;
 }
 
+export async function uploadProfileAvatar(accessToken: string, file: File): Promise<string> {
+  const base64 = await fileToBase64(file);
+
+  const response = await fetch('/api/profile-avatar', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      file: base64,
+      filename: file.name,
+      contentType: file.type || 'application/octet-stream',
+    }),
+  });
+
+  const result = await readApiJson<{ avatar_url: string | null }>(response, 'Failed to upload profile picture');
+  const avatarUrl = typeof result.avatar_url === 'string' ? result.avatar_url.trim() : '';
+  if (!avatarUrl) {
+    throw new Error('Profile picture upload did not return an image URL.');
+  }
+  return avatarUrl;
+}
+
+export async function removeProfileAvatar(accessToken: string): Promise<void> {
+  const response = await fetch('/api/profile-avatar', {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    await throwApiError(response, 'Failed to remove profile picture');
+  }
+}
+
 export async function saveProfileRecord(accessToken: string, profile: ProfileRecord): Promise<ProfileRecord> {
   const response = await fetch('/api/profile', {
     method: 'PUT',
@@ -321,6 +383,7 @@ export function profileRecordToSettings(record: ProfileRecord): ProfileSettings 
       ? record.activity_interests
       : defaultProfileSettings.activityInterests,
     profileCompletedAt: record.profile_completed_at || null,
+    avatarUrl: typeof record.avatar_url === 'string' && record.avatar_url.trim() ? record.avatar_url.trim() : null,
   };
 }
 
