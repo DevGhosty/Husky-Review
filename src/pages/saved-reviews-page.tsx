@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BookmarkCheck, CalendarDays, FileText, Trash2 } from 'lucide-react';
+import { ArrowRight, BookmarkCheck, CalendarDays, FileText, Loader2, Trash2 } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Surface } from '../components/layout/surface';
@@ -18,6 +18,8 @@ export function SavedReviewsPage() {
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [deleteResumeErrors, setDeleteResumeErrors] = useState<Record<string, string>>({});
   const [deleteReviewErrors, setDeleteReviewErrors] = useState<Record<string, string>>({});
+  const [openingReviewId, setOpeningReviewId] = useState<string | null>(null);
+  const [openReviewErrors, setOpenReviewErrors] = useState<Record<string, string>>({});
 
   const handleDeleteResume = async (id: string) => {
     setDeletingId(id);
@@ -137,15 +139,40 @@ export function SavedReviewsPage() {
                 </p>
                 <div className="relative mt-5 flex gap-2">
                   <Button
+                    type="button"
                     variant={analysis?.id === review.id ? 'primary' : 'secondary'}
                     className="flex-1"
+                    disabled={openingReviewId === review.id}
+                    aria-busy={openingReviewId === review.id}
                     onClick={async () => {
-                      await loadReviewById(review.id);
-                      navigate('/app/roadmap');
+                      setOpenReviewErrors((prev) => ({ ...prev, [review.id]: '' }));
+                      setOpeningReviewId(review.id);
+                      try {
+                        const opened = await loadReviewById(review.id);
+                        if (opened) {
+                          navigate('/app/roadmap');
+                        } else {
+                          setOpenReviewErrors((prev) => ({
+                            ...prev,
+                            [review.id]: 'Could not open this review. Try again.',
+                          }));
+                        }
+                      } finally {
+                        setOpeningReviewId(null);
+                      }
                     }}
                   >
-                    Open roadmap
-                    <ArrowRight className="size-4" aria-hidden="true" />
+                    {openingReviewId === review.id ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        Opening...
+                      </>
+                    ) : (
+                      <>
+                        Open roadmap
+                        <ArrowRight className="size-4" aria-hidden="true" />
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="secondary"
@@ -158,6 +185,9 @@ export function SavedReviewsPage() {
                     <Trash2 className="size-4" aria-hidden="true" />
                   </Button>
                 </div>
+                {openReviewErrors[review.id] && (
+                  <p className="relative mt-2 text-xs font-medium text-red-600">{openReviewErrors[review.id]}</p>
+                )}
                 {deleteReviewErrors[review.id] && (
                   <p className="relative mt-2 text-xs font-medium text-red-600">{deleteReviewErrors[review.id]}</p>
                 )}
