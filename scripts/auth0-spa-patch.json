@@ -1,6 +1,0 @@
-{
-  "grant_types": ["authorization_code", "refresh_token"],
-  "token_endpoint_auth_method": "none",
-  "app_type": "spa",
-  "oidc_conformant": true
-}
